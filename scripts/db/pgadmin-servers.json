@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "HRMS Local",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "hrms_db",
+      "Username": "hrms_user",
+      "SSLMode": "prefer",
+      "PassFile": "/pgpass"
+    }
+  }
+}

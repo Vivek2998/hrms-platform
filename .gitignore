@@ -1,0 +1,107 @@
+# ===================================================
+# Dependencies
+# ===================================================
+node_modules/
+.pnpm-store/
+
+# ===================================================
+# Build outputs
+# ===================================================
+dist/
+build/
+.next/
+out/
+
+# ===================================================
+# Environment — NEVER COMMIT REAL .env FILES
+# ===================================================
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ===================================================
+# Logs
+# ===================================================
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# ===================================================
+# Editors
+# ===================================================
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===================================================
+# OS
+# ===================================================
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini
+
+# ===================================================
+# Turborepo
+# ===================================================
+.turbo/
+
+# ===================================================
+# TypeScript build cache
+# ===================================================
+*.tsbuildinfo
+
+# ===================================================
+# Test coverage
+# ===================================================
+coverage/
+.nyc_output/
+
+# ===================================================
+# Docker local data
+# ===================================================
+.docker-data/
+
+# ===================================================
+# Flutter
+# ===================================================
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/.pub-cache/
+apps/mobile/pubspec.lock
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/app/debug.keystore
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Pods/
+apps/mobile/ios/Flutter/ephemeral/
+apps/mobile/macos/Flutter/ephemeral/
+apps/mobile/*.g.dart
+apps/mobile/*.freezed.dart
+
+# ===================================================
+# Prisma
+# ===================================================
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
+
+# ===================================================
+# Security — never commit these
+# ===================================================
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+serviceAccountKey.json
+google-services.json
+GoogleService-Info.plist
