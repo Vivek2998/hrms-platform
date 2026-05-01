@@ -1,0 +1,630 @@
+// HRMS Platform — Prisma Schema v6
+// Multi-tenant with PostgreSQL Row-Level Security (RLS)
+// India-first: PF, ESI, PT, TDS, Gratuity fields included from Day 1
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  HR
+  MANAGER
+  EMPLOYEE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+  CONSULTANT
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_NOTICE
+  TERMINATED
+  ABSCONDED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  WFH
+  ON_LEAVE
+  HOLIDAY
+  WEEKEND
+  PENDING
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  WITHDRAWN
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  PAID
+  FAILED
+}
+
+enum NotificationType {
+  ATTENDANCE_PUNCH_IN
+  ATTENDANCE_PUNCH_OUT
+  LEAVE_APPLIED
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  PAYSLIP_GENERATED
+  SALARY_REVISED
+  ANNOUNCEMENT
+  SYSTEM
+}
+
+enum DocumentType {
+  OFFER_LETTER
+  APPOINTMENT_LETTER
+  PAYSLIP
+  FORM_16
+  EXPERIENCE_LETTER
+  RELIEVING_LETTER
+  ID_PROOF
+  ADDRESS_PROOF
+  EDUCATIONAL
+  OTHER
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORGANIZATIONS (Tenants)
+// ─────────────────────────────────────────────────────────────
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  website     String?
+  email       String
+  phone       String?
+  addressLine1 String?
+  addressLine2 String?
+  city        String?
+  state       String?
+  pincode     String?
+  country     String   @default("IN")
+  gstin       String?
+  pan         String?
+  cin         String?
+  timezone    String   @default("Asia/Kolkata")
+  currency    String   @default("INR")
+  fiscalYearStart Int  @default(4) // April = 4
+  pfEnabled   Boolean  @default(true)
+  esiEnabled  Boolean  @default(true)
+  ptEnabled   Boolean  @default(false)
+  ptState     String?
+  isActive    Boolean  @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employees       Employee[]
+  departments     Department[]
+  shifts          Shift[]
+  leaveTypes      LeaveType[]
+  salaryComponents SalaryComponent[]
+  holidays        Holiday[]
+  announcements   Announcement[]
+  payrollRuns     PayrollRun[]
+  notifications   Notification[]
+
+  @@map("organizations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// DEPARTMENTS & TEAMS
+// ─────────────────────────────────────────────────────────────
+
+model Department {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  description    String?
+  headId         String?
+  parentId       String?
+  isActive       Boolean   @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  parent       Department?  @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children     Department[] @relation("DeptHierarchy")
+  teams        Team[]
+  employees    Employee[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("departments")
+}
+
+model Team {
+  id             String    @id @default(uuid())
+  organizationId String
+  departmentId   String
+  name           String
+  leadId         String?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id])
+  employees  Employee[]
+
+  @@index([organizationId])
+  @@index([departmentId])
+  @@map("teams")
+}
+
+// ─────────────────────────────────────────────────────────────
+// EMPLOYEES
+// ─────────────────────────────────────────────────────────────
+
+model Employee {
+  id                  String          @id @default(uuid())
+  organizationId      String
+  employeeCode        String
+  firstName           String
+  lastName            String
+  displayName         String?
+  email               String          // personal
+  workEmail           String          // company
+  phone               String?
+  dateOfBirth         DateTime?
+  gender              String?
+  bloodGroup          String?
+  avatarUrl           String?
+  role                UserRole        @default(EMPLOYEE)
+  status              EmployeeStatus  @default(ACTIVE)
+  employmentType      EmploymentType  @default(FULL_TIME)
+  departmentId        String?
+  teamId              String?
+  managerId           String?
+  designationId       String?
+  // India statutory
+  panNumber           String?
+  aadhaarNumber       String?
+  pfAccountNumber     String?
+  esiNumber           String?
+  uanNumber           String?
+  // Bank
+  bankAccountNumber   String?
+  bankIfsc            String?
+  bankName            String?
+  bankBranch          String?
+  // Dates
+  dateOfJoining       DateTime?
+  dateOfConfirmation  DateTime?
+  dateOfTermination   DateTime?
+  noticePeriodDays    Int             @default(30)
+  // Address
+  presentAddress      Json?
+  permanentAddress    Json?
+  emergencyContact    Json?
+  // Auth
+  passwordHash        String
+  passwordChangedAt   DateTime?
+  lastLoginAt         DateTime?
+  isEmailVerified     Boolean         @default(false)
+  refreshTokenHash    String?
+  // Soft delete
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  department       Department?       @relation(fields: [departmentId], references: [id])
+  team             Team?             @relation(fields: [teamId], references: [id])
+  manager          Employee?         @relation("ReportsTo", fields: [managerId], references: [id])
+  reportees        Employee[]        @relation("ReportsTo")
+  shiftAssignments ShiftAssignment[]
+  attendanceRecords AttendanceRecord[]
+  leaveRequests    LeaveRequest[]
+  leaveApprovals   LeaveApproval[]
+  salaryRevisions  SalaryRevision[]
+  payslips         Payslip[]
+  documents        Document[]
+  notifications    Notification[]
+
+  @@unique([organizationId, employeeCode])
+  @@unique([organizationId, workEmail])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, departmentId])
+  @@map("employees")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHIFTS
+// ─────────────────────────────────────────────────────────────
+
+model Shift {
+  id                     String    @id @default(uuid())
+  organizationId         String
+  name                   String
+  code                   String
+  startTime              String    // HH:mm
+  endTime                String    // HH:mm
+  graceMinutes           Int       @default(0)
+  halfDayAfterMinutes    Int       @default(240)
+  absentAfterMinutes     Int       @default(480)
+  breakDurationMinutes   Int       @default(60)
+  isNightShift           Boolean   @default(false)
+  weeklyOffDays          Json      @default("[0,6]") // 0=Sun,6=Sat
+  isActive               Boolean   @default(true)
+  deletedAt              DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  assignments      ShiftAssignment[]
+  attendanceRecords AttendanceRecord[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("shifts")
+}
+
+model ShiftAssignment {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  shiftId        String
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  createdAt      DateTime  @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@map("shift_assignments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ATTENDANCE
+// ─────────────────────────────────────────────────────────────
+
+model AttendanceRecord {
+  id               String           @id @default(uuid())
+  organizationId   String
+  employeeId       String
+  shiftId          String?
+  date             DateTime         @db.Date
+  punchIn          DateTime?
+  punchOut         DateTime?
+  status           AttendanceStatus @default(PENDING)
+  punchInLocation  Json?            // { lat, lng, accuracy, address }
+  punchOutLocation Json?
+  punchInPhoto     String?          // Cloudinary URL
+  workingMinutes   Int              @default(0)
+  overtimeMinutes  Int              @default(0)
+  lateMinutes      Int              @default(0)
+  isManuallyEdited Boolean          @default(false)
+  editReason       String?
+  editedBy         String?
+  remarks          String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift?   @relation(fields: [shiftId], references: [id])
+
+  @@unique([organizationId, employeeId, date])
+  @@index([organizationId, date])
+  @@index([organizationId, employeeId])
+  @@map("attendance_records")
+}
+
+// ─────────────────────────────────────────────────────────────
+// LEAVE TYPES & REQUESTS
+// ─────────────────────────────────────────────────────────────
+
+model LeaveType {
+  id              String    @id @default(uuid())
+  organizationId  String
+  name            String
+  code            String
+  daysAllowed     Int
+  isCarryForward  Boolean   @default(false)
+  maxCarryForward Int       @default(0)
+  isPaid          Boolean   @default(true)
+  isEncashable    Boolean   @default(false)
+  applicableAfterDays Int   @default(0)
+  colorHex        String    @default("#6366f1")
+  isActive        Boolean   @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  leaveRequests  LeaveRequest[]
+  leaveBalances  LeaveBalance[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("leave_types")
+}
+
+model LeaveBalance {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  leaveTypeId    String
+  year           Int
+  allocated      Float     @default(0)
+  used           Float     @default(0)
+  pending        Float     @default(0)
+  carried        Float     @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([organizationId, employeeId, leaveTypeId, year])
+  @@index([organizationId, employeeId])
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id             String      @id @default(uuid())
+  organizationId String
+  employeeId     String
+  leaveTypeId    String
+  fromDate       DateTime    @db.Date
+  toDate         DateTime    @db.Date
+  totalDays      Float
+  reason         String
+  status         LeaveStatus @default(PENDING)
+  attachmentUrl  String?
+  deletedAt      DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  employee  Employee        @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType       @relation(fields: [leaveTypeId], references: [id])
+  approvals LeaveApproval[]
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("leave_requests")
+}
+
+model LeaveApproval {
+  id             String      @id @default(uuid())
+  organizationId String
+  leaveRequestId String
+  approverId     String
+  action         LeaveStatus
+  remarks        String?
+  createdAt      DateTime    @default(now())
+
+  leaveRequest LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+  approver     Employee     @relation(fields: [approverId], references: [id])
+
+  @@index([leaveRequestId])
+  @@map("leave_approvals")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SALARY & PAYROLL
+// ─────────────────────────────────────────────────────────────
+
+model SalaryComponent {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  type           String    // EARNING | DEDUCTION | STATUTORY
+  isFixedAmount  Boolean   @default(false)
+  defaultPercent Float?    // % of Basic
+  defaultAmount  Float?
+  isTaxable      Boolean   @default(true)
+  isActive       Boolean   @default(true)
+  displayOrder   Int       @default(0)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("salary_components")
+}
+
+model SalaryRevision {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  effectiveFrom  DateTime  @db.Date
+  effectiveTo    DateTime? @db.Date
+  ctc            Float
+  basic          Float
+  gross          Float
+  netPay         Float
+  components     Json      // [{ componentId, code, name, amount }]
+  reason         String?
+  approvedBy     String?
+  createdAt      DateTime  @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  // Immutable — never updated, only new rows
+  @@index([organizationId, employeeId])
+  @@map("salary_revisions")
+}
+
+model PayrollRun {
+  id               String           @id @default(uuid())
+  organizationId   String
+  month            Int              // 1-12
+  year             Int
+  status           PayrollRunStatus @default(DRAFT)
+  totalEmployees   Int              @default(0)
+  totalGross       Float            @default(0)
+  totalDeductions  Float            @default(0)
+  totalNetPay      Float            @default(0)
+  processedBy      String?
+  processedAt      DateTime?
+  paidAt           DateTime?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  payslips     Payslip[]
+
+  @@unique([organizationId, month, year])
+  @@index([organizationId])
+  @@map("payroll_runs")
+}
+
+model Payslip {
+  id               String    @id @default(uuid())
+  organizationId   String
+  payrollRunId     String
+  employeeId       String
+  month            Int
+  year             Int
+  workingDays      Int
+  presentDays      Float
+  lopDays          Float     @default(0)
+  earnings         Json      // [{ code, name, amount }]
+  deductions       Json      // [{ code, name, amount }]
+  statutory        Json      // [{ code, name, amount }]
+  grossEarnings    Float
+  totalDeductions  Float
+  netPay           Float
+  pfEmployer       Float     @default(0)
+  esiEmployer      Float     @default(0)
+  pdfUrl           String?   // Cloudinary URL
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id])
+  employee   Employee   @relation(fields: [employeeId], references: [id])
+
+  @@unique([organizationId, payrollRunId, employeeId])
+  @@index([organizationId, employeeId])
+  @@map("payslips")
+}
+
+// ─────────────────────────────────────────────────────────────
+// HOLIDAYS
+// ─────────────────────────────────────────────────────────────
+
+model Holiday {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  date           DateTime @db.Date
+  type           String   @default("NATIONAL") // NATIONAL | REGIONAL | OPTIONAL
+  year           Int
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, date])
+  @@index([organizationId, year])
+  @@map("holidays")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ANNOUNCEMENTS
+// ─────────────────────────────────────────────────────────────
+
+model Announcement {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  content        String
+  authorId       String
+  isPinned       Boolean   @default(false)
+  visibleTo      Json      @default("[]") // [] = all, or array of role strings
+  expiresAt      DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("announcements")
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOCUMENTS
+// ─────────────────────────────────────────────────────────────
+
+model Document {
+  id             String       @id @default(uuid())
+  organizationId String
+  employeeId     String
+  type           DocumentType
+  name           String
+  url            String       // Cloudinary URL
+  size           Int?
+  mimeType       String?
+  uploadedBy     String
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@map("documents")
+}
+
+// ─────────────────────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id             String           @id @default(uuid())
+  organizationId String
+  employeeId     String
+  type           NotificationType
+  title          String
+  body           String
+  data           Json?
+  isRead         Boolean          @default(false)
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, employeeId, isRead])
+  @@map("notifications")
+}
