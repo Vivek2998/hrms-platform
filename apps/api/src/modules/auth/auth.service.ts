@@ -52,15 +52,17 @@ export async function loginService(
   return {
     accessToken,
     refreshToken,
-    user: {
+    employee: {
       id: employee.id,
-      orgId: employee.organizationId,
+      organizationId: employee.organizationId,
       orgName: employee.organization.name,
       role: employee.role,
       firstName: employee.firstName,
       lastName: employee.lastName,
-      email: employee.workEmail,
-      avatarUrl: employee.avatarUrl ?? undefined,
+      workEmail: employee.workEmail,
+      employeeCode: employee.employeeCode,
+      avatarUrl: employee.avatarUrl ?? null,
+      mustChangePassword: employee.passwordChangedAt === null,
     },
   };
 }
