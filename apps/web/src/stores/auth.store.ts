@@ -2,15 +2,17 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { UserRole } from "@hrms/shared-types";
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
-  orgId: string;
+  organizationId: string;
   orgName: string;
   role: UserRole;
   firstName: string;
   lastName: string;
-  email: string;
-  avatarUrl?: string;
+  workEmail: string;
+  employeeCode: string;
+  avatarUrl?: string | null;
+  mustChangePassword?: boolean;
 }
 
 interface AuthState {

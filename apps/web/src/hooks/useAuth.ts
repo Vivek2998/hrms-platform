@@ -4,7 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/axios";
 import { useAuthStore } from "@/stores/auth.store";
-import type { ApiResponse } from "@hrms/shared-types";
+import type { ApiResponse, UserRole } from "@hrms/shared-types";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -16,15 +16,17 @@ export type LoginInput = z.infer<typeof loginSchema>;
 interface LoginResponse {
   accessToken: string;
   refreshToken: string;
-  user: {
+  employee: {
     id: string;
-    orgId: string;
+    organizationId: string;
     orgName: string;
-    role: import("@hrms/shared-types").UserRole;
+    role: UserRole;
     firstName: string;
     lastName: string;
-    email: string;
-    avatarUrl?: string;
+    workEmail: string;
+    employeeCode: string;
+    avatarUrl: string | null;
+    mustChangePassword: boolean;
   };
 }
 
@@ -44,8 +46,19 @@ export function useLogin() {
     },
     onSuccess: (data) => {
       setTokens(data.accessToken, data.refreshToken);
-      setUser(data.user);
-      toast.success(`Welcome back, ${data.user.firstName}!`);
+      setUser({
+        id: data.employee.id,
+        organizationId: data.employee.organizationId,
+        orgName: data.employee.orgName,
+        role: data.employee.role,
+        firstName: data.employee.firstName,
+        lastName: data.employee.lastName,
+        workEmail: data.employee.workEmail,
+        employeeCode: data.employee.employeeCode,
+        avatarUrl: data.employee.avatarUrl,
+        mustChangePassword: data.employee.mustChangePassword,
+      });
+      toast.success(`Welcome back, ${data.employee.firstName}!`);
       void navigate("/dashboard");
     },
   });

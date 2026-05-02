@@ -11,7 +11,7 @@ interface EmployeeListParams {
   status?: string;
 }
 
-interface EmployeeListResponse {
+interface EmployeeListResult {
   employees: Employee[];
   meta: PaginationMeta;
 }
@@ -25,12 +25,12 @@ export const employeeKeys = {
 export function useEmployees(params: EmployeeListParams = {}) {
   return useQuery({
     queryKey: employeeKeys.list(params),
-    queryFn: async () => {
-      const res = await apiClient.get<ApiResponse<EmployeeListResponse>>(
+    queryFn: async (): Promise<EmployeeListResult> => {
+      const res = await apiClient.get<ApiResponse<Employee[]>>(
         "/employees",
         { params },
       );
-      return res.data.data;
+      return { employees: res.data.data, meta: res.data.meta! };
     },
   });
 }

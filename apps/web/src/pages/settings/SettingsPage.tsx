@@ -23,7 +23,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Email</span>
-            <span>{user?.email}</span>
+            <span>{user?.workEmail}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Role</span>

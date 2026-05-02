@@ -50,7 +50,7 @@ export function Header() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={user?.avatarUrl} alt={user?.firstName} />
+              <AvatarImage src={user?.avatarUrl ?? undefined} alt={user?.firstName} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </Button>
@@ -61,7 +61,7 @@ export function Header() {
               <p className="text-sm font-semibold">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <p className="text-xs text-muted-foreground">{user?.workEmail}</p>
               <p className="text-xs font-medium text-primary">{user?.role}</p>
             </div>
           </DropdownMenuLabel>

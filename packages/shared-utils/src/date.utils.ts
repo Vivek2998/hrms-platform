@@ -2,7 +2,6 @@ import {
   format,
   parseISO,
   addDays,
-  isWeekend,
   isSameDay,
   differenceInCalendarDays,
   startOfMonth,
