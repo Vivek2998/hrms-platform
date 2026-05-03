@@ -125,18 +125,18 @@ export async function processPayrollRun(
       // Statutory
       const pf = run.organization.pfEnabled
         ? calculatePF(basicAfterLop)
-        : { employeeContribution: 0, employerContribution: 0, totalContribution: 0, epfEmployee: 0, eps: 0, edli: 0, adminCharges: 0 };
+        : { pfWage: 0, isAboveCeiling: false, employeeEPF: 0, employerEPF: 0, employerEPS: 0, employerEDLI: 0, employerAdminCharge: 0, totalEmployerContribution: 0, totalCostToEmployer: 0 };
 
       const esi = run.organization.esiEnabled
         ? calculateESI(grossAfterLop)
-        : { employeeContribution: 0, employerContribution: 0, totalContribution: 0, isEligible: false };
+        : { grossSalary: 0, employeeContribution: 0, employerContribution: 0, totalESI: 0, isEligible: false };
 
       const pt = run.organization.ptEnabled && run.organization.ptState
         ? calculateProfessionalTax(grossAfterLop, run.organization.ptState as IndiaState)
         : 0;
 
       const totalDeductionsForEmp =
-        pf.employeeContribution + esi.employeeContribution + pt;
+        pf.employeeEPF + esi.employeeContribution + pt;
 
       const netPay = grossAfterLop - totalDeductionsForEmp;
 
@@ -148,13 +148,13 @@ export async function processPayrollRun(
 
       const deductions = [
         { code: "LOP", name: "Loss of Pay", amount: lopAmount },
-        { code: "PF_EMP", name: "PF (Employee)", amount: pf.employeeContribution },
+        { code: "PF_EMP", name: "PF (Employee)", amount: pf.employeeEPF },
         { code: "ESI_EMP", name: "ESI (Employee)", amount: esi.employeeContribution },
         { code: "PT", name: "Professional Tax", amount: pt },
       ].filter((d) => d.amount > 0);
 
       const statutory = [
-        { code: "PF_ER", name: "PF (Employer)", amount: pf.employerContribution },
+        { code: "PF_ER", name: "PF (Employer)", amount: pf.totalEmployerContribution },
         { code: "ESI_ER", name: "ESI (Employer)", amount: esi.employerContribution },
       ].filter((s) => s.amount > 0);
 
@@ -182,7 +182,7 @@ export async function processPayrollRun(
           grossEarnings: grossAfterLop,
           totalDeductions: totalDeductionsForEmp,
           netPay,
-          pfEmployer: pf.employerContribution,
+          pfEmployer: pf.totalEmployerContribution,
           esiEmployer: esi.employerContribution,
         },
       });

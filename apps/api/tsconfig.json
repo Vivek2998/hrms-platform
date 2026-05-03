@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "exactOptionalPropertyTypes": false,
     "target": "ESNext",
     "lib": ["ESNext"],
     "module": "NodeNext",
