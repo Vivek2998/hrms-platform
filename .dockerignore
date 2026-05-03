@@ -1,0 +1,12 @@
+node_modules
+.turbo
+apps/web/dist
+apps/web/.vercel
+apps/api/dist
+packages/*/dist
+.git
+.gitignore
+*.md
+.env
+.env.*
+!.env.example
