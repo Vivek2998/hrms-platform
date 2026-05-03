@@ -2,5 +2,10 @@
   "framework": "vite",
   "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @hrms/shared-utils run build && pnpm --filter @hrms/web build",
   "outputDirectory": "dist",
-  "devCommand": "vite"
+  "devCommand": "vite",
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://hrms-platform-production.up.railway.app"
+    }
+  }
 }
