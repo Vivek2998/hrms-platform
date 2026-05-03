@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { env } from "../config/env.js";
 import type { NotificationJobData } from "./queues.js";
 
@@ -17,7 +17,7 @@ export const notificationWorker = new Worker<NotificationJobData>(
         type: type as import("@prisma/client").NotificationType,
         title,
         body,
-        data: data ?? undefined,
+        data: data as Prisma.InputJsonValue | undefined,
       },
     });
   },
