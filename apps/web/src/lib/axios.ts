@@ -1,7 +1,11 @@
 import axios, { type AxiosError } from "axios";
 import { useAuthStore } from "@/stores/auth.store";
 
-const BASE_URL = import.meta.env["VITE_API_URL"] ?? "http://localhost:3000";
+const BASE_URL =
+  import.meta.env["VITE_API_URL"] ??
+  (import.meta.env.PROD
+    ? "https://hrms-platform-production.up.railway.app"
+    : "http://localhost:3000");
 
 export const apiClient = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
