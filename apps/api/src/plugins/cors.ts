@@ -11,7 +11,8 @@ export const corsPlugin = fp(async (app: FastifyInstance) => {
       if (
         !origin ||
         allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app')
+        origin.endsWith('.vercel.app') ||
+        (env.NODE_ENV === 'development' && /^https?:\/\/localhost(:\d+)?$/.test(origin))
       ) {
         cb(null, true);
       } else {
