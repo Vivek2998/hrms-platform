@@ -234,11 +234,38 @@ export interface Team {
 // Employee
 // ─────────────────────────────────────────────────────────────
 
+export interface EmployeeAddress {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+}
+
+export interface EmployeeEmergencyContact {
+  name?: string;
+  phone?: string;
+  relationship?: string;
+}
+
+export interface EmployeeEducation {
+  degree?: string;
+  institution?: string;
+  year?: number;
+}
+
+export interface EmployeeExperience {
+  totalYears?: number;
+  lastCompany?: string;
+  lastDesignation?: string;
+}
+
 export interface Employee {
   id: string;
   organizationId: string;
   employeeCode: string;
-  userId: string;
+  userId?: string;
   firstName: string;
   lastName: string;
   displayName: string;
@@ -251,8 +278,9 @@ export interface Employee {
   employmentType: EmploymentType;
   gender?: Gender;
   bloodGroup?: BloodGroup;
+  maritalStatus?: string;
   dateOfBirth?: string;
-  dateOfJoining: string;
+  dateOfJoining?: string;
   dateOfConfirmation?: string;
   dateOfTermination?: string;
   departmentId?: string;
@@ -260,15 +288,23 @@ export interface Employee {
   managerId?: string;
   designation?: string;
   location?: string;
+  presentAddress?: EmployeeAddress;
+  permanentAddress?: EmployeeAddress;
+  emergencyContact?: EmployeeEmergencyContact;
+  educationDetails?: EmployeeEducation;
+  experienceDetails?: EmployeeExperience;
   panNumber?: string;
   aadhaarNumber?: string;
   pfAccountNumber?: string;
   esiNumber?: string;
+  uanNumber?: string;
   bankAccountNumber?: string;
   bankIfsc?: string;
   bankName?: string;
-  department?: Department;
-  manager?: EmployeeSummary;
+  bankBranch?: string;
+  noticePeriodDays?: number;
+  department?: { id: string; name: string };
+  manager?: { id: string; firstName: string; lastName: string };
   createdAt: string;
   updatedAt: string;
 }
