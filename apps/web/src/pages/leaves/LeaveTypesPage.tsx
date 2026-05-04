@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -274,8 +274,12 @@ const SUGGESTED = [
   { name: 'Study Leave', code: 'STL', days: 5, paid: false },
 ];
 
-export default function LeaveTypesPage() {
-  const [showAdd, setShowAdd] = useState(false);
+interface LeaveTypesPanelProps {
+  showAdd: boolean;
+  onCloseAdd: () => void;
+}
+
+export function LeaveTypesPanel({ showAdd, onCloseAdd }: LeaveTypesPanelProps) {
   const [editing, setEditing] = useState<LeaveType | undefined>();
   const [deleting, setDeleting] = useState<LeaveType | undefined>();
 
@@ -283,18 +287,7 @@ export default function LeaveTypesPage() {
   const deleteMutation = useDeleteLeaveType();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Leave Types</h1>
-          <p className="text-muted-foreground">Configure leave categories and entitlements</p>
-        </div>
-        <Button onClick={() => { setShowAdd(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Leave Type
-        </Button>
-      </div>
-
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>All Leave Types</CardTitle>
@@ -388,7 +381,7 @@ export default function LeaveTypesPage() {
         </CardContent>
       </Card>
 
-      <LeaveTypeDialog open={showAdd} onClose={() => { setShowAdd(false); }} />
+      <LeaveTypeDialog open={showAdd} onClose={onCloseAdd} />
       {editing && (
         <LeaveTypeDialog
           open={true}

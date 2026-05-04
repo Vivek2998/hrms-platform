@@ -219,8 +219,8 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
               </TabsList>
             </div>
 
-            {/* Only the content area scrolls */}
-            <div className="max-h-[55vh] overflow-y-auto px-6 py-5">
+            {/* Fixed-height content area — always same size regardless of active tab */}
+            <div className="h-[55vh] overflow-y-auto px-6 py-5">
               <TabsContent value="personal" className="mt-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="First Name" required error={errors.firstName?.message}>

@@ -4,7 +4,6 @@ import {
   Users,
   Clock,
   CalendarDays,
-  CalendarCheck,
   DollarSign,
   Building2,
   Timer,
@@ -34,12 +33,6 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: 'Attendance', to: '/attendance', icon: Clock },
   { label: 'Leaves', to: '/leaves', icon: CalendarDays },
-  {
-    label: 'Leave Types',
-    to: '/leave-types',
-    icon: CalendarCheck,
-    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
-  },
   {
     label: 'Payroll',
     to: '/payroll',
