@@ -14,6 +14,7 @@ const LeavesPage = lazy(() => import('@/pages/leaves/LeavesPage'));
 const PayrollPage = lazy(() => import('@/pages/payroll/PayrollPage'));
 const DepartmentsPage = lazy(() => import('@/pages/departments/DepartmentsPage'));
 const ShiftsPage = lazy(() => import('@/pages/shifts/ShiftsPage'));
+const LeaveTypesPage = lazy(() => import('@/pages/leaves/LeaveTypesPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
@@ -109,6 +110,16 @@ export const router = createBrowserRouter([
           <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
             <Lazy>
               <ShiftsPage />
+            </Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'leave-types',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <LeaveTypesPage />
             </Lazy>
           </RoleGuard>
         ),

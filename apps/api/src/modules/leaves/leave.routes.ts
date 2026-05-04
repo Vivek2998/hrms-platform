@@ -18,6 +18,18 @@ const approveLeaveSchema = z.object({
   remarks: z.string().optional(),
 });
 
+const leaveTypeBodySchema = z.object({
+  name: z.string().min(1).max(100),
+  code: z.string().min(1).max(20),
+  daysAllowed: z.coerce.number().int().min(0),
+  isPaid: z.boolean().default(true),
+  isCarryForward: z.boolean().default(false),
+  maxCarryForward: z.coerce.number().int().min(0).default(0),
+  isEncashable: z.boolean().default(false),
+  applicableAfterDays: z.coerce.number().int().min(0).default(0),
+  colorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#6366f1'),
+});
+
 export function leaveRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
 
@@ -28,6 +40,40 @@ export function leaveRoutes(app: FastifyInstance) {
       orderBy: { name: 'asc' },
     });
     return reply.send(ok(leaveTypes));
+  });
+
+  // POST /leave-types
+  app.post('/leave-types', auth, async (req, reply) => {
+    const input = leaveTypeBodySchema.parse(req.body);
+    const leaveType = await app.prisma.leaveType.create({
+      data: {
+        organizationId: req.user.orgId,
+        ...input,
+        code: input.code.toUpperCase(),
+      },
+    });
+    return reply.status(201).send(ok(leaveType));
+  });
+
+  // PATCH /leave-types/:id
+  app.patch('/leave-types/:id', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = leaveTypeBodySchema.partial().parse(req.body);
+    const leaveType = await app.prisma.leaveType.update({
+      where: { id, organizationId: req.user.orgId },
+      data: { ...input, ...(input.code && { code: input.code.toUpperCase() }) },
+    });
+    return reply.send(ok(leaveType));
+  });
+
+  // DELETE /leave-types/:id  (soft delete)
+  app.delete('/leave-types/:id', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await app.prisma.leaveType.update({
+      where: { id, organizationId: req.user.orgId },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+    return reply.send(ok({ message: 'Leave type deleted' }));
   });
 
   // ────────────────────────────────────────────────────────────

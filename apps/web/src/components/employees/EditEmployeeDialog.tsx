@@ -92,6 +92,39 @@ function toDateInput(iso?: string | null) {
   return new Date(iso).toISOString().split('T')[0];
 }
 
+function buildDefaults(employee: Employee): FormValues {
+  return {
+    firstName: employee.firstName,
+    lastName: employee.lastName,
+    email: employee.email,
+    phone: employee.phone ?? '',
+    dateOfBirth: toDateInput(employee.dateOfBirth),
+    gender: employee.gender as FormValues['gender'],
+    bloodGroup: employee.bloodGroup ?? '',
+    maritalStatus: employee.maritalStatus as FormValues['maritalStatus'],
+    workEmail: employee.workEmail ?? '',
+    employmentType: (employee.employmentType ?? 'FULL_TIME') as FormValues['employmentType'],
+    designation: employee.designation ?? '',
+    departmentId: employee.departmentId ?? '',
+    managerId: employee.managerId ?? '',
+    dateOfJoining: toDateInput(employee.dateOfJoining),
+    presentLine1: employee.presentAddress?.line1 ?? '',
+    presentLine2: employee.presentAddress?.line2 ?? '',
+    presentCity: employee.presentAddress?.city ?? '',
+    presentState: employee.presentAddress?.state ?? '',
+    presentPincode: employee.presentAddress?.pincode ?? '',
+    emergencyName: employee.emergencyContact?.name ?? '',
+    emergencyPhone: employee.emergencyContact?.phone ?? '',
+    emergencyRelation: employee.emergencyContact?.relationship ?? '',
+    eduDegree: employee.educationDetails?.degree ?? '',
+    eduInstitution: employee.educationDetails?.institution ?? '',
+    eduYear: employee.educationDetails?.year ? String(employee.educationDetails.year) : '',
+    expTotalYears: employee.experienceDetails?.totalYears != null ? String(employee.experienceDetails.totalYears) : '',
+    expLastCompany: employee.experienceDetails?.lastCompany ?? '',
+    expLastDesignation: employee.experienceDetails?.lastDesignation ?? '',
+  };
+}
+
 export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDialogProps) {
   const { mutate: updateEmployee, isPending } = useUpdateEmployee(employee.id);
   const { data: departments = [] } = useDepartments();
@@ -100,71 +133,11 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      email: employee.email,
-      phone: employee.phone ?? '',
-      dateOfBirth: toDateInput(employee.dateOfBirth),
-      gender: employee.gender as FormValues['gender'],
-      bloodGroup: employee.bloodGroup ?? '',
-      maritalStatus: employee.maritalStatus as FormValues['maritalStatus'],
-      workEmail: employee.workEmail ?? '',
-      employmentType: (employee.employmentType ?? 'FULL_TIME') as FormValues['employmentType'],
-      designation: employee.designation ?? '',
-      departmentId: employee.departmentId ?? '',
-      managerId: employee.managerId ?? '',
-      dateOfJoining: toDateInput(employee.dateOfJoining),
-      presentLine1: (employee.presentAddress?.line1) ?? '',
-      presentLine2: (employee.presentAddress?.line2) ?? '',
-      presentCity: (employee.presentAddress?.city) ?? '',
-      presentState: (employee.presentAddress?.state) ?? '',
-      presentPincode: (employee.presentAddress?.pincode) ?? '',
-      emergencyName: (employee.emergencyContact?.name) ?? '',
-      emergencyPhone: (employee.emergencyContact?.phone) ?? '',
-      emergencyRelation: (employee.emergencyContact?.relationship) ?? '',
-      eduDegree: (employee.educationDetails?.degree) ?? '',
-      eduInstitution: (employee.educationDetails?.institution) ?? '',
-      eduYear: employee.educationDetails?.year ? String(employee.educationDetails.year) : '',
-      expTotalYears: employee.experienceDetails?.totalYears != null ? String(employee.experienceDetails.totalYears) : '',
-      expLastCompany: (employee.experienceDetails?.lastCompany) ?? '',
-      expLastDesignation: (employee.experienceDetails?.lastDesignation) ?? '',
-    },
+    defaultValues: buildDefaults(employee),
   });
 
   useEffect(() => {
-    if (open) {
-      form.reset({
-        firstName: employee.firstName,
-        lastName: employee.lastName,
-        email: employee.email,
-        phone: employee.phone ?? '',
-        dateOfBirth: toDateInput(employee.dateOfBirth),
-        gender: employee.gender as FormValues['gender'],
-        bloodGroup: employee.bloodGroup ?? '',
-        maritalStatus: employee.maritalStatus as FormValues['maritalStatus'],
-        workEmail: employee.workEmail ?? '',
-        employmentType: (employee.employmentType ?? 'FULL_TIME') as FormValues['employmentType'],
-        designation: employee.designation ?? '',
-        departmentId: employee.departmentId ?? '',
-        managerId: employee.managerId ?? '',
-        dateOfJoining: toDateInput(employee.dateOfJoining),
-        presentLine1: (employee.presentAddress?.line1) ?? '',
-        presentLine2: (employee.presentAddress?.line2) ?? '',
-        presentCity: (employee.presentAddress?.city) ?? '',
-        presentState: (employee.presentAddress?.state) ?? '',
-        presentPincode: (employee.presentAddress?.pincode) ?? '',
-        emergencyName: (employee.emergencyContact?.name) ?? '',
-        emergencyPhone: (employee.emergencyContact?.phone) ?? '',
-        emergencyRelation: (employee.emergencyContact?.relationship) ?? '',
-        eduDegree: (employee.educationDetails?.degree) ?? '',
-        eduInstitution: (employee.educationDetails?.institution) ?? '',
-        eduYear: employee.educationDetails?.year ? String(employee.educationDetails.year) : '',
-        expTotalYears: employee.experienceDetails?.totalYears != null ? String(employee.experienceDetails.totalYears) : '',
-        expLastCompany: (employee.experienceDetails?.lastCompany) ?? '',
-        expLastDesignation: (employee.experienceDetails?.lastDesignation) ?? '',
-      });
-    }
+    if (open) form.reset(buildDefaults(employee));
   }, [open, employee, form]);
 
   const errors = form.formState.errors;
@@ -223,231 +196,230 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
           : undefined,
     };
 
-    updateEmployee(payload, {
-      onSuccess: () => {
-        onClose();
-      },
-    });
+    updateEmployee(payload, { onSuccess: onClose });
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
+      {/* No overflow on the dialog itself — prevents Select dropdowns from being clipped */}
+      <DialogContent className="max-w-2xl gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Edit Employee</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="mb-4 grid w-full grid-cols-4">
-              <TabsTrigger value="personal">Personal</TabsTrigger>
-              <TabsTrigger value="employment">Employment</TabsTrigger>
-              <TabsTrigger value="address">Address</TabsTrigger>
-              <TabsTrigger value="education">Education</TabsTrigger>
-            </TabsList>
+            {/* Tab bar stays pinned — never scrolls away */}
+            <div className="border-b px-6 py-3">
+              <TabsList className="w-full">
+                <TabsTrigger value="personal" className="flex-1 text-xs sm:text-sm">Personal</TabsTrigger>
+                <TabsTrigger value="employment" className="flex-1 text-xs sm:text-sm">Employment</TabsTrigger>
+                <TabsTrigger value="address" className="flex-1 text-xs sm:text-sm">Address</TabsTrigger>
+                <TabsTrigger value="education" className="flex-1 text-xs sm:text-sm">Education</TabsTrigger>
+              </TabsList>
+            </div>
 
-            {/* Tab 1: Personal */}
-            <TabsContent value="personal" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="First Name" required error={errors.firstName?.message}>
-                  <Input {...form.register('firstName')} />
-                </Field>
-                <Field label="Last Name" required error={errors.lastName?.message}>
-                  <Input {...form.register('lastName')} />
-                </Field>
-                <Field label="Personal Email" required error={errors.email?.message}>
-                  <Input type="email" {...form.register('email')} />
-                </Field>
-                <Field label="Phone">
-                  <Input placeholder="+91XXXXXXXXXX" {...form.register('phone')} />
-                </Field>
-                <Field label="Date of Birth">
-                  <Input type="date" {...form.register('dateOfBirth')} />
-                </Field>
-                <Field label="Gender">
-                  <Controller
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="MALE">Male</SelectItem>
-                          <SelectItem value="FEMALE">Female</SelectItem>
-                          <SelectItem value="OTHER">Other</SelectItem>
-                          <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-                <Field label="Blood Group">
-                  <Controller
-                    control={form.control}
-                    name="bloodGroup"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
-                            <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-                <Field label="Marital Status">
-                  <Controller
-                    control={form.control}
-                    name="maritalStatus"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SINGLE">Single</SelectItem>
-                          <SelectItem value="MARRIED">Married</SelectItem>
-                          <SelectItem value="DIVORCED">Divorced</SelectItem>
-                          <SelectItem value="WIDOWED">Widowed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-              </div>
-            </TabsContent>
-
-            {/* Tab 2: Employment */}
-            <TabsContent value="employment" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Work Email" required error={errors.workEmail?.message}>
-                  <Input type="email" {...form.register('workEmail')} />
-                </Field>
-                <Field label="Designation">
-                  <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
-                </Field>
-                <Field label="Employment Type">
-                  <Controller
-                    control={form.control}
-                    name="employmentType"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="FULL_TIME">Full Time</SelectItem>
-                          <SelectItem value="PART_TIME">Part Time</SelectItem>
-                          <SelectItem value="CONTRACT">Contract</SelectItem>
-                          <SelectItem value="INTERN">Intern</SelectItem>
-                          <SelectItem value="CONSULTANT">Consultant</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-                <Field label="Date of Joining">
-                  <Input type="date" {...form.register('dateOfJoining')} />
-                </Field>
-                <Field label="Department">
-                  <Controller
-                    control={form.control}
-                    name="departmentId"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                        <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                        <SelectContent>
-                          {departments.map((d) => (
-                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-                <Field label="Reporting Manager">
-                  <Controller
-                    control={form.control}
-                    name="managerId"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                        <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
-                        <SelectContent>
-                          {managers.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.firstName} {m.lastName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-              </div>
-            </TabsContent>
-
-            {/* Tab 3: Address & Emergency */}
-            <TabsContent value="address" className="space-y-6">
-              <div>
-                <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
-                  Current Address
-                </p>
+            {/* Only the content area scrolls */}
+            <div className="max-h-[55vh] overflow-y-auto px-6 py-5">
+              <TabsContent value="personal" className="mt-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="Address Line 1"><Input {...form.register('presentLine1')} /></Field>
-                  <Field label="Address Line 2"><Input {...form.register('presentLine2')} /></Field>
-                  <Field label="City"><Input {...form.register('presentCity')} /></Field>
-                  <Field label="State"><Input {...form.register('presentState')} /></Field>
-                  <Field label="Pincode"><Input {...form.register('presentPincode')} /></Field>
-                </div>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
-                  Emergency Contact
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Contact Name"><Input {...form.register('emergencyName')} /></Field>
-                  <Field label="Contact Phone">
-                    <Input placeholder="+91XXXXXXXXXX" {...form.register('emergencyPhone')} />
+                  <Field label="First Name" required error={errors.firstName?.message}>
+                    <Input {...form.register('firstName')} />
                   </Field>
-                  <Field label="Relationship">
-                    <Input placeholder="e.g. Spouse, Parent" {...form.register('emergencyRelation')} />
+                  <Field label="Last Name" required error={errors.lastName?.message}>
+                    <Input {...form.register('lastName')} />
+                  </Field>
+                  <Field label="Personal Email" required error={errors.email?.message}>
+                    <Input type="email" {...form.register('email')} />
+                  </Field>
+                  <Field label="Phone">
+                    <Input placeholder="+91XXXXXXXXXX" {...form.register('phone')} />
+                  </Field>
+                  <Field label="Date of Birth">
+                    <Input type="date" {...form.register('dateOfBirth')} />
+                  </Field>
+                  <Field label="Gender">
+                    <Controller
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MALE">Male</SelectItem>
+                            <SelectItem value="FEMALE">Female</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
+                            <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Blood Group">
+                    <Controller
+                      control={form.control}
+                      name="bloodGroup"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
+                              <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Marital Status">
+                    <Controller
+                      control={form.control}
+                      name="maritalStatus"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SINGLE">Single</SelectItem>
+                            <SelectItem value="MARRIED">Married</SelectItem>
+                            <SelectItem value="DIVORCED">Divorced</SelectItem>
+                            <SelectItem value="WIDOWED">Widowed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            {/* Tab 4: Education & Experience */}
-            <TabsContent value="education" className="space-y-6">
-              <div>
-                <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
-                  Highest Education Qualification
-                </p>
+              <TabsContent value="employment" className="mt-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="Degree / Qualification">
-                    <Input placeholder="e.g. B.Tech, MBA" {...form.register('eduDegree')} />
+                  <Field label="Work Email" required error={errors.workEmail?.message}>
+                    <Input type="email" {...form.register('workEmail')} />
                   </Field>
-                  <Field label="Institution">
-                    <Input placeholder="College / University name" {...form.register('eduInstitution')} />
+                  <Field label="Designation">
+                    <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
                   </Field>
-                  <Field label="Year of Passing">
-                    <Input type="number" placeholder="e.g. 2020" {...form.register('eduYear')} />
+                  <Field label="Employment Type">
+                    <Controller
+                      control={form.control}
+                      name="employmentType"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FULL_TIME">Full Time</SelectItem>
+                            <SelectItem value="PART_TIME">Part Time</SelectItem>
+                            <SelectItem value="CONTRACT">Contract</SelectItem>
+                            <SelectItem value="INTERN">Intern</SelectItem>
+                            <SelectItem value="CONSULTANT">Consultant</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Date of Joining">
+                    <Input type="date" {...form.register('dateOfJoining')} />
+                  </Field>
+                  <Field label="Department">
+                    <Controller
+                      control={form.control}
+                      name="departmentId"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                          <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                          <SelectContent>
+                            {departments.map((d) => (
+                              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Reporting Manager">
+                    <Controller
+                      control={form.control}
+                      name="managerId"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                          <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
+                          <SelectContent>
+                            {managers.map((m) => (
+                              <SelectItem key={m.id} value={m.id}>
+                                {m.firstName} {m.lastName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                 </div>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
-                  Work Experience
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Total Experience (Years)">
-                    <Input type="number" step="0.5" placeholder="e.g. 3.5" {...form.register('expTotalYears')} />
-                  </Field>
-                  <Field label="Last Company"><Input {...form.register('expLastCompany')} /></Field>
-                  <Field label="Last Designation"><Input {...form.register('expLastDesignation')} /></Field>
+              </TabsContent>
+
+              <TabsContent value="address" className="mt-0 space-y-6">
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Current Address
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Address Line 1"><Input {...form.register('presentLine1')} /></Field>
+                    <Field label="Address Line 2"><Input {...form.register('presentLine2')} /></Field>
+                    <Field label="City"><Input {...form.register('presentCity')} /></Field>
+                    <Field label="State"><Input {...form.register('presentState')} /></Field>
+                    <Field label="Pincode"><Input {...form.register('presentPincode')} /></Field>
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Emergency Contact
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Contact Name"><Input {...form.register('emergencyName')} /></Field>
+                    <Field label="Contact Phone">
+                      <Input placeholder="+91XXXXXXXXXX" {...form.register('emergencyPhone')} />
+                    </Field>
+                    <Field label="Relationship">
+                      <Input placeholder="e.g. Spouse, Parent" {...form.register('emergencyRelation')} />
+                    </Field>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="education" className="mt-0 space-y-6">
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Highest Education Qualification
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Degree / Qualification">
+                      <Input placeholder="e.g. B.Tech, MBA" {...form.register('eduDegree')} />
+                    </Field>
+                    <Field label="Institution">
+                      <Input placeholder="College / University name" {...form.register('eduInstitution')} />
+                    </Field>
+                    <Field label="Year of Passing">
+                      <Input type="number" placeholder="e.g. 2020" {...form.register('eduYear')} />
+                    </Field>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Work Experience
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Total Experience (Years)">
+                      <Input type="number" step="0.5" placeholder="e.g. 3.5" {...form.register('expTotalYears')} />
+                    </Field>
+                    <Field label="Last Company"><Input {...form.register('expLastCompany')} /></Field>
+                    <Field label="Last Designation"><Input {...form.register('expLastDesignation')} /></Field>
+                  </div>
+                </div>
+              </TabsContent>
+            </div>
           </Tabs>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter className="border-t px-6 py-4">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? 'Saving...' : 'Save Changes'}
