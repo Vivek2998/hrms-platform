@@ -1,14 +1,14 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuthStore } from "@/stores/auth.store";
-import { useLogin, loginSchema, type LoginInput } from "@/hooks/useAuth";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuthStore } from '@/stores/auth.store';
+import { useLogin, loginSchema, type LoginInput } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -17,18 +17,18 @@ export default function LoginPage() {
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: '', password: '' },
   });
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <div className="bg-muted/40 flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="h-12 w-12 rounded-xl bg-primary" />
+          <div className="bg-primary h-12 w-12 rounded-xl" />
           <h1 className="text-2xl font-bold">HRMS Platform</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Complete HR Management for Indian Businesses
           </p>
         </div>
@@ -36,13 +36,13 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sign in to your account</CardTitle>
-            <CardDescription>
-              Enter your work email and password to continue
-            </CardDescription>
+            <CardDescription>Enter your work email and password to continue</CardDescription>
           </CardHeader>
           <CardContent>
             <form
-              onSubmit={form.handleSubmit((data) => { login(data); })}
+              onSubmit={form.handleSubmit((data) => {
+                login(data);
+              })}
               className="space-y-4"
             >
               <div className="space-y-2">
@@ -52,12 +52,10 @@ export default function LoginPage() {
                   type="email"
                   placeholder="you@company.com"
                   autoComplete="email"
-                  {...form.register("email")}
+                  {...form.register('email')}
                 />
                 {form.formState.errors.email && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.email.message}
-                  </p>
+                  <p className="text-destructive text-xs">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
@@ -66,26 +64,24 @@ export default function LoginPage() {
                 <div className="relative">
                   <Input
                     id="password"
-                    type={showPwd ? "text" : "password"}
+                    type={showPwd ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    {...form.register("password")}
+                    {...form.register('password')}
                   />
                   <button
                     type="button"
-                    onClick={() => { setShowPwd((v) => !v); }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPwd ? "Hide password" : "Show password"}
+                    onClick={() => {
+                      setShowPwd((v) => !v);
+                    }}
+                    className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                    aria-label={showPwd ? 'Hide password' : 'Show password'}
                   >
-                    {showPwd ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {form.formState.errors.password && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-destructive text-xs">
                     {form.formState.errors.password.message}
                   </p>
                 )}

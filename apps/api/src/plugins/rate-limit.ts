@@ -1,7 +1,7 @@
-import fp from "fastify-plugin";
-import fastifyRateLimit from "@fastify/rate-limit";
-import type { FastifyInstance } from "fastify";
-import { env } from "../config/env.js";
+import fp from 'fastify-plugin';
+import fastifyRateLimit from '@fastify/rate-limit';
+import type { FastifyInstance } from 'fastify';
+import { env } from '../config/env.js';
 
 export const rateLimitPlugin = fp(async (app: FastifyInstance) => {
   await app.register(fastifyRateLimit, {
@@ -10,7 +10,7 @@ export const rateLimitPlugin = fp(async (app: FastifyInstance) => {
     errorResponseBuilder: () => ({
       success: false,
       data: null,
-      error: "Too many requests — please slow down",
+      error: 'Too many requests — please slow down',
     }),
   });
 });

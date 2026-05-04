@@ -1,17 +1,17 @@
-import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (
-    typeof error === "object" &&
+    typeof error === 'object' &&
     error !== null &&
-    "message" in error &&
-    typeof error.message === "string"
+    'message' in error &&
+    typeof error.message === 'string'
   ) {
     return error.message;
   }
-  return "An unexpected error occurred";
+  return 'An unexpected error occurred';
 }
 
 export const queryClient = new QueryClient({
@@ -22,8 +22,8 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         if (
           error instanceof Error &&
-          "status" in error &&
-          typeof error.status === "number" &&
+          'status' in error &&
+          typeof error.status === 'number' &&
           [401, 403, 404].includes(error.status)
         ) {
           return false;

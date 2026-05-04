@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ShiftsPage() {
   return (
@@ -12,7 +12,7 @@ export default function ShiftsPage() {
           <CardTitle>Shift Configuration</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Shift management is part of Phase 1 and will be wired to the API shortly.
           </p>
         </CardContent>

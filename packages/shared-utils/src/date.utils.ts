@@ -96,10 +96,7 @@ export function getWorkingMinutes(punchIn: Date, punchOut: Date, breakMinutes = 
   return Math.max(0, total - breakMinutes);
 }
 
-export function getOvertimeMinutes(
-  workingMinutes: number,
-  shiftDurationMinutes: number,
-): number {
+export function getOvertimeMinutes(workingMinutes: number, shiftDurationMinutes: number): number {
   return Math.max(0, workingMinutes - shiftDurationMinutes);
 }
 
@@ -146,7 +143,11 @@ export function getWorkingDaysInMonth(
 // Indian Financial Year (April 1 – March 31)
 // ─────────────────────────────────────────────────────────────
 
-export function getFinancialYear(date: Date = new Date()): { start: Date; end: Date; label: string } {
+export function getFinancialYear(date: Date = new Date()): {
+  start: Date;
+  end: Date;
+  label: string;
+} {
   const year = date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear();
   return {
     start: new Date(year, 3, 1),
@@ -167,12 +168,7 @@ export function isDateInRange(date: Date, start: Date, end: Date): boolean {
   return isWithinInterval(startOfDay(date), { start: startOfDay(start), end: endOfDay(end) });
 }
 
-export function hasDateOverlap(
-  aStart: Date,
-  aEnd: Date,
-  bStart: Date,
-  bEnd: Date,
-): boolean {
+export function hasDateOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
   return isBefore(aStart, bEnd) && isAfter(aEnd, bStart);
 }
 

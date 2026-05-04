@@ -1,21 +1,21 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
-import { AuthGuard } from "@/components/guards/AuthGuard";
-import { RoleGuard } from "@/components/guards/RoleGuard";
-import { AppShell } from "@/components/layout/AppShell";
-import { PageLoader } from "@/components/ui/page-loader";
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { AuthGuard } from '@/components/guards/AuthGuard';
+import { RoleGuard } from '@/components/guards/RoleGuard';
+import { AppShell } from '@/components/layout/AppShell';
+import { PageLoader } from '@/components/ui/page-loader';
 
-const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
-const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage"));
-const EmployeesPage = lazy(() => import("@/pages/employees/EmployeesPage"));
-const EmployeeDetailPage = lazy(() => import("@/pages/employees/EmployeeDetailPage"));
-const AttendancePage = lazy(() => import("@/pages/attendance/AttendancePage"));
-const LeavesPage = lazy(() => import("@/pages/leaves/LeavesPage"));
-const PayrollPage = lazy(() => import("@/pages/payroll/PayrollPage"));
-const DepartmentsPage = lazy(() => import("@/pages/departments/DepartmentsPage"));
-const ShiftsPage = lazy(() => import("@/pages/shifts/ShiftsPage"));
-const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
-const NotFoundPage = lazy(() => import("@/pages/errors/NotFoundPage"));
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
+const EmployeesPage = lazy(() => import('@/pages/employees/EmployeesPage'));
+const EmployeeDetailPage = lazy(() => import('@/pages/employees/EmployeeDetailPage'));
+const AttendancePage = lazy(() => import('@/pages/attendance/AttendancePage'));
+const LeavesPage = lazy(() => import('@/pages/leaves/LeavesPage'));
+const PayrollPage = lazy(() => import('@/pages/payroll/PayrollPage'));
+const DepartmentsPage = lazy(() => import('@/pages/departments/DepartmentsPage'));
+const ShiftsPage = lazy(() => import('@/pages/shifts/ShiftsPage'));
+const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
+const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -23,7 +23,7 @@ function Lazy({ children }: { children: React.ReactNode }) {
 
 export const router = createBrowserRouter([
   {
-    path: "/login",
+    path: '/login',
     element: (
       <Lazy>
         <LoginPage />
@@ -31,7 +31,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/",
+    path: '/',
     element: (
       <AuthGuard>
         <AppShell />
@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       {
-        path: "dashboard",
+        path: 'dashboard',
         element: (
           <Lazy>
             <DashboardPage />
@@ -48,9 +48,9 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "employees",
+        path: 'employees',
         element: (
-          <RoleGuard allow={["SUPER_ADMIN", "ORG_ADMIN", "HR", "MANAGER"]}>
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER']}>
             <Lazy>
               <EmployeesPage />
             </Lazy>
@@ -58,9 +58,9 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "employees/:id",
+        path: 'employees/:id',
         element: (
-          <RoleGuard allow={["SUPER_ADMIN", "ORG_ADMIN", "HR", "MANAGER"]}>
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER']}>
             <Lazy>
               <EmployeeDetailPage />
             </Lazy>
@@ -68,7 +68,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "attendance",
+        path: 'attendance',
         element: (
           <Lazy>
             <AttendancePage />
@@ -76,7 +76,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "leaves",
+        path: 'leaves',
         element: (
           <Lazy>
             <LeavesPage />
@@ -84,9 +84,9 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "payroll",
+        path: 'payroll',
         element: (
-          <RoleGuard allow={["SUPER_ADMIN", "ORG_ADMIN", "HR"]}>
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
             <Lazy>
               <PayrollPage />
             </Lazy>
@@ -94,9 +94,9 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "departments",
+        path: 'departments',
         element: (
-          <RoleGuard allow={["SUPER_ADMIN", "ORG_ADMIN", "HR"]}>
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
             <Lazy>
               <DepartmentsPage />
             </Lazy>
@@ -104,9 +104,9 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "shifts",
+        path: 'shifts',
         element: (
-          <RoleGuard allow={["SUPER_ADMIN", "ORG_ADMIN", "HR"]}>
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
             <Lazy>
               <ShiftsPage />
             </Lazy>
@@ -114,7 +114,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "settings",
+        path: 'settings',
         element: (
           <Lazy>
             <SettingsPage />
@@ -124,7 +124,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "*",
+    path: '*',
     element: (
       <Lazy>
         <NotFoundPage />

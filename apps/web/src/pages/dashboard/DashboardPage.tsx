@@ -1,12 +1,12 @@
-import { Users, Clock, CalendarDays, DollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuthStore } from "@/stores/auth.store";
-import { useEmployees } from "@/hooks/useEmployees";
-import { useAttendance } from "@/hooks/useAttendance";
-import { useLeaves } from "@/hooks/useLeaves";
-import { usePayrollRuns } from "@/hooks/usePayroll";
+import { Users, Clock, CalendarDays, DollarSign } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthStore } from '@/stores/auth.store';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useAttendance } from '@/hooks/useAttendance';
+import { useLeaves } from '@/hooks/useLeaves';
+import { usePayrollRuns } from '@/hooks/usePayroll';
 
 interface StatCardProps {
   title: string;
@@ -20,10 +20,8 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }: StatCardProps
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="text-muted-foreground text-sm font-medium">{title}</CardTitle>
+        <Icon className="text-muted-foreground h-4 w-4" />
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -31,7 +29,7 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }: StatCardProps
         ) : (
           <>
             <div className="text-2xl font-bold">{value}</div>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <p className="text-muted-foreground text-xs">{subtitle}</p>
           </>
         )}
       </CardContent>
@@ -42,7 +40,15 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }: StatCardProps
 function todayRange() {
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+  const to = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999,
+  ).toISOString();
   return { from, to };
 }
 
@@ -55,11 +61,11 @@ export default function DashboardPage() {
     limit: 1,
     from,
     to,
-    status: "PRESENT",
+    status: 'PRESENT',
   });
   const { data: leaveData, isLoading: leaveLoading } = useLeaves({
     limit: 5,
-    status: "PENDING",
+    status: 'PENDING',
   });
   const { data: payrollData, isLoading: payrollLoading } = usePayrollRuns({ limit: 1 });
 
@@ -68,47 +74,41 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">
-          Good morning, {user?.firstName ?? "there"}!
-        </h1>
+        <h1 className="text-2xl font-bold">Good morning, {user?.firstName ?? 'there'}!</h1>
         <p className="text-muted-foreground">
-          Here's what's happening at your organisation today.
+          Here&apos;s what&apos;s happening at your organisation today.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Employees"
-          value={empData?.meta.total.toString() ?? "—"}
+          value={empData?.meta.total.toString() ?? '—'}
           subtitle="active headcount"
           icon={Users}
           loading={empLoading}
         />
         <StatCard
           title="Present Today"
-          value={attData?.meta.total.toString() ?? "—"}
+          value={attData?.meta.total.toString() ?? '—'}
           subtitle="punched in so far"
           icon={Clock}
           loading={attLoading}
         />
         <StatCard
           title="Pending Leaves"
-          value={leaveData?.meta.total.toString() ?? "—"}
+          value={leaveData?.meta.total.toString() ?? '—'}
           subtitle="awaiting approval"
           icon={CalendarDays}
           loading={leaveLoading}
         />
         <StatCard
           title="Last Payroll"
-          value={
-            latestRun
-              ? `₹${(latestRun.totalNetPay / 100_000).toFixed(1)}L`
-              : "—"
-          }
+          value={latestRun ? `₹${(latestRun.totalNetPay / 100_000).toFixed(1)}L` : '—'}
           subtitle={
             latestRun
-              ? `${latestRun.month}/${latestRun.year} · ${latestRun.status}`
-              : "no runs yet"
+              ? `${String(latestRun.month)}/${String(latestRun.year)} · ${latestRun.status}`
+              : 'no runs yet'
           }
           icon={DollarSign}
           loading={payrollLoading}
@@ -127,7 +127,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : leaveData?.data.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground py-6 text-center text-sm">
               No pending leave requests — all clear!
             </p>
           ) : (
@@ -140,11 +140,11 @@ export default function DashboardPage() {
                         ? `${leave.employee.firstName} ${leave.employee.lastName}`
                         : leave.employeeId}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {leave.leaveType?.name ?? "Leave"} ·{" "}
-                      {new Date(leave.fromDate).toLocaleDateString("en-IN")} –{" "}
-                      {new Date(leave.toDate).toLocaleDateString("en-IN")} ·{" "}
-                      {leave.totalDays} day{leave.totalDays !== 1 ? "s" : ""}
+                    <p className="text-muted-foreground text-xs">
+                      {leave.leaveType?.name ?? 'Leave'} ·{' '}
+                      {new Date(leave.fromDate).toLocaleDateString('en-IN')} –{' '}
+                      {new Date(leave.toDate).toLocaleDateString('en-IN')} · {leave.totalDays} day
+                      {leave.totalDays !== 1 ? 's' : ''}
                     </p>
                   </div>
                   <Badge variant="warning">PENDING</Badge>

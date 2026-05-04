@@ -1,12 +1,13 @@
-import { Worker } from "bullmq";
-import { PrismaClient, Prisma } from "@prisma/client";
-import { env } from "../config/env.js";
-import type { NotificationJobData } from "./queues.js";
+import { Worker } from 'bullmq';
+import { PrismaClient } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { env } from '../config/env.js';
+import type { NotificationJobData } from './queues.js';
 
 const prisma = new PrismaClient();
 
 export const notificationWorker = new Worker<NotificationJobData>(
-  "notification",
+  'notification',
   async (job) => {
     const { organizationId, employeeId, type, title, body, data } = job.data;
 
@@ -14,7 +15,7 @@ export const notificationWorker = new Worker<NotificationJobData>(
       data: {
         organizationId,
         employeeId,
-        type: type as import("@prisma/client").NotificationType,
+        type: type as Prisma.NotificationCreateInput['type'],
         title,
         body,
         data: data as Prisma.InputJsonValue | undefined,
@@ -27,6 +28,6 @@ export const notificationWorker = new Worker<NotificationJobData>(
   },
 );
 
-notificationWorker.on("failed", (job, err) => {
-  console.error(`Notification job ${job?.id ?? "unknown"} failed:`, err.message);
+notificationWorker.on('failed', (job, err) => {
+  console.error(`Notification job ${job?.id ?? 'unknown'} failed:`, err.message);
 });

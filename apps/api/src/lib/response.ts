@@ -1,15 +1,10 @@
-import type { PaginationMeta } from "@hrms/shared-types";
+import type { PaginationMeta } from '@hrms/shared-types';
 
 export function ok<T>(data: T, meta?: PaginationMeta) {
   return { success: true as const, data, meta: meta ?? null, error: null };
 }
 
-export function paginated<T>(
-  data: T[],
-  page: number,
-  limit: number,
-  total: number,
-) {
+export function paginated<T>(data: T[], page: number, limit: number, total: number) {
   const totalPages = Math.ceil(total / limit);
   const meta: PaginationMeta = {
     page,

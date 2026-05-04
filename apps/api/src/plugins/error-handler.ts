@@ -1,19 +1,15 @@
-import type { FastifyError, FastifyRequest, FastifyReply } from "fastify";
-import { ZodError } from "zod";
+import type { FastifyError, FastifyRequest, FastifyReply } from 'fastify';
+import { ZodError } from 'zod';
 
-export function errorHandler(
-  error: FastifyError,
-  _req: FastifyRequest,
-  reply: FastifyReply,
-) {
+export function errorHandler(error: FastifyError, _req: FastifyRequest, reply: FastifyReply) {
   // Zod validation errors
   if (error instanceof ZodError) {
     return reply.status(400).send({
       success: false,
       data: null,
-      error: "Validation failed",
+      error: 'Validation failed',
       details: error.errors.map((e) => ({
-        field: e.path.join("."),
+        field: e.path.join('.'),
         message: e.message,
       })),
     });
@@ -24,7 +20,7 @@ export function errorHandler(
     return reply.status(400).send({
       success: false,
       data: null,
-      error: "Validation failed",
+      error: 'Validation failed',
       details: error.validation,
     });
   }
@@ -38,6 +34,6 @@ export function errorHandler(
   return reply.status(statusCode).send({
     success: false,
     data: null,
-    error: statusCode >= 500 ? "Internal server error" : error.message,
+    error: statusCode >= 500 ? 'Internal server error' : error.message,
   });
 }

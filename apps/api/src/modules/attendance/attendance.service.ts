@@ -1,6 +1,6 @@
-import type { PrismaClient } from "@prisma/client";
-import { fail } from "../../lib/response.js";
-import { resolveShiftTimes } from "@hrms/shared-utils";
+import type { PrismaClient } from '@prisma/client';
+import { fail } from '../../lib/response.js';
+import { resolveShiftTimes } from '@hrms/shared-utils';
 
 interface PunchInInput {
   employeeId: string;
@@ -29,7 +29,7 @@ export async function punchIn(input: PunchInInput, prisma: PrismaClient) {
     },
   });
 
-  if (existing?.punchIn) throw fail("Already punched in for today", 409);
+  if (existing?.punchIn) throw fail('Already punched in for today', 409);
 
   const now = new Date();
 
@@ -41,10 +41,10 @@ export async function punchIn(input: PunchInInput, prisma: PrismaClient) {
       OR: [{ effectiveTo: null }, { effectiveTo: { gte: today } }],
     },
     include: { shift: true },
-    orderBy: { effectiveFrom: "desc" },
+    orderBy: { effectiveFrom: 'desc' },
   });
 
-  let status: "PRESENT" | "LATE" = "PRESENT";
+  let status: 'PRESENT' | 'LATE' = 'PRESENT';
   let lateMinutes = 0;
 
   if (assignment) {
@@ -53,11 +53,9 @@ export async function punchIn(input: PunchInInput, prisma: PrismaClient) {
       assignment.shift.startTime,
       assignment.shift.endTime,
     );
-    const graceEnd = new Date(
-      start.getTime() + assignment.shift.graceMinutes * 60_000,
-    );
+    const graceEnd = new Date(start.getTime() + assignment.shift.graceMinutes * 60_000);
     if (now > graceEnd) {
-      status = "LATE";
+      status = 'LATE';
       lateMinutes = Math.floor((now.getTime() - start.getTime()) / 60_000);
     }
   }
@@ -109,18 +107,15 @@ export async function punchOut(input: PunchOutInput, prisma: PrismaClient) {
     include: { shift: true },
   });
 
-  if (!record?.punchIn) throw fail("No punch-in found for today", 400);
-  if (record.punchOut) throw fail("Already punched out for today", 409);
+  if (!record?.punchIn) throw fail('No punch-in found for today', 400);
+  if (record.punchOut) throw fail('Already punched out for today', 409);
 
   const now = new Date();
-  const workingMinutes = Math.floor(
-    (now.getTime() - record.punchIn.getTime()) / 60_000,
-  );
+  const workingMinutes = Math.floor((now.getTime() - record.punchIn.getTime()) / 60_000);
 
   let overtimeMinutes = 0;
   if (record.shift) {
-    const expectedMinutes =
-      record.shift.absentAfterMinutes - record.shift.breakDurationMinutes;
+    const expectedMinutes = record.shift.absentAfterMinutes - record.shift.breakDurationMinutes;
     overtimeMinutes = Math.max(0, workingMinutes - expectedMinutes);
   }
 

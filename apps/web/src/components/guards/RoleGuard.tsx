@@ -1,6 +1,6 @@
-import { Navigate } from "react-router-dom";
-import type { UserRole } from "@hrms/shared-types";
-import { useAuthStore } from "@/stores/auth.store";
+import { Navigate } from 'react-router-dom';
+import type { UserRole } from '@hrms/shared-types';
+import { useAuthStore } from '@/stores/auth.store';
 
 interface RoleGuardProps {
   children: React.ReactNode;

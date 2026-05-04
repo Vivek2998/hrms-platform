@@ -15,11 +15,11 @@ import type { IndiaState } from '@hrms/shared-types';
 // ─────────────────────────────────────────────────────────────
 
 const PF_WAGE_CEILING_MONTHLY = 15_000;
-const EMPLOYEE_PF_RATE = 0.12;        // 12% employee contribution
-const EMPLOYER_EPF_RATE = 0.0367;     // 3.67% to EPF account
-const EMPLOYER_EPS_RATE = 0.0833;     // 8.33% to EPS (pension scheme)
-const EMPLOYER_EDLI_RATE = 0.005;     // 0.5% EDLI (insurance)
-const EMPLOYER_ADMIN_CHARGE = 0.01;   // 1% admin charge (min ₹500/month)
+const EMPLOYEE_PF_RATE = 0.12; // 12% employee contribution
+const EMPLOYER_EPF_RATE = 0.0367; // 3.67% to EPF account
+const EMPLOYER_EPS_RATE = 0.0833; // 8.33% to EPS (pension scheme)
+const EMPLOYER_EDLI_RATE = 0.005; // 0.5% EDLI (insurance)
+const EMPLOYER_ADMIN_CHARGE = 0.01; // 1% admin charge (min ₹500/month)
 
 export interface PFResult {
   pfWage: number;
@@ -39,9 +39,7 @@ export interface PFResult {
  * @param restrictToCeiling - If true, cap PF wage at ₹15,000 (statutory default)
  */
 export function calculatePF(basicPlusDa: number, restrictToCeiling = true): PFResult {
-  const pfWage = restrictToCeiling
-    ? Math.min(basicPlusDa, PF_WAGE_CEILING_MONTHLY)
-    : basicPlusDa;
+  const pfWage = restrictToCeiling ? Math.min(basicPlusDa, PF_WAGE_CEILING_MONTHLY) : basicPlusDa;
 
   const employeeEPF = Math.round(pfWage * EMPLOYEE_PF_RATE);
   const employerEPS = Math.round(pfWage * EMPLOYER_EPS_RATE);
@@ -67,8 +65,8 @@ export function calculatePF(basicPlusDa: number, restrictToCeiling = true): PFRe
 // ─────────────────────────────────────────────────────────────
 
 const ESI_WAGE_CEILING_MONTHLY = 21_000;
-const EMPLOYEE_ESI_RATE = 0.0075;   // 0.75%
-const EMPLOYER_ESI_RATE = 0.0325;   // 3.25%
+const EMPLOYEE_ESI_RATE = 0.0075; // 0.75%
+const EMPLOYER_ESI_RATE = 0.0325; // 3.25%
 
 export interface ESIResult {
   grossSalary: number;
@@ -182,9 +180,9 @@ export interface GratuityResult {
   isEligible: boolean;
   yearsOfService: number;
   monthsOfService: number;
-  effectiveYears: number;       // Rounded as per Act
+  effectiveYears: number; // Rounded as per Act
   lastDrawnBasicPlusDA: number;
-  gratuityAmount: number;       // Capped at statutory maximum
+  gratuityAmount: number; // Capped at statutory maximum
   isAboveTaxFreeLimit: boolean;
 }
 

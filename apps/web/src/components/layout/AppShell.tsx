@@ -1,19 +1,19 @@
-import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
-import { Header } from "./Header";
-import { useUiStore } from "@/stores/ui.store";
-import { cn } from "@/lib/utils";
+import { Outlet } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { Header } from './Header';
+import { useUiStore } from '@/stores/ui.store';
+import { cn } from '@/lib/utils';
 
 export function AppShell() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="bg-background flex h-screen overflow-hidden">
       <Sidebar />
       <div
         className={cn(
-          "flex flex-1 flex-col overflow-hidden transition-all duration-300",
-          sidebarOpen ? "ml-64" : "ml-16",
+          'flex flex-1 flex-col overflow-hidden transition-all duration-300',
+          sidebarOpen ? 'ml-64' : 'ml-16',
         )}
       >
         <Header />

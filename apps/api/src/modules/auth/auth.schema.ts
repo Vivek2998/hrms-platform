@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -17,13 +17,13 @@ export const changePasswordSchema = z
       .min(8)
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
-        "Password must contain uppercase, lowercase, number and special character",
+        'Password must contain uppercase, lowercase, number and special character',
       ),
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
   });
 
 export type LoginInput = z.infer<typeof loginSchema>;

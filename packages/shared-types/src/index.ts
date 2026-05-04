@@ -73,10 +73,43 @@ export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ESCALATED';
 // ─────────────────────────────────────────────────────────────
 
 export type IndiaState =
-  | 'AN' | 'AP' | 'AR' | 'AS' | 'BR' | 'CG' | 'CH' | 'DN' | 'DD' | 'DL'
-  | 'GA' | 'GJ' | 'HR' | 'HP' | 'JK' | 'JH' | 'KA' | 'KL' | 'LA' | 'LD'
-  | 'MP' | 'MH' | 'MN' | 'ML' | 'MZ' | 'NL' | 'OD' | 'PY' | 'PB' | 'RJ'
-  | 'SK' | 'TN' | 'TS' | 'TR' | 'UP' | 'UK' | 'WB';
+  | 'AN'
+  | 'AP'
+  | 'AR'
+  | 'AS'
+  | 'BR'
+  | 'CG'
+  | 'CH'
+  | 'DN'
+  | 'DD'
+  | 'DL'
+  | 'GA'
+  | 'GJ'
+  | 'HR'
+  | 'HP'
+  | 'JK'
+  | 'JH'
+  | 'KA'
+  | 'KL'
+  | 'LA'
+  | 'LD'
+  | 'MP'
+  | 'MH'
+  | 'MN'
+  | 'ML'
+  | 'MZ'
+  | 'NL'
+  | 'OD'
+  | 'PY'
+  | 'PB'
+  | 'RJ'
+  | 'SK'
+  | 'TN'
+  | 'TS'
+  | 'TR'
+  | 'UP'
+  | 'UK'
+  | 'WB';
 
 // ─────────────────────────────────────────────────────────────
 // API Response Envelope
@@ -111,8 +144,8 @@ export interface PaginationQuery {
 // ─────────────────────────────────────────────────────────────
 
 export interface JwtPayload {
-  sub: string;       // userId
-  orgId: string;     // organizationId (multi-tenancy)
+  sub: string; // userId
+  orgId: string; // organizationId (multi-tenancy)
   role: UserRole;
   iat?: number;
   exp?: number;
@@ -242,7 +275,14 @@ export interface Employee {
 
 export type EmployeeSummary = Pick<
   Employee,
-  'id' | 'employeeCode' | 'firstName' | 'lastName' | 'displayName' | 'avatar' | 'designation' | 'role'
+  | 'id'
+  | 'employeeCode'
+  | 'firstName'
+  | 'lastName'
+  | 'displayName'
+  | 'avatar'
+  | 'designation'
+  | 'role'
 >;
 
 // ─────────────────────────────────────────────────────────────
@@ -254,14 +294,14 @@ export interface Shift {
   organizationId: string;
   name: string;
   code: string;
-  startTime: string;           // "HH:mm" in 24hr format
-  endTime: string;             // "HH:mm" in 24hr format
-  graceMinutes: number;        // Late arrival buffer
+  startTime: string; // "HH:mm" in 24hr format
+  endTime: string; // "HH:mm" in 24hr format
+  graceMinutes: number; // Late arrival buffer
   halfDayAfterMinutes: number; // Mark half-day if late by this many minutes
-  absentAfterMinutes: number;  // Mark absent if late by this many minutes
+  absentAfterMinutes: number; // Mark absent if late by this many minutes
   breakDurationMinutes: number;
-  isNightShift: boolean;       // Crosses midnight
-  weeklyOffDays: number[];     // 0=Sunday, 6=Saturday
+  isNightShift: boolean; // Crosses midnight
+  weeklyOffDays: number[]; // 0=Sunday, 6=Saturday
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -283,13 +323,13 @@ export interface AttendanceRecord {
   organizationId: string;
   employeeId: string;
   shiftId?: string;
-  date: string;                    // "YYYY-MM-DD"
-  punchIn?: string;                // ISO 8601 UTC
-  punchOut?: string;               // ISO 8601 UTC
+  date: string; // "YYYY-MM-DD"
+  punchIn?: string; // ISO 8601 UTC
+  punchOut?: string; // ISO 8601 UTC
   status: AttendanceStatus;
   punchInLocation?: GeoLocation;
   punchOutLocation?: GeoLocation;
-  punchInPhoto?: string;           // Cloudinary URL
+  punchInPhoto?: string; // Cloudinary URL
   workingMinutes?: number;
   overtimeMinutes?: number;
   lateMinutes?: number;
@@ -305,7 +345,7 @@ export interface AttendanceRecord {
 
 export interface PunchInRequest {
   location?: GeoLocation;
-  photo?: string;               // Base64 or Cloudinary URL
+  photo?: string; // Base64 or Cloudinary URL
   deviceId?: string;
   notes?: string;
 }
@@ -327,14 +367,14 @@ export interface LeaveType {
   category: LeaveCategory;
   daysAllowedPerYear: number;
   maxCarryForwardDays: number;
-  minNoticeDays: number;        // Minimum advance notice required
-  maxConsecutiveDays: number;   // 0 = unlimited
+  minNoticeDays: number; // Minimum advance notice required
+  maxConsecutiveDays: number; // 0 = unlimited
   isHalfDayAllowed: boolean;
   isSandwichApplicable: boolean; // Weekends between leave dates count
   isPaidLeave: boolean;
   isActive: boolean;
   applicableGenders?: Gender[];
-  color: string;                // Hex color for calendar display
+  color: string; // Hex color for calendar display
   createdAt: string;
   updatedAt: string;
 }
@@ -349,7 +389,7 @@ export interface LeaveBalance {
   carryForward: number;
   used: number;
   pending: number;
-  available: number;            // allocated + carryForward - used - pending
+  available: number; // allocated + carryForward - used - pending
 }
 
 export interface LeaveRequest {
@@ -357,8 +397,8 @@ export interface LeaveRequest {
   organizationId: string;
   employeeId: string;
   leaveTypeId: string;
-  startDate: string;            // "YYYY-MM-DD"
-  endDate: string;              // "YYYY-MM-DD"
+  startDate: string; // "YYYY-MM-DD"
+  endDate: string; // "YYYY-MM-DD"
   isHalfDay: boolean;
   halfDaySession?: 'MORNING' | 'AFTERNOON';
   totalDays: number;
@@ -422,7 +462,7 @@ export interface SalaryStructure {
 export interface SalaryStructureComponent {
   componentId: string;
   component: SalaryComponent;
-  value: number;               // Resolved value (calculated if formula-based)
+  value: number; // Resolved value (calculated if formula-based)
   monthlyAmount: number;
   annualAmount: number;
 }
@@ -430,7 +470,7 @@ export interface SalaryStructureComponent {
 export interface PayrollRun {
   id: string;
   organizationId: string;
-  month: number;               // 1-12
+  month: number; // 1-12
   year: number;
   status: PayrollStatus;
   totalEmployees: number;
@@ -481,7 +521,7 @@ export interface PayslipLineItem {
 export interface WsEvent<T = unknown> {
   event: string;
   data: T;
-  timestamp: string;           // ISO 8601
+  timestamp: string; // ISO 8601
   organizationId: string;
 }
 

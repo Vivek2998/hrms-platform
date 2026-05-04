@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuthStore } from "@/stores/auth.store";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuthStore } from '@/stores/auth.store';
+import { Badge } from '@/components/ui/badge';
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -19,7 +19,9 @@ export default function SettingsPage() {
         <CardContent className="space-y-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Name</span>
-            <span>{user?.firstName} {user?.lastName}</span>
+            <span>
+              {user?.firstName} {user?.lastName}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Email</span>

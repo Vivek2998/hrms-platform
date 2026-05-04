@@ -44,23 +44,21 @@ All responses follow this structure:
   "success": false,
   "data": null,
   "error": "Validation failed",
-  "details": [
-    { "field": "email", "message": "Invalid email format" }
-  ]
+  "details": [{ "field": "email", "message": "Invalid email format" }]
 }
 ```
 
 ## Modules
 
-| Module | Prefix | Status |
-|--------|--------|--------|
-| Auth | `/api/v1/auth` | Phase 1 |
-| Employees | `/api/v1/employees` | Phase 1 |
-| Departments | `/api/v1/departments` | Phase 1 |
-| Shifts | `/api/v1/shifts` | Phase 1 |
-| Attendance | `/api/v1/attendance` | Phase 2 |
-| Leave Types | `/api/v1/leave-types` | Phase 3 |
-| Leave Requests | `/api/v1/leaves` | Phase 3 |
-| Payroll | `/api/v1/payroll` | Phase 4 |
-| Notifications | `/api/v1/notifications` | Phase 2 |
-| Health | `/api/v1/health` | Done |
+| Module         | Prefix                  | Status  |
+| -------------- | ----------------------- | ------- |
+| Auth           | `/api/v1/auth`          | Phase 1 |
+| Employees      | `/api/v1/employees`     | Phase 1 |
+| Departments    | `/api/v1/departments`   | Phase 1 |
+| Shifts         | `/api/v1/shifts`        | Phase 1 |
+| Attendance     | `/api/v1/attendance`    | Phase 2 |
+| Leave Types    | `/api/v1/leave-types`   | Phase 3 |
+| Leave Requests | `/api/v1/leaves`        | Phase 3 |
+| Payroll        | `/api/v1/payroll`       | Phase 4 |
+| Notifications  | `/api/v1/notifications` | Phase 2 |
+| Health         | `/api/v1/health`        | Done    |

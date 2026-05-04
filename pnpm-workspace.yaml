@@ -1,20 +1,20 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
 
 # Shared dependency versions — single source of truth across all packages
 catalog:
   # TypeScript & Node
-  typescript: "^5.8.3"
-  "@types/node": "^24.0.0"
+  typescript: '^5.8.3'
+  '@types/node': '^24.0.0'
 
   # Code quality
-  prettier: "^3.5.3"
+  prettier: '^3.5.3'
 
   # Testing
-  vitest: "^3.1.4"
-  "@vitest/coverage-v8": "^3.1.4"
+  vitest: '^3.1.4'
+  '@vitest/coverage-v8': '^3.1.4'
 
   # Shared runtime
-  zod: "^3.24.2"
-  date-fns: "^4.1.0"
+  zod: '^3.24.2'
+  date-fns: '^4.1.0'

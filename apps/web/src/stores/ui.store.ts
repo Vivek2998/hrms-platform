@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-type Theme = "light" | "dark" | "system";
+type Theme = 'light' | 'dark' | 'system';
 
 interface UiState {
   theme: Theme;
@@ -14,16 +14,16 @@ interface UiState {
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
-      theme: "system",
+      theme: 'system',
       sidebarOpen: true,
 
       setTheme: (theme) => {
         set({ theme });
         const root = document.documentElement;
-        root.classList.remove("light", "dark");
-        if (theme === "system") {
-          const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          root.classList.add(isDark ? "dark" : "light");
+        root.classList.remove('light', 'dark');
+        if (theme === 'system') {
+          const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          root.classList.add(isDark ? 'dark' : 'light');
         } else {
           root.classList.add(theme);
         }
@@ -38,7 +38,7 @@ export const useUiStore = create<UiState>()(
       },
     }),
     {
-      name: "hrms-ui",
+      name: 'hrms-ui',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ theme: state.theme }),
     },

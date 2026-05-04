@@ -1,23 +1,19 @@
-import type { PrismaClient } from "@prisma/client";
-import { fail } from "../../lib/response.js";
+import type { PrismaClient } from '@prisma/client';
+import { fail } from '../../lib/response.js';
 import {
   calculatePF,
   calculateESI,
   calculateProfessionalTax,
   calculateLOP,
-} from "@hrms/shared-utils";
-import type { IndiaState } from "@hrms/shared-types";
+} from '@hrms/shared-utils';
+import type { IndiaState } from '@hrms/shared-types';
 
 interface PayrollRunInput {
   month: number;
   year: number;
 }
 
-export async function initPayrollRun(
-  orgId: string,
-  input: PayrollRunInput,
-  prisma: PrismaClient,
-) {
+export async function initPayrollRun(orgId: string, input: PayrollRunInput, prisma: PrismaClient) {
   const existing = await prisma.payrollRun.findUnique({
     where: {
       organizationId_month_year: {
@@ -28,8 +24,8 @@ export async function initPayrollRun(
     },
   });
 
-  if (existing && existing.status !== "FAILED")
-    throw fail(`Payroll for ${input.month}/${input.year} already exists`, 409);
+  if (existing && existing.status !== 'FAILED')
+    throw fail(`Payroll for ${String(input.month)}/${String(input.year)} already exists`, 409);
 
   const run = await prisma.payrollRun.upsert({
     where: {
@@ -39,12 +35,12 @@ export async function initPayrollRun(
         year: input.year,
       },
     },
-    update: { status: "DRAFT" },
+    update: { status: 'DRAFT' },
     create: {
       organizationId: orgId,
       month: input.month,
       year: input.year,
-      status: "DRAFT",
+      status: 'DRAFT',
     },
   });
 
@@ -62,17 +58,17 @@ export async function processPayrollRun(
     include: { organization: true },
   });
 
-  if (!run) throw fail("Payroll run not found", 404);
-  if (run.status !== "DRAFT") throw fail("Only DRAFT payroll runs can be processed", 400);
+  if (!run) throw fail('Payroll run not found', 404);
+  if (run.status !== 'DRAFT') throw fail('Only DRAFT payroll runs can be processed', 400);
 
   await prisma.payrollRun.update({
     where: { id: payrollRunId },
-    data: { status: "PROCESSING" },
+    data: { status: 'PROCESSING' },
   });
 
   try {
     const employees = await prisma.employee.findMany({
-      where: { organizationId: orgId, status: "ACTIVE", deletedAt: null },
+      where: { organizationId: orgId, status: 'ACTIVE', deletedAt: null },
     });
 
     // Working days in the month
@@ -95,7 +91,7 @@ export async function processPayrollRun(
             { effectiveTo: { gte: new Date(run.year, run.month - 1, 1) } },
           ],
         },
-        orderBy: { effectiveFrom: "desc" },
+        orderBy: { effectiveFrom: 'desc' },
       });
 
       if (!revision) continue;
@@ -111,9 +107,9 @@ export async function processPayrollRun(
         },
       });
 
-      const presentDays = attendance.filter((a) =>
-        ["PRESENT", "LATE", "WFH", "HALF_DAY"].includes(a.status),
-      ).reduce((s, a) => s + (a.status === "HALF_DAY" ? 0.5 : 1), 0);
+      const presentDays = attendance
+        .filter((a) => ['PRESENT', 'LATE', 'WFH', 'HALF_DAY'].includes(a.status))
+        .reduce((s, a) => s + (a.status === 'HALF_DAY' ? 0.5 : 1), 0);
 
       const lopDays = Math.max(0, daysInMonth - presentDays);
 
@@ -125,37 +121,57 @@ export async function processPayrollRun(
       // Statutory
       const pf = run.organization.pfEnabled
         ? calculatePF(basicAfterLop)
-        : { pfWage: 0, isAboveCeiling: false, employeeEPF: 0, employerEPF: 0, employerEPS: 0, employerEDLI: 0, employerAdminCharge: 0, totalEmployerContribution: 0, totalCostToEmployer: 0 };
+        : {
+            pfWage: 0,
+            isAboveCeiling: false,
+            employeeEPF: 0,
+            employerEPF: 0,
+            employerEPS: 0,
+            employerEDLI: 0,
+            employerAdminCharge: 0,
+            totalEmployerContribution: 0,
+            totalCostToEmployer: 0,
+          };
 
       const esi = run.organization.esiEnabled
         ? calculateESI(grossAfterLop)
-        : { grossSalary: 0, employeeContribution: 0, employerContribution: 0, totalESI: 0, isEligible: false };
+        : {
+            grossSalary: 0,
+            employeeContribution: 0,
+            employerContribution: 0,
+            totalESI: 0,
+            isEligible: false,
+          };
 
-      const pt = run.organization.ptEnabled && run.organization.ptState
-        ? calculateProfessionalTax(grossAfterLop, run.organization.ptState as IndiaState)
-        : 0;
+      const pt =
+        run.organization.ptEnabled && run.organization.ptState
+          ? calculateProfessionalTax(grossAfterLop, run.organization.ptState as IndiaState)
+          : 0;
 
-      const totalDeductionsForEmp =
-        pf.employeeEPF + esi.employeeContribution + pt;
+      const totalDeductionsForEmp = pf.employeeEPF + esi.employeeContribution + pt;
 
       const netPay = grossAfterLop - totalDeductionsForEmp;
 
-      const components = revision.components as Array<{ code: string; name: string; amount: number }>;
+      const components = revision.components as Array<{
+        code: string;
+        name: string;
+        amount: number;
+      }>;
 
       const earnings = components
-        .filter((c) => !["PF_EMP", "ESI_EMP", "PT", "TDS"].includes(c.code))
+        .filter((c) => !['PF_EMP', 'ESI_EMP', 'PT', 'TDS'].includes(c.code))
         .map((c) => ({ code: c.code, name: c.name, amount: c.amount }));
 
       const deductions = [
-        { code: "LOP", name: "Loss of Pay", amount: lopAmount },
-        { code: "PF_EMP", name: "PF (Employee)", amount: pf.employeeEPF },
-        { code: "ESI_EMP", name: "ESI (Employee)", amount: esi.employeeContribution },
-        { code: "PT", name: "Professional Tax", amount: pt },
+        { code: 'LOP', name: 'Loss of Pay', amount: lopAmount },
+        { code: 'PF_EMP', name: 'PF (Employee)', amount: pf.employeeEPF },
+        { code: 'ESI_EMP', name: 'ESI (Employee)', amount: esi.employeeContribution },
+        { code: 'PT', name: 'Professional Tax', amount: pt },
       ].filter((d) => d.amount > 0);
 
       const statutory = [
-        { code: "PF_ER", name: "PF (Employer)", amount: pf.totalEmployerContribution },
-        { code: "ESI_ER", name: "ESI (Employer)", amount: esi.employerContribution },
+        { code: 'PF_ER', name: 'PF (Employer)', amount: pf.totalEmployerContribution },
+        { code: 'ESI_ER', name: 'ESI (Employer)', amount: esi.employerContribution },
       ].filter((s) => s.amount > 0);
 
       await prisma.payslip.upsert({
@@ -195,7 +211,7 @@ export async function processPayrollRun(
     await prisma.payrollRun.update({
       where: { id: payrollRunId },
       data: {
-        status: "COMPLETED",
+        status: 'COMPLETED',
         totalEmployees: employees.length,
         totalGross,
         totalDeductions,
@@ -209,7 +225,7 @@ export async function processPayrollRun(
   } catch (err) {
     await prisma.payrollRun.update({
       where: { id: payrollRunId },
-      data: { status: "FAILED" },
+      data: { status: 'FAILED' },
     });
     throw err;
   }

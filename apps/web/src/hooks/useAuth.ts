@@ -1,14 +1,14 @@
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { toast } from "sonner";
-import { apiClient } from "@/lib/axios";
-import { useAuthStore } from "@/stores/auth.store";
-import type { ApiResponse, UserRole } from "@hrms/shared-types";
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/axios';
+import { useAuthStore } from '@/stores/auth.store';
+import type { ApiResponse, UserRole } from '@hrms/shared-types';
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email('Invalid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -38,10 +38,7 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (input: LoginInput) => {
-      const res = await apiClient.post<ApiResponse<LoginResponse>>(
-        "/auth/login",
-        input,
-      );
+      const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', input);
       return res.data.data;
     },
     onSuccess: (data) => {
@@ -59,7 +56,7 @@ export function useLogin() {
         mustChangePassword: data.employee.mustChangePassword,
       });
       toast.success(`Welcome back, ${data.employee.firstName}!`);
-      void navigate("/dashboard");
+      void navigate('/dashboard');
     },
   });
 }
@@ -70,11 +67,11 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      await apiClient.post("/auth/logout");
+      await apiClient.post('/auth/logout');
     },
     onSettled: () => {
       logout();
-      void navigate("/login");
+      void navigate('/login');
     },
   });
 }

@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import type { UserRole } from "@hrms/shared-types";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { UserRole } from '@hrms/shared-types';
 
 export interface AuthUser {
   id: string;
@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "hrms-auth",
+      name: 'hrms-auth',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accessToken: state.accessToken,

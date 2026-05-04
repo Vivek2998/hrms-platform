@@ -34,6 +34,7 @@ SuperAdmin
 ## Key Tables
 
 ### employees
+
 - `id`, `organizationId`, `userId`, `employeeCode`
 - `firstName`, `lastName`, `displayName`, `email`, `workEmail`
 - `role`, `status`, `employmentType`
@@ -44,6 +45,7 @@ SuperAdmin
 - `deletedAt`, `createdAt`, `updatedAt`
 
 ### attendance_records
+
 - `id`, `organizationId`, `employeeId`, `shiftId`
 - `date` (date only, no time)
 - `punchIn`, `punchOut` (full UTC timestamps)
@@ -54,6 +56,7 @@ SuperAdmin
 - `isManuallyEdited`, `editReason`, `editedBy`
 
 ### shifts
+
 - `id`, `organizationId`, `name`, `code`
 - `startTime`, `endTime` (HH:mm strings)
 - `graceMinutes`, `halfDayAfterMinutes`, `absentAfterMinutes`
@@ -61,6 +64,7 @@ SuperAdmin
 - `weeklyOffDays` (JSON array of day numbers: 0=Sun)
 
 ### salary_revisions
+
 - `id`, `organizationId`, `employeeId`
 - `effectiveFrom`, `effectiveTo` (for history)
 - `ctc`, `basic`, `gross`, `netPay`
@@ -69,11 +73,13 @@ SuperAdmin
 - Immutable — never updated, only new rows inserted
 
 ### payroll_runs
+
 - `id`, `organizationId`, `month`, `year`
 - `status` (DRAFT/PROCESSING/COMPLETED/PAID/FAILED)
 - `totalEmployees`, `totalGross`, `totalDeductions`, `totalNetPay`
 
 ### payslips
+
 - `id`, `organizationId`, `payrollRunId`, `employeeId`
 - `month`, `year`, `workingDays`, `presentDays`, `lopDays`
 - `earnings`, `deductions`, `statutory` (JSON arrays)

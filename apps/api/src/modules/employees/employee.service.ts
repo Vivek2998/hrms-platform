@@ -1,8 +1,12 @@
-import bcrypt from "bcryptjs";
-import type { PrismaClient, Prisma } from "@prisma/client";
-import { fail, paginated } from "../../lib/response.js";
-import { paginationArgs } from "../../lib/pagination.js";
-import type { CreateEmployeeInput, UpdateEmployeeInput, EmployeeListQuery } from "./employee.schema.js";
+import bcrypt from 'bcryptjs';
+import type { PrismaClient, Prisma } from '@prisma/client';
+import { fail, paginated } from '../../lib/response.js';
+import { paginationArgs } from '../../lib/pagination.js';
+import type {
+  CreateEmployeeInput,
+  UpdateEmployeeInput,
+  EmployeeListQuery,
+} from './employee.schema.js';
 
 const EMPLOYEE_SELECT = {
   id: true,
@@ -42,19 +46,12 @@ const EMPLOYEE_SELECT = {
   manager: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.EmployeeSelect;
 
-async function generateEmployeeCode(
-  prisma: PrismaClient,
-  organizationId: string,
-): Promise<string> {
+async function generateEmployeeCode(prisma: PrismaClient, organizationId: string): Promise<string> {
   const count = await prisma.employee.count({ where: { organizationId } });
-  return `EMP${String(count + 1).padStart(4, "0")}`;
+  return `EMP${String(count + 1).padStart(4, '0')}`;
 }
 
-export async function listEmployees(
-  orgId: string,
-  query: EmployeeListQuery,
-  prisma: PrismaClient,
-) {
+export async function listEmployees(orgId: string, query: EmployeeListQuery, prisma: PrismaClient) {
   const where: Prisma.EmployeeWhereInput = {
     organizationId: orgId,
     deletedAt: null,
@@ -63,10 +60,10 @@ export async function listEmployees(
     ...(query.employmentType && { employmentType: query.employmentType }),
     ...(query.search && {
       OR: [
-        { firstName: { contains: query.search, mode: "insensitive" } },
-        { lastName: { contains: query.search, mode: "insensitive" } },
-        { workEmail: { contains: query.search, mode: "insensitive" } },
-        { employeeCode: { contains: query.search, mode: "insensitive" } },
+        { firstName: { contains: query.search, mode: 'insensitive' } },
+        { lastName: { contains: query.search, mode: 'insensitive' } },
+        { workEmail: { contains: query.search, mode: 'insensitive' } },
+        { employeeCode: { contains: query.search, mode: 'insensitive' } },
       ],
     }),
   };
@@ -84,16 +81,12 @@ export async function listEmployees(
   return paginated(employees, query.page, query.limit, total);
 }
 
-export async function getEmployee(
-  id: string,
-  orgId: string,
-  prisma: PrismaClient,
-) {
+export async function getEmployee(id: string, orgId: string, prisma: PrismaClient) {
   const employee = await prisma.employee.findFirst({
     where: { id, organizationId: orgId, deletedAt: null },
     select: EMPLOYEE_SELECT,
   });
-  if (!employee) throw fail("Employee not found", 404);
+  if (!employee) throw fail('Employee not found', 404);
   return employee;
 }
 
@@ -105,7 +98,7 @@ export async function createEmployee(
   const existing = await prisma.employee.findFirst({
     where: { organizationId: orgId, workEmail: input.workEmail, deletedAt: null },
   });
-  if (existing) throw fail("An employee with this work email already exists", 409);
+  if (existing) throw fail('An employee with this work email already exists', 409);
 
   const employeeCode = await generateEmployeeCode(prisma, orgId);
   const passwordHash = await bcrypt.hash(input.password, 12);
@@ -149,14 +142,10 @@ export async function updateEmployee(
   return employee;
 }
 
-export async function softDeleteEmployee(
-  id: string,
-  orgId: string,
-  prisma: PrismaClient,
-) {
+export async function softDeleteEmployee(id: string, orgId: string, prisma: PrismaClient) {
   await getEmployee(id, orgId, prisma);
   await prisma.employee.update({
     where: { id },
-    data: { deletedAt: new Date(), status: "TERMINATED" },
+    data: { deletedAt: new Date(), status: 'TERMINATED' },
   });
 }

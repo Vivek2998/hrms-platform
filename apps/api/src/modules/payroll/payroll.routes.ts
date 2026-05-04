@@ -1,15 +1,15 @@
-import type { FastifyInstance } from "fastify";
-import { z } from "zod";
-import { ok, paginated, fail } from "../../lib/response.js";
-import { paginationArgs, paginationSchema } from "../../lib/pagination.js";
-import { initPayrollRun, processPayrollRun } from "./payroll.service.js";
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { ok, paginated, fail } from '../../lib/response.js';
+import { paginationArgs, paginationSchema } from '../../lib/pagination.js';
+import { initPayrollRun, processPayrollRun } from './payroll.service.js';
 
 const runSchema = z.object({
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020),
 });
 
-export async function payrollRoutes(app: FastifyInstance) {
+export function payrollRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
 
   // ────────────────────────────────────────────────────────────
@@ -17,10 +17,12 @@ export async function payrollRoutes(app: FastifyInstance) {
   // ────────────────────────────────────────────────────────────
 
   // GET /payroll/my-payslips  (current employee's payslip list)
-  app.get("/payroll/my-payslips", auth, async (req, reply) => {
-    const query = paginationSchema.extend({
-      year: z.coerce.number().int().optional(),
-    }).parse(req.query);
+  app.get('/payroll/my-payslips', auth, async (req, reply) => {
+    const query = paginationSchema
+      .extend({
+        year: z.coerce.number().int().optional(),
+      })
+      .parse(req.query);
 
     const payslips = await app.prisma.payslip.findMany({
       where: {
@@ -31,7 +33,7 @@ export async function payrollRoutes(app: FastifyInstance) {
       include: {
         payrollRun: { select: { status: true } },
       },
-      orderBy: [{ year: "desc" }, { month: "desc" }],
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
     });
 
     const data = payslips.map((p) => ({
@@ -51,7 +53,7 @@ export async function payrollRoutes(app: FastifyInstance) {
   });
 
   // GET /payroll/my-payslips/:id  (full payslip detail with earnings/deductions)
-  app.get("/payroll/my-payslips/:id", auth, async (req, reply) => {
+  app.get('/payroll/my-payslips/:id', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
 
     const payslip = await app.prisma.payslip.findFirst({
@@ -65,20 +67,22 @@ export async function payrollRoutes(app: FastifyInstance) {
       },
     });
 
-    if (!payslip) throw fail("Payslip not found", 404);
+    if (!payslip) throw fail('Payslip not found', 404);
 
-    return reply.send(ok({
-      id: payslip.id,
-      month: payslip.month,
-      year: payslip.year,
-      grossEarnings: payslip.grossEarnings,
-      totalDeductions: payslip.totalDeductions,
-      netPay: payslip.netPay,
-      earnings: payslip.earnings,
-      deductions: payslip.deductions,
-      status: payslip.payrollRun.status,
-      pdfUrl: payslip.pdfUrl,
-    }));
+    return reply.send(
+      ok({
+        id: payslip.id,
+        month: payslip.month,
+        year: payslip.year,
+        grossEarnings: payslip.grossEarnings,
+        totalDeductions: payslip.totalDeductions,
+        netPay: payslip.netPay,
+        earnings: payslip.earnings,
+        deductions: payslip.deductions,
+        status: payslip.payrollRun.status,
+        pdfUrl: payslip.pdfUrl,
+      }),
+    );
   });
 
   // ────────────────────────────────────────────────────────────
@@ -86,13 +90,13 @@ export async function payrollRoutes(app: FastifyInstance) {
   // ────────────────────────────────────────────────────────────
 
   // GET /payroll/runs
-  app.get("/payroll/runs", auth, async (req, reply) => {
+  app.get('/payroll/runs', auth, async (req, reply) => {
     const query = paginationSchema.parse(req.query);
     const [runs, total] = await app.prisma.$transaction([
       app.prisma.payrollRun.findMany({
         where: { organizationId: req.user.orgId },
         ...paginationArgs(query),
-        orderBy: [{ year: "desc" }, { month: "desc" }],
+        orderBy: [{ year: 'desc' }, { month: 'desc' }],
       }),
       app.prisma.payrollRun.count({ where: { organizationId: req.user.orgId } }),
     ]);
@@ -100,28 +104,28 @@ export async function payrollRoutes(app: FastifyInstance) {
   });
 
   // POST /payroll/runs  (create draft payroll run)
-  app.post("/payroll/runs", auth, async (req, reply) => {
+  app.post('/payroll/runs', auth, async (req, reply) => {
     const input = runSchema.parse(req.body);
     const run = await initPayrollRun(req.user.orgId, input, app.prisma);
     return reply.status(201).send(ok(run));
   });
 
   // POST /payroll/runs/:id/process  (calculate and finalize)
-  app.post("/payroll/runs/:id/process", auth, async (req, reply) => {
+  app.post('/payroll/runs/:id/process', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
     const run = await processPayrollRun(req.user.orgId, id, req.user.sub, app.prisma);
     return reply.send(ok(run));
   });
 
   // GET /payroll/runs/:id/payslips  (all payslips for a specific run)
-  app.get("/payroll/runs/:id/payslips", auth, async (req, reply) => {
+  app.get('/payroll/runs/:id/payslips', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
     const query = paginationSchema.parse(req.query);
 
     const run = await app.prisma.payrollRun.findFirst({
       where: { id, organizationId: req.user.orgId },
     });
-    if (!run) throw fail("Payroll run not found", 404);
+    if (!run) throw fail('Payroll run not found', 404);
 
     const [payslips, total] = await app.prisma.$transaction([
       app.prisma.payslip.findMany({
@@ -138,15 +142,16 @@ export async function payrollRoutes(app: FastifyInstance) {
   });
 
   // GET /payroll/payslips/:employeeId  (HR view — any employee's payslips)
-  app.get("/payroll/payslips/:employeeId", auth, async (req, reply) => {
+  app.get('/payroll/payslips/:employeeId', auth, async (req, reply) => {
     const { employeeId } = req.params as { employeeId: string };
 
-    if (req.user.role === "EMPLOYEE" && req.user.sub !== employeeId)
-      throw fail("Forbidden", 403);
+    if (req.user.role === 'EMPLOYEE' && req.user.sub !== employeeId) throw fail('Forbidden', 403);
 
-    const query = paginationSchema.extend({
-      year: z.coerce.number().int().optional(),
-    }).parse(req.query);
+    const query = paginationSchema
+      .extend({
+        year: z.coerce.number().int().optional(),
+      })
+      .parse(req.query);
 
     const [payslips, total] = await app.prisma.$transaction([
       app.prisma.payslip.findMany({
@@ -156,7 +161,7 @@ export async function payrollRoutes(app: FastifyInstance) {
           ...(query.year && { year: query.year }),
         },
         ...paginationArgs(query),
-        orderBy: [{ year: "desc" }, { month: "desc" }],
+        orderBy: [{ year: 'desc' }, { month: 'desc' }],
       }),
       app.prisma.payslip.count({
         where: {

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -10,11 +10,11 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
-import type { UserRole } from "@hrms/shared-types";
-import { useAuthStore } from "@/stores/auth.store";
-import { useUiStore } from "@/stores/ui.store";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import type { UserRole } from '@hrms/shared-types';
+import { useAuthStore } from '@/stores/auth.store';
+import { useUiStore } from '@/stores/ui.store';
+import { cn } from '@/lib/utils';
 
 interface NavItem {
   label: string;
@@ -24,34 +24,34 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   {
-    label: "Employees",
-    to: "/employees",
+    label: 'Employees',
+    to: '/employees',
     icon: Users,
-    allow: ["SUPER_ADMIN", "ORG_ADMIN", "HR", "MANAGER"],
+    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'],
   },
-  { label: "Attendance", to: "/attendance", icon: Clock },
-  { label: "Leaves", to: "/leaves", icon: CalendarDays },
+  { label: 'Attendance', to: '/attendance', icon: Clock },
+  { label: 'Leaves', to: '/leaves', icon: CalendarDays },
   {
-    label: "Payroll",
-    to: "/payroll",
+    label: 'Payroll',
+    to: '/payroll',
     icon: DollarSign,
-    allow: ["SUPER_ADMIN", "ORG_ADMIN", "HR"],
+    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
   },
   {
-    label: "Departments",
-    to: "/departments",
+    label: 'Departments',
+    to: '/departments',
     icon: Building2,
-    allow: ["SUPER_ADMIN", "ORG_ADMIN", "HR"],
+    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
   },
   {
-    label: "Shifts",
-    to: "/shifts",
+    label: 'Shifts',
+    to: '/shifts',
     icon: Timer,
-    allow: ["SUPER_ADMIN", "ORG_ADMIN", "HR"],
+    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
   },
-  { label: "Settings", to: "/settings", icon: Settings },
+  { label: 'Settings', to: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -66,29 +66,25 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-full flex-col border-r bg-sidebar transition-all duration-300",
-        sidebarOpen ? "w-64" : "w-16",
+        'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r transition-all duration-300',
+        sidebarOpen ? 'w-64' : 'w-16',
       )}
     >
       <div className="flex h-16 items-center justify-between border-b px-4">
         {sidebarOpen && (
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-primary" />
-            <span className="truncate text-sm font-semibold text-sidebar-foreground">
-              {orgName ?? "HRMS"}
+            <div className="bg-primary h-8 w-8 shrink-0 rounded-lg" />
+            <span className="text-sidebar-foreground truncate text-sm font-semibold">
+              {orgName ?? 'HRMS'}
             </span>
           </div>
         )}
         <button
           onClick={toggleSidebar}
-          className="ml-auto rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          className="text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ml-auto rounded-md p-1.5"
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          {sidebarOpen ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
       </div>
 
@@ -100,10 +96,10 @@ export function Sidebar() {
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )
                 }
               >

@@ -1,68 +1,85 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAttendance, useEditAttendance } from "@/hooks/useAttendance";
-import type { AttendanceRecord, AttendanceStatus } from "@hrms/shared-types";
+} from '@/components/ui/select';
+import { useAttendance, useEditAttendance } from '@/hooks/useAttendance';
+import type { AttendanceRecord, AttendanceStatus } from '@hrms/shared-types';
 
 const STATUSES: AttendanceStatus[] = [
-  "PRESENT", "ABSENT", "LATE", "HALF_DAY", "WFH", "ON_LEAVE", "HOLIDAY", "WEEKEND", "PENDING",
+  'PRESENT',
+  'ABSENT',
+  'LATE',
+  'HALF_DAY',
+  'WFH',
+  'ON_LEAVE',
+  'HOLIDAY',
+  'WEEKEND',
+  'PENDING',
 ];
 
 function statusVariant(status: AttendanceStatus) {
   switch (status) {
-    case "PRESENT": return "success";
-    case "ABSENT": return "destructive";
-    case "LATE": return "warning";
-    case "WFH": return "outline";
-    default: return "secondary";
+    case 'PRESENT':
+      return 'success';
+    case 'ABSENT':
+      return 'destructive';
+    case 'LATE':
+      return 'warning';
+    case 'WFH':
+      return 'outline';
+    default:
+      return 'secondary';
   }
 }
 
 function fmtTime(iso?: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
 function fmtHours(minutes: number) {
-  if (!minutes) return "—";
+  if (!minutes) return '—';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${h}h ${m}m`;
+  return `${String(h)}h ${String(m)}m`;
 }
 
 const editSchema = z.object({
   punchIn: z.string().optional(),
   punchOut: z.string().optional(),
-  status: z.enum(["PRESENT", "ABSENT", "LATE", "HALF_DAY", "WFH", "ON_LEAVE", "HOLIDAY"]).optional(),
-  editReason: z.string().min(5, "Reason must be at least 5 characters"),
+  status: z
+    .enum(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'WFH', 'ON_LEAVE', 'HOLIDAY'])
+    .optional(),
+  editReason: z.string().min(5, 'Reason must be at least 5 characters'),
 });
 
 type EditForm = z.infer<typeof editSchema>;
@@ -77,16 +94,17 @@ function EditDialog({
   onClose: () => void;
 }) {
   const editMutation = useEditAttendance();
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<EditForm>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<EditForm>({
     resolver: zodResolver(editSchema),
     defaultValues: {
-      punchIn: record.punchIn
-        ? new Date(record.punchIn).toISOString().slice(0, 16)
-        : undefined,
-      punchOut: record.punchOut
-        ? new Date(record.punchOut).toISOString().slice(0, 16)
-        : undefined,
-      status: record.status as EditForm["status"],
+      punchIn: record.punchIn ? new Date(record.punchIn).toISOString().slice(0, 16) : undefined,
+      punchOut: record.punchOut ? new Date(record.punchOut).toISOString().slice(0, 16) : undefined,
+      status: record.status as EditForm['status'],
     },
   });
 
@@ -106,41 +124,60 @@ function EditDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Attendance Record</DialogTitle>
         </DialogHeader>
-        <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            void handleSubmit(onSubmit)(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-1">
             <Label>Punch In</Label>
-            <Input type="datetime-local" {...register("punchIn")} />
+            <Input type="datetime-local" {...register('punchIn')} />
           </div>
           <div className="space-y-1">
             <Label>Punch Out</Label>
-            <Input type="datetime-local" {...register("punchOut")} />
+            <Input type="datetime-local" {...register('punchOut')} />
           </div>
           <div className="space-y-1">
             <Label>Status</Label>
             <Select
               defaultValue={record.status}
-              onValueChange={(v) => { setValue("status", v as EditForm["status"]); }}
+              onValueChange={(v) => {
+                setValue('status', v as EditForm['status']);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {(["PRESENT", "ABSENT", "LATE", "HALF_DAY", "WFH", "ON_LEAVE", "HOLIDAY"] as const).map(
-                  (s) => <SelectItem key={s} value={s}>{s}</SelectItem>,
-                )}
+                {(
+                  ['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'WFH', 'ON_LEAVE', 'HOLIDAY'] as const
+                ).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
             <Label>Reason for edit *</Label>
-            <Input placeholder="Explain why this record is being changed" {...register("editReason")} />
+            <Input
+              placeholder="Explain why this record is being changed"
+              {...register('editReason')}
+            />
             {errors.editReason && (
-              <p className="text-xs text-destructive">{errors.editReason.message}</p>
+              <p className="text-destructive text-xs">{errors.editReason.message}</p>
             )}
           </div>
           <DialogFooter>
@@ -148,7 +185,7 @@ function EditDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={editMutation.isPending}>
-              {editMutation.isPending ? "Saving…" : "Save changes"}
+              {editMutation.isPending ? 'Saving…' : 'Save changes'}
             </Button>
           </DialogFooter>
         </form>
@@ -161,7 +198,7 @@ export default function AttendancePage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL');
   const [editing, setEditing] = useState<AttendanceRecord | null>(null);
 
   const from = new Date(year, month - 1, 1).toISOString();
@@ -170,13 +207,23 @@ export default function AttendancePage() {
   const { data, isLoading } = useAttendance({
     from,
     to,
-    ...(statusFilter !== "ALL" ? { status: statusFilter } : {}),
+    ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
     limit: 100,
   });
 
   const MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const years = [now.getFullYear() - 1, now.getFullYear()];
@@ -187,43 +234,53 @@ export default function AttendancePage() {
         <div>
           <h1 className="text-2xl font-bold">Attendance</h1>
           <p className="text-muted-foreground">
-            {data?.meta.total ?? "—"} records for {MONTHS[month - 1]} {year}
+            {data?.meta.total ?? '—'} records for {MONTHS[month - 1]} {year}
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
         <Select
-          value={`${month}`}
-          onValueChange={(v) => { setMonth(Number(v)); }}
+          value={String(month)}
+          onValueChange={(v) => {
+            setMonth(Number(v));
+          }}
         >
           <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {MONTHS.map((m, i) => (
-              <SelectItem key={i} value={`${i + 1}`}>{m}</SelectItem>
+              <SelectItem key={i} value={String(i + 1)}>
+                {m}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select
-          value={`${year}`}
-          onValueChange={(v) => { setYear(Number(v)); }}
+          value={String(year)}
+          onValueChange={(v) => {
+            setYear(Number(v));
+          }}
         >
           <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {years.map((y) => (
-              <SelectItem key={y} value={`${y}`}>{y}</SelectItem>
+              <SelectItem key={y} value={String(y)}>
+                {y}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select
           value={statusFilter}
-          onValueChange={(v) => { setStatusFilter(v as AttendanceStatus | "ALL"); }}
+          onValueChange={(v) => {
+            setStatusFilter(v as AttendanceStatus | 'ALL');
+          }}
         >
           <SelectTrigger className="w-36">
             <SelectValue placeholder="All statuses" />
@@ -231,7 +288,9 @@ export default function AttendancePage() {
           <SelectContent>
             <SelectItem value="ALL">All statuses</SelectItem>
             {STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -249,14 +308,14 @@ export default function AttendancePage() {
               ))}
             </div>
           ) : data?.data.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground py-12 text-center text-sm">
               No attendance records found for this period.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/50 text-left text-xs font-medium text-muted-foreground">
+                  <tr className="bg-muted/50 text-muted-foreground border-b text-left text-xs font-medium">
                     <th className="px-4 py-3">Employee</th>
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Status</th>
@@ -274,28 +333,24 @@ export default function AttendancePage() {
                           ? `${rec.employee.firstName} ${rec.employee.lastName}`
                           : rec.employeeId.slice(0, 8)}
                         {rec.isManuallyEdited && (
-                          <span className="ml-1.5 text-xs text-muted-foreground">(edited)</span>
+                          <span className="text-muted-foreground ml-1.5 text-xs">(edited)</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {fmtDate(rec.date)}
-                      </td>
+                      <td className="text-muted-foreground px-4 py-3">{fmtDate(rec.date)}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={statusVariant(rec.status)}>
-                          {rec.status}
-                        </Badge>
+                        <Badge variant={statusVariant(rec.status)}>{rec.status}</Badge>
                       </td>
                       <td className="px-4 py-3">{fmtTime(rec.punchIn)}</td>
                       <td className="px-4 py-3">{fmtTime(rec.punchOut)}</td>
-                      <td className="px-4 py-3">
-                        {fmtHours(rec.workingMinutes ?? 0)}
-                      </td>
+                      <td className="px-4 py-3">{fmtHours(rec.workingMinutes ?? 0)}</td>
                       <td className="px-4 py-3">
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
-                          onClick={() => { setEditing(rec); }}
+                          onClick={() => {
+                            setEditing(rec);
+                          }}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -313,7 +368,9 @@ export default function AttendancePage() {
         <EditDialog
           record={editing}
           open={true}
-          onClose={() => { setEditing(null); }}
+          onClose={() => {
+            setEditing(null);
+          }}
         />
       )}
     </div>

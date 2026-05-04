@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { apiClient } from "@/lib/axios";
-import type { ApiResponse, AttendanceRecord, AttendanceStatus } from "@hrms/shared-types";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/axios';
+import type { ApiResponse, AttendanceRecord, AttendanceStatus } from '@hrms/shared-types';
 
 interface AttendanceParams {
   page?: number;
@@ -20,18 +20,16 @@ interface ManualEditInput {
 }
 
 export const attendanceKeys = {
-  all: ["attendance"] as const,
-  list: (params: AttendanceParams) => ["attendance", "list", params] as const,
+  all: ['attendance'] as const,
+  list: (params: AttendanceParams) => ['attendance', 'list', params] as const,
 };
 
 export function useAttendance(params: AttendanceParams = {}) {
   return useQuery({
     queryKey: attendanceKeys.list(params),
     queryFn: async () => {
-      const res = await apiClient.get<ApiResponse<AttendanceRecord[]>>(
-        "/attendance",
-        { params },
-      );
+      const res = await apiClient.get<ApiResponse<AttendanceRecord[]>>('/attendance', { params });
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return { data: res.data.data, meta: res.data.meta! };
     },
   });
@@ -40,22 +38,13 @@ export function useAttendance(params: AttendanceParams = {}) {
 export function useEditAttendance() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: string;
-      input: ManualEditInput;
-    }) => {
-      const res = await apiClient.patch<ApiResponse<AttendanceRecord>>(
-        `/attendance/${id}`,
-        input,
-      );
+    mutationFn: async ({ id, input }: { id: string; input: ManualEditInput }) => {
+      const res = await apiClient.patch<ApiResponse<AttendanceRecord>>(`/attendance/${id}`, input);
       return res.data.data;
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: attendanceKeys.all });
-      toast.success("Attendance record updated");
+      toast.success('Attendance record updated');
     },
   });
 }

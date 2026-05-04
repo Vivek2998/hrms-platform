@@ -1,9 +1,9 @@
-import type { FastifyInstance } from "fastify";
-import { z } from "zod";
-import { ok, paginated, fail } from "../../lib/response.js";
-import { paginationArgs, paginationSchema } from "../../lib/pagination.js";
-import { punchIn, punchOut } from "./attendance.service.js";
-import type { Prisma } from "@prisma/client";
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { ok, paginated, fail } from '../../lib/response.js';
+import { paginationArgs, paginationSchema } from '../../lib/pagination.js';
+import { punchIn, punchOut } from './attendance.service.js';
+import type { Prisma } from '@prisma/client';
 
 // Mobile-compatible punch schemas: flat lat/lng instead of nested location
 const punchInSchema = z.object({
@@ -22,7 +22,9 @@ const punchOutSchema = z.object({
 const manualEditSchema = z.object({
   punchIn: z.string().datetime().optional(),
   punchOut: z.string().datetime().optional(),
-  status: z.enum(["PRESENT", "ABSENT", "LATE", "HALF_DAY", "WFH", "ON_LEAVE", "HOLIDAY"]).optional(),
+  status: z
+    .enum(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'WFH', 'ON_LEAVE', 'HOLIDAY'])
+    .optional(),
   editReason: z.string().min(5),
 });
 
@@ -30,7 +32,19 @@ const attendanceQuerySchema = paginationSchema.extend({
   employeeId: z.string().uuid().optional(),
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
-  status: z.enum(["PRESENT", "ABSENT", "LATE", "HALF_DAY", "WFH", "ON_LEAVE", "HOLIDAY", "WEEKEND", "PENDING"]).optional(),
+  status: z
+    .enum([
+      'PRESENT',
+      'ABSENT',
+      'LATE',
+      'HALF_DAY',
+      'WFH',
+      'ON_LEAVE',
+      'HOLIDAY',
+      'WEEKEND',
+      'PENDING',
+    ])
+    .optional(),
 });
 
 const monthYearSchema = z.object({
@@ -38,15 +52,15 @@ const monthYearSchema = z.object({
   year: z.coerce.number().int().min(2020),
 });
 
-export async function attendanceRoutes(app: FastifyInstance) {
+export function attendanceRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
 
   // GET /attendance/my  (mobile: employee's own records for a given month)
-  app.get("/attendance/my", auth, async (req, reply) => {
+  app.get('/attendance/my', auth, async (req, reply) => {
     const now = new Date();
     const { month, year } = monthYearSchema.parse({
-      month: (req.query as Record<string, string>)["month"] ?? now.getMonth() + 1,
-      year: (req.query as Record<string, string>)["year"] ?? now.getFullYear(),
+      month: (req.query as Record<string, string>)['month'] ?? now.getMonth() + 1,
+      year: (req.query as Record<string, string>)['year'] ?? now.getFullYear(),
     });
 
     const from = new Date(year, month - 1, 1);
@@ -58,14 +72,14 @@ export async function attendanceRoutes(app: FastifyInstance) {
         employeeId: req.user.sub,
         date: { gte: from, lte: to },
       },
-      orderBy: { date: "asc" },
+      orderBy: { date: 'asc' },
     });
 
     return reply.send(ok(records));
   });
 
   // GET /attendance  (admin/HR: all records with filters)
-  app.get("/attendance", auth, async (req, reply) => {
+  app.get('/attendance', auth, async (req, reply) => {
     const query = attendanceQuerySchema.parse(req.query);
     const where: Prisma.AttendanceRecordWhereInput = {
       organizationId: req.user.orgId,
@@ -86,7 +100,7 @@ export async function attendanceRoutes(app: FastifyInstance) {
           employee: { select: { id: true, firstName: true, lastName: true, employeeCode: true } },
         },
         ...paginationArgs(query),
-        orderBy: { date: "desc" },
+        orderBy: { date: 'desc' },
       }),
       app.prisma.attendanceRecord.count({ where }),
     ]);
@@ -95,7 +109,7 @@ export async function attendanceRoutes(app: FastifyInstance) {
   });
 
   // POST /attendance/punch-in  (mobile: flat latitude/longitude)
-  app.post("/attendance/punch-in", auth, async (req, reply) => {
+  app.post('/attendance/punch-in', auth, async (req, reply) => {
     const input = punchInSchema.parse(req.body);
     const record = await punchIn(
       {
@@ -114,7 +128,7 @@ export async function attendanceRoutes(app: FastifyInstance) {
   });
 
   // POST /attendance/punch-out
-  app.post("/attendance/punch-out", auth, async (req, reply) => {
+  app.post('/attendance/punch-out', auth, async (req, reply) => {
     const input = punchOutSchema.parse(req.body);
     const record = await punchOut(
       {
@@ -132,14 +146,14 @@ export async function attendanceRoutes(app: FastifyInstance) {
   });
 
   // PATCH /attendance/:id  (HR manual edit)
-  app.patch("/attendance/:id", auth, async (req, reply) => {
+  app.patch('/attendance/:id', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
     const input = manualEditSchema.parse(req.body);
 
     const record = await app.prisma.attendanceRecord.findFirst({
       where: { id, organizationId: req.user.orgId },
     });
-    if (!record) throw fail("Attendance record not found", 404);
+    if (!record) throw fail('Attendance record not found', 404);
 
     const updated = await app.prisma.attendanceRecord.update({
       where: { id },
@@ -157,7 +171,7 @@ export async function attendanceRoutes(app: FastifyInstance) {
   });
 
   // GET /attendance/summary/:employeeId  (monthly summary for dashboards)
-  app.get("/attendance/summary/:employeeId", auth, async (req, reply) => {
+  app.get('/attendance/summary/:employeeId', auth, async (req, reply) => {
     const { employeeId } = req.params as { employeeId: string };
     const { month, year } = z
       .object({
@@ -177,16 +191,18 @@ export async function attendanceRoutes(app: FastifyInstance) {
       },
     });
 
-    return reply.send(ok({
-      present: records.filter((r) => r.status === "PRESENT").length,
-      absent: records.filter((r) => r.status === "ABSENT").length,
-      late: records.filter((r) => r.status === "LATE").length,
-      halfDay: records.filter((r) => r.status === "HALF_DAY").length,
-      wfh: records.filter((r) => r.status === "WFH").length,
-      onLeave: records.filter((r) => r.status === "ON_LEAVE").length,
-      totalWorkingMinutes: records.reduce((s, r) => s + r.workingMinutes, 0),
-      totalOvertimeMinutes: records.reduce((s, r) => s + r.overtimeMinutes, 0),
-      totalLateMinutes: records.reduce((s, r) => s + r.lateMinutes, 0),
-    }));
+    return reply.send(
+      ok({
+        present: records.filter((r) => r.status === 'PRESENT').length,
+        absent: records.filter((r) => r.status === 'ABSENT').length,
+        late: records.filter((r) => r.status === 'LATE').length,
+        halfDay: records.filter((r) => r.status === 'HALF_DAY').length,
+        wfh: records.filter((r) => r.status === 'WFH').length,
+        onLeave: records.filter((r) => r.status === 'ON_LEAVE').length,
+        totalWorkingMinutes: records.reduce((s, r) => s + r.workingMinutes, 0),
+        totalOvertimeMinutes: records.reduce((s, r) => s + r.overtimeMinutes, 0),
+        totalLateMinutes: records.reduce((s, r) => s + r.lateMinutes, 0),
+      }),
+    );
   });
 }
