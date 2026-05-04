@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEmployees } from '@/hooks/useEmployees';
+import { AddEmployeeDialog } from '@/components/employees/AddEmployeeDialog';
 
 export default function EmployeesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
   const { data, isLoading } = useEmployees({ search, limit: 20 });
 
   return (
@@ -21,7 +23,7 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-bold">Employees</h1>
           <p className="text-muted-foreground">{data?.meta.total ?? '—'} total employees</p>
         </div>
-        <Button>
+        <Button onClick={() => { setShowAdd(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
@@ -38,6 +40,8 @@ export default function EmployeesPage() {
           }}
         />
       </div>
+
+      <AddEmployeeDialog open={showAdd} onClose={() => { setShowAdd(false); }} />
 
       <Card>
         <CardHeader>

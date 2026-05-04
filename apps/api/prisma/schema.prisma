@@ -226,6 +226,11 @@ model Employee {
   dateOfConfirmation  DateTime?
   dateOfTermination   DateTime?
   noticePeriodDays    Int             @default(30)
+  // Professional
+  designation         String?
+  maritalStatus       String?   // SINGLE | MARRIED | DIVORCED | WIDOWED
+  educationDetails    Json?     // { degree, institution, year, grade }
+  experienceDetails   Json?     // { totalYears, lastCompany, lastDesignation }
   // Address
   presentAddress      Json?
   permanentAddress    Json?

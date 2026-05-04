@@ -47,7 +47,7 @@ export function useEmployee(id: string) {
 export function useCreateEmployee() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<Employee>) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiClient.post<ApiResponse<Employee>>('/employees', data);
       return res.data.data;
     },

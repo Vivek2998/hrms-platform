@@ -2,27 +2,73 @@ import { z } from 'zod';
 import { isValidPAN, isValidAadhaar, isValidIFSC, isValidIndianMobile } from '@hrms/shared-utils';
 import { paginationSchema } from '../../lib/pagination.js';
 
+const addressSchema = z
+  .object({
+    line1: z.string().optional(),
+    line2: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    pincode: z.string().optional(),
+    country: z.string().default('IN'),
+  })
+  .optional();
+
+const emergencyContactSchema = z
+  .object({
+    name: z.string().optional(),
+    phone: z.string().optional(),
+    relationship: z.string().optional(),
+  })
+  .optional();
+
+const educationDetailsSchema = z
+  .object({
+    degree: z.string().optional(),
+    institution: z.string().optional(),
+    year: z.number().int().optional(),
+    grade: z.string().optional(),
+  })
+  .optional();
+
+const experienceDetailsSchema = z
+  .object({
+    totalYears: z.number().optional(),
+    lastCompany: z.string().optional(),
+    lastDesignation: z.string().optional(),
+  })
+  .optional();
+
 export const createEmployeeSchema = z.object({
+  // Personal
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
   email: z.string().email(),
-  workEmail: z.string().email(),
   phone: z
     .string()
     .optional()
-    .refine((v) => !v || isValidIndianMobile(v), {
-      message: 'Invalid Indian mobile number',
-    }),
+    .refine((v) => !v || isValidIndianMobile(v), { message: 'Invalid Indian mobile number' }),
   dateOfBirth: z.string().datetime().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
+  bloodGroup: z.string().optional(),
+  maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']).optional(),
+  // Employment
+  workEmail: z.string().email(),
   employmentType: z
     .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT'])
     .default('FULL_TIME'),
+  designation: z.string().max(100).optional(),
   departmentId: z.string().uuid().optional(),
   teamId: z.string().uuid().optional(),
   managerId: z.string().uuid().optional(),
   dateOfJoining: z.string().datetime().optional(),
   noticePeriodDays: z.number().int().min(0).default(30),
+  // Address & Emergency
+  presentAddress: addressSchema,
+  permanentAddress: addressSchema,
+  emergencyContact: emergencyContactSchema,
+  // Education & Experience
+  educationDetails: educationDetailsSchema,
+  experienceDetails: experienceDetailsSchema,
   // India statutory
   panNumber: z
     .string()
@@ -43,7 +89,7 @@ export const createEmployeeSchema = z.object({
     .refine((v) => !v || isValidIFSC(v), { message: 'Invalid IFSC code' }),
   bankName: z.string().optional(),
   bankBranch: z.string().optional(),
-  // Initial password
+  // Account
   password: z
     .string()
     .min(8)
