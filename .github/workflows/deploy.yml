@@ -43,18 +43,20 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy API service
-        run: railway up . --service hrms-api --detach
+        run: railway up . --service hrms-platform --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   # ─────────────────────────────────────
-  # Deploy Web → Vercel
+  # Deploy Web → Vercel (independent of API deploy)
   # ─────────────────────────────────────
   deploy-web:
     name: Deploy Web → Vercel
     runs-on: ubuntu-latest
     environment: production
-    needs: [deploy-api]
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
 
