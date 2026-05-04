@@ -1,7 +1,6 @@
 import axios, { type AxiosError } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const BASE_URL: string =
   (import.meta.env['VITE_API_URL'] as string | undefined) ??
   (import.meta.env.PROD
@@ -44,7 +43,6 @@ apiClient.interceptors.response.use(
       if (!refreshToken) {
         logout();
         isRefreshing = false;
-        // eslint-disable-next-line @typescript-eslint/return-await
         return Promise.reject(error);
       }
 
