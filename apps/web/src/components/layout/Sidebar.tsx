@@ -138,12 +138,7 @@ export function Sidebar() {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   function toggleGroup(key: string) {
-    setOpenGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setOpenGroups((prev) => new Set(prev.has(key) ? [] : [key]));
   }
 
   return (
