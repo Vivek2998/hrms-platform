@@ -10,6 +10,11 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Palmtree,
+  CalendarCheck,
+  ClockAlert,
+  CalendarPlus,
+  FileText,
 } from 'lucide-react';
 import type { UserRole } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
@@ -51,6 +56,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: Timer,
     allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
   },
+  { label: 'Holiday Calendar', to: '/holidays', icon: Palmtree },
+  { label: 'My Leaves', to: '/my-leaves', icon: CalendarCheck },
+  { label: 'Regularisation', to: '/regularisation', icon: ClockAlert },
+  { label: 'Comp Off', to: '/comp-off', icon: CalendarPlus },
+  { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText },
   { label: 'Settings', to: '/settings', icon: Settings },
 ];
 

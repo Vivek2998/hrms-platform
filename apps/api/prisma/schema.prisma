@@ -260,10 +260,13 @@ model Employee {
   attendanceRecords AttendanceRecord[]
   leaveRequests    LeaveRequest[]
   leaveApprovals   LeaveApproval[]
-  salaryRevisions  SalaryRevision[]
-  payslips         Payslip[]
-  documents        Document[]
-  notifications    Notification[]
+  salaryRevisions          SalaryRevision[]
+  payslips                 Payslip[]
+  documents                Document[]
+  notifications            Notification[]
+  regularisations          AttendanceRegularisation[]
+  compOffs                 CompOff[]
+  taxDeclarations          TaxDeclaration[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -615,6 +618,116 @@ model Document {
 
   @@index([organizationId, employeeId])
   @@map("documents")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ATTENDANCE REGULARISATION
+// ─────────────────────────────────────────────────────────────
+
+enum RegularisationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CompOffStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model AttendanceRegularisation {
+  id             String               @id @default(uuid())
+  organizationId String
+  employeeId     String
+  date           DateTime             @db.Date
+  requestedIn    String?              // HH:mm
+  requestedOut   String?              // HH:mm
+  reason         String
+  status         RegularisationStatus @default(PENDING)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  remarks        String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("attendance_regularisations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// COMP OFF
+// ─────────────────────────────────────────────────────────────
+
+model CompOff {
+  id             String        @id @default(uuid())
+  organizationId String
+  employeeId     String
+  workedDate     DateTime      @db.Date
+  requestedDate  DateTime?     @db.Date
+  reason         String
+  status         CompOffStatus @default(PENDING)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  remarks        String?
+  expiresAt      DateTime?     @db.Date
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("comp_offs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// TAX (IT) DECLARATION
+// ─────────────────────────────────────────────────────────────
+
+model TaxDeclaration {
+  id                     String    @id @default(uuid())
+  organizationId         String
+  employeeId             String
+  financialYear          String    // e.g. "2025-26"
+  regime                 String    @default("OLD") // OLD | NEW
+  // 80C investments
+  ppf                    Float?
+  epf                    Float?
+  elss                   Float?
+  lic                    Float?
+  nsc                    Float?
+  homeLoanPrincipal      Float?
+  tuitionFees            Float?
+  sukanyaSamriddhi       Float?
+  // 80D health insurance
+  healthInsuranceSelf    Float?
+  healthInsuranceParents Float?
+  // HRA
+  rentPaid               Float?
+  landlordPan            String?
+  // Other deductions
+  npsEmployee            Float?   // 80CCD(1B) — extra ₹50k
+  homeLoanInterest       Float?   // 24(b)
+  savingsInterest        Float?   // 80TTA
+  otherDeductions        Json?    // { label: amount }
+  totalDeclared          Float    @default(0)
+  status                 String   @default("DRAFT") // DRAFT | SUBMITTED | VERIFIED
+  submittedAt            DateTime?
+  verifiedBy             String?
+  verifiedAt             DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([organizationId, employeeId, financialYear])
+  @@index([organizationId, employeeId])
+  @@map("tax_declarations")
 }
 
 // ─────────────────────────────────────────────────────────────

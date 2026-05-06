@@ -21,6 +21,10 @@ import { healthRoutes } from './modules/health/health.routes.js';
 import { uploadRoutes } from './modules/upload/upload.routes.js';
 import { documentRoutes } from './modules/documents/document.routes.js';
 import { salaryRoutes } from './modules/salary/salary.routes.js';
+import { holidayRoutes } from './modules/holidays/holiday.routes.js';
+import { regularisationRoutes } from './modules/regularisation/regularisation.routes.js';
+import { compOffRoutes } from './modules/comp-off/comp-off.routes.js';
+import { taxDeclarationRoutes } from './modules/tax-declaration/tax-declaration.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -61,6 +65,10 @@ export async function buildApp() {
   await app.register(uploadRoutes, { prefix });
   await app.register(documentRoutes, { prefix });
   await app.register(salaryRoutes, { prefix });
+  await app.register(holidayRoutes, { prefix });
+  await app.register(regularisationRoutes, { prefix });
+  await app.register(compOffRoutes, { prefix });
+  await app.register(taxDeclarationRoutes, { prefix });
 
   await app.ready();
   return app;

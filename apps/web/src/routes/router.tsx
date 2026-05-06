@@ -15,6 +15,11 @@ const PayrollPage = lazy(() => import('@/pages/payroll/PayrollPage'));
 const DepartmentsPage = lazy(() => import('@/pages/departments/DepartmentsPage'));
 const ShiftsPage = lazy(() => import('@/pages/shifts/ShiftsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
+const HolidaysPage = lazy(() => import('@/pages/holidays/HolidaysPage'));
+const MyLeavesPage = lazy(() => import('@/pages/my-leaves/MyLeavesPage'));
+const RegularisationPage = lazy(() => import('@/pages/regularisation/RegularisationPage'));
+const CompOffPage = lazy(() => import('@/pages/comp-off/CompOffPage'));
+const TaxDeclarationPage = lazy(() => import('@/pages/tax-declaration/TaxDeclarationPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
@@ -111,6 +116,46 @@ export const router = createBrowserRouter([
               <ShiftsPage />
             </Lazy>
           </RoleGuard>
+        ),
+      },
+      {
+        path: 'holidays',
+        element: (
+          <Lazy>
+            <HolidaysPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'my-leaves',
+        element: (
+          <Lazy>
+            <MyLeavesPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'regularisation',
+        element: (
+          <Lazy>
+            <RegularisationPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'comp-off',
+        element: (
+          <Lazy>
+            <CompOffPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'tax-declaration',
+        element: (
+          <Lazy>
+            <TaxDeclarationPage />
+          </Lazy>
         ),
       },
       {
