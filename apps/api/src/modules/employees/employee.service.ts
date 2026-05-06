@@ -114,16 +114,42 @@ export async function createEmployee(
   const { password: _, ...rest } = input;
   void _;
 
-  const employee = await prisma.employee.create({
-    data: {
-      ...rest,
-      organizationId: orgId,
-      employeeCode,
-      passwordHash,
-      dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
-      dateOfJoining: input.dateOfJoining ? new Date(input.dateOfJoining) : undefined,
-    },
-    select: EMPLOYEE_SELECT,
+  const employee = await prisma.$transaction(async (tx) => {
+    const created = await tx.employee.create({
+      data: {
+        ...rest,
+        organizationId: orgId,
+        employeeCode,
+        passwordHash,
+        dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
+        dateOfJoining: input.dateOfJoining ? new Date(input.dateOfJoining) : undefined,
+      },
+      select: EMPLOYEE_SELECT,
+    });
+
+    const year = new Date().getFullYear();
+    const leaveTypes = await tx.leaveType.findMany({
+      where: { organizationId: orgId, isActive: true, deletedAt: null },
+      select: { id: true, daysAllowed: true },
+    });
+
+    if (leaveTypes.length > 0) {
+      await tx.leaveBalance.createMany({
+        data: leaveTypes.map((lt) => ({
+          organizationId: orgId,
+          employeeId: created.id,
+          leaveTypeId: lt.id,
+          year,
+          allocated: lt.daysAllowed,
+          used: 0,
+          pending: 0,
+          carried: 0,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return created;
   });
 
   return employee;

@@ -60,6 +60,11 @@ enum LeaveStatus {
   WITHDRAWN
 }
 
+enum LeaveSession {
+  FIRST_HALF
+  SECOND_HALF
+}
+
 enum PayrollRunStatus {
   DRAFT
   PROCESSING
@@ -410,6 +415,7 @@ model LeaveRequest {
   toDate         DateTime    @db.Date
   totalDays      Float
   reason         String
+  session        LeaveSession?
   status         LeaveStatus @default(PENDING)
   attachmentUrl  String?
   deletedAt      DateTime?

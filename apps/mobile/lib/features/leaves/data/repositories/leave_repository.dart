@@ -66,14 +66,12 @@ class LeaveRepository {
     required String reason,
     String? session, // 'FIRST_HALF' | 'SECOND_HALF' for half-day leave
   }) async {
-    final finalReason = session != null
-        ? '[${session.replaceAll('_', ' ')}] $reason'
-        : reason;
     await _dio.post('/leaves', data: {
       'leaveTypeId': leaveTypeId,
       'startDate': startDate.toIso8601String().substring(0, 10),
       'endDate': endDate.toIso8601String().substring(0, 10),
-      'reason': finalReason,
+      'reason': reason,
+      if (session != null) 'session': session,
     });
   }
 

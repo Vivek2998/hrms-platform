@@ -45,6 +45,11 @@ const schema = z.object({
   presentCity: z.string().optional(),
   presentState: z.string().optional(),
   presentPincode: z.string().optional(),
+  permLine1: z.string().optional(),
+  permLine2: z.string().optional(),
+  permCity: z.string().optional(),
+  permState: z.string().optional(),
+  permPincode: z.string().optional(),
   emergencyName: z.string().optional(),
   emergencyPhone: z.string().optional(),
   emergencyRelation: z.string().optional(),
@@ -113,6 +118,11 @@ function buildDefaults(employee: Employee): FormValues {
     presentCity: employee.presentAddress?.city ?? '',
     presentState: employee.presentAddress?.state ?? '',
     presentPincode: employee.presentAddress?.pincode ?? '',
+    permLine1: employee.permanentAddress?.line1 ?? '',
+    permLine2: employee.permanentAddress?.line2 ?? '',
+    permCity: employee.permanentAddress?.city ?? '',
+    permState: employee.permanentAddress?.state ?? '',
+    permPincode: employee.permanentAddress?.pincode ?? '',
     emergencyName: employee.emergencyContact?.name ?? '',
     emergencyPhone: employee.emergencyContact?.phone ?? '',
     emergencyRelation: employee.emergencyContact?.relationship ?? '',
@@ -167,6 +177,17 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
               city: values.presentCity,
               state: values.presentState,
               pincode: values.presentPincode,
+              country: 'IN',
+            }
+          : undefined,
+      permanentAddress:
+        values.permLine1 || values.permCity
+          ? {
+              line1: values.permLine1,
+              line2: values.permLine2,
+              city: values.permCity,
+              state: values.permState,
+              pincode: values.permPincode,
               country: 'IN',
             }
           : undefined,
@@ -368,6 +389,18 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                     <Field label="City"><Input {...form.register('presentCity')} /></Field>
                     <Field label="State"><Input {...form.register('presentState')} /></Field>
                     <Field label="Pincode"><Input {...form.register('presentPincode')} /></Field>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Permanent Address
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Address Line 1"><Input {...form.register('permLine1')} /></Field>
+                    <Field label="Address Line 2"><Input {...form.register('permLine2')} /></Field>
+                    <Field label="City"><Input {...form.register('permCity')} /></Field>
+                    <Field label="State"><Input {...form.register('permState')} /></Field>
+                    <Field label="Pincode"><Input {...form.register('permPincode')} /></Field>
                   </div>
                 </div>
                 <div>

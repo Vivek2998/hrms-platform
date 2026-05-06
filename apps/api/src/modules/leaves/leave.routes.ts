@@ -10,6 +10,7 @@ const applyLeaveSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
   reason: z.string().min(3).max(500),
+  session: z.enum(['FIRST_HALF', 'SECOND_HALF']).optional(),
   attachmentUrl: z.string().url().optional(),
 });
 
@@ -194,9 +195,13 @@ export function leaveRoutes(app: FastifyInstance) {
     const to = new Date(input.endDate + 'T00:00:00.000Z');
 
     if (to < from) throw fail('End date cannot be before start date', 400);
+    if (input.session && from.getTime() !== to.getTime())
+      throw fail('Half-day session requires start and end date to be the same', 400);
 
     const msPerDay = 86_400_000;
-    const totalDays = Math.floor((to.getTime() - from.getTime()) / msPerDay) + 1;
+    const totalDays = input.session
+      ? 0.5
+      : Math.floor((to.getTime() - from.getTime()) / msPerDay) + 1;
 
     const request = await app.prisma.leaveRequest.create({
       data: {
@@ -207,6 +212,7 @@ export function leaveRoutes(app: FastifyInstance) {
         toDate: to,
         totalDays,
         reason: input.reason,
+        ...(input.session !== undefined && { session: input.session }),
         ...(input.attachmentUrl !== undefined && { attachmentUrl: input.attachmentUrl }),
       },
     });
