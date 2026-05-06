@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,68 +11,98 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Palmtree,
   CalendarCheck,
   ClockAlert,
   CalendarPlus,
   FileText,
+  ListChecks,
+  ReceiptText,
 } from 'lucide-react';
 import type { UserRole } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUiStore } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
 
+type IconType = React.ComponentType<{ className?: string }>;
+
 interface NavItem {
   label: string;
   to: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: IconType;
   allow?: UserRole[];
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+interface NavGroup {
+  key: string;
+  label: string;
+  icon: IconType;
+  children: NavItem[];
+}
+
+type SidebarEntry = ({ group: false } & NavItem) | ({ group: true } & NavGroup);
+
+const ENTRIES: SidebarEntry[] = [
+  { group: false, label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { group: false, label: 'Employees', to: '/employees', icon: Users, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
+  { group: false, label: 'Attendance', to: '/attendance', icon: Clock },
   {
-    label: 'Employees',
-    to: '/employees',
-    icon: Users,
-    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'],
+    group: true,
+    key: 'leaves',
+    label: 'Leaves',
+    icon: CalendarDays,
+    children: [
+      { label: 'Leave Management', to: '/leaves', icon: ListChecks, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
+      { label: 'Holiday Calendar', to: '/holidays', icon: Palmtree },
+      { label: 'My Leaves', to: '/my-leaves', icon: CalendarCheck },
+      { label: 'Regularisation', to: '/regularisation', icon: ClockAlert },
+      { label: 'Comp Off', to: '/comp-off', icon: CalendarPlus },
+    ],
   },
-  { label: 'Attendance', to: '/attendance', icon: Clock },
-  { label: 'Leaves', to: '/leaves', icon: CalendarDays },
   {
+    group: true,
+    key: 'payroll',
     label: 'Payroll',
-    to: '/payroll',
     icon: DollarSign,
-    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
+    children: [
+      { label: 'Payroll Runs', to: '/payroll', icon: ReceiptText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText },
+    ],
   },
-  {
-    label: 'Departments',
-    to: '/departments',
-    icon: Building2,
-    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
-  },
-  {
-    label: 'Shifts',
-    to: '/shifts',
-    icon: Timer,
-    allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'],
-  },
-  { label: 'Holiday Calendar', to: '/holidays', icon: Palmtree },
-  { label: 'My Leaves', to: '/my-leaves', icon: CalendarCheck },
-  { label: 'Regularisation', to: '/regularisation', icon: ClockAlert },
-  { label: 'Comp Off', to: '/comp-off', icon: CalendarPlus },
-  { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText },
-  { label: 'Settings', to: '/settings', icon: Settings },
+  { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+  { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+  { group: false, label: 'Settings', to: '/settings', icon: Settings },
 ];
+
+function isVisible(item: NavItem, role: UserRole | undefined): boolean {
+  return !item.allow || (role != null && item.allow.includes(role));
+}
+
+function itemClass(isActive: boolean, indent: boolean) {
+  return cn(
+    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+    indent && 'ml-4',
+    isActive
+      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+  );
+}
 
 export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
   const { sidebarOpen, toggleSidebar } = useUiStore();
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['leaves', 'payroll']));
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.allow || (role && item.allow.includes(role)),
-  );
+  function toggleGroup(key: string) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   return (
     <aside
@@ -100,24 +131,58 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-2">
-          {visibleItems.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  )
-                }
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {sidebarOpen && <span>{item.label}</span>}
-              </NavLink>
-            </li>
-          ))}
+          {ENTRIES.map((entry) => {
+            if (entry.group) {
+              const visible = entry.children.filter((c) => isVisible(c, role));
+              if (visible.length === 0) return null;
+              const isOpen = openGroups.has(entry.key);
+
+              return (
+                <li key={entry.key}>
+                  {sidebarOpen && (
+                    <button
+                      onClick={() => { toggleGroup(entry.key); }}
+                      className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                    >
+                      <entry.icon className="h-5 w-5 shrink-0" />
+                      <span className="flex-1 text-left">{entry.label}</span>
+                      <ChevronDown
+                        className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-180')}
+                      />
+                    </button>
+                  )}
+                  {(isOpen || !sidebarOpen) && (
+                    <ul className={cn('space-y-1', sidebarOpen && 'mt-1')}>
+                      {visible.map((child) => (
+                        <li key={child.to}>
+                          <NavLink
+                            to={child.to}
+                            className={({ isActive }) => itemClass(isActive, sidebarOpen)}
+                          >
+                            <child.icon className="h-5 w-5 shrink-0" />
+                            {sidebarOpen && <span>{child.label}</span>}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            }
+
+            if (!isVisible(entry, role)) return null;
+            return (
+              <li key={entry.to}>
+                <NavLink
+                  to={entry.to}
+                  className={({ isActive }) => itemClass(isActive, false)}
+                >
+                  <entry.icon className="h-5 w-5 shrink-0" />
+                  {sidebarOpen && <span>{entry.label}</span>}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </aside>
