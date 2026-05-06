@@ -5,6 +5,11 @@ import '../data/repositories/leave_repository.dart';
 part 'leave_provider.g.dart';
 
 @riverpod
+Future<List<ApiLeaveType>> leaveTypes(LeaveTypesRef ref) {
+  return ref.read(leaveRepositoryProvider).getLeaveTypes();
+}
+
+@riverpod
 Future<List<CachedLeaveRequest>> leaveList(LeaveListRef ref) {
   return ref.read(leaveRepositoryProvider).getMyLeaves();
 }
@@ -24,6 +29,7 @@ class ApplyLeaveNotifier extends _$ApplyLeaveNotifier {
     required DateTime startDate,
     required DateTime endDate,
     required String reason,
+    String? session,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
@@ -32,6 +38,7 @@ class ApplyLeaveNotifier extends _$ApplyLeaveNotifier {
             startDate: startDate,
             endDate: endDate,
             reason: reason,
+            session: session,
           ),
     );
     if (state.hasValue) ref.invalidate(leaveListProvider);

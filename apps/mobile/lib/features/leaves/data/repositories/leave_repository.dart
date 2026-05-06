@@ -41,11 +41,22 @@ class LeaveRepository {
     }
   }
 
-  Future<List<LeaveBalance>> getMyBalances() async {
-    final res = await _dio.get('/leaves/my/balance');
+  Future<List<ApiLeaveType>> getLeaveTypes() async {
+    final res = await _dio.get('/leave-types');
     return (res.data['data'] as List)
-        .map((e) => LeaveBalance.fromJson(e as Map<String, dynamic>))
+        .map((e) => ApiLeaveType.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<LeaveBalance>> getMyBalances() async {
+    try {
+      final res = await _dio.get('/leaves/my/balance');
+      return (res.data['data'] as List)
+          .map((e) => LeaveBalance.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<void> applyLeave({
@@ -53,12 +64,16 @@ class LeaveRepository {
     required DateTime startDate,
     required DateTime endDate,
     required String reason,
+    String? session, // 'FIRST_HALF' | 'SECOND_HALF' for half-day leave
   }) async {
+    final finalReason = session != null
+        ? '[${session.replaceAll('_', ' ')}] $reason'
+        : reason;
     await _dio.post('/leaves', data: {
       'leaveTypeId': leaveTypeId,
       'startDate': startDate.toIso8601String().substring(0, 10),
       'endDate': endDate.toIso8601String().substring(0, 10),
-      'reason': reason,
+      'reason': finalReason,
     });
   }
 

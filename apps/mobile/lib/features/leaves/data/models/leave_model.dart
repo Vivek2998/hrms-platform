@@ -2,6 +2,34 @@ import 'package:isar/isar.dart';
 
 part 'leave_model.g.dart';
 
+/// A leave type as returned by GET /leave-types (not an Isar collection)
+class ApiLeaveType {
+  final String id;
+  final String name;
+  final String code;
+  final int daysAllowed;
+  final String colorHex;
+
+  const ApiLeaveType({
+    required this.id,
+    required this.name,
+    required this.code,
+    required this.daysAllowed,
+    required this.colorHex,
+  });
+
+  factory ApiLeaveType.fromJson(Map<String, dynamic> j) => ApiLeaveType(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        code: j['code'] as String,
+        daysAllowed: (j['daysAllowed'] as num).toInt(),
+        colorHex: (j['colorHex'] as String?) ?? '#6366f1',
+      );
+
+  bool get isHalfDay =>
+      code == 'HDL' || name.toLowerCase().contains('half day');
+}
+
 @collection
 class CachedLeaveRequest {
   Id id = Isar.autoIncrement;
