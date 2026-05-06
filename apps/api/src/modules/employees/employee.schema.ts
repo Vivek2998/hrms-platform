@@ -89,6 +89,8 @@ export const createEmployeeSchema = z.object({
     .refine((v) => !v || isValidIFSC(v), { message: 'Invalid IFSC code' }),
   bankName: z.string().optional(),
   bankBranch: z.string().optional(),
+  // Avatar
+  avatarUrl: z.string().url().optional(),
   // Account
   password: z
     .string()

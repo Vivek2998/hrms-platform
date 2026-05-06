@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import multipart from '@fastify/multipart';
 import { env } from './config/env.js';
 import { prismaPlugin } from './plugins/prisma.js';
 import { redisPlugin } from './plugins/redis.js';
@@ -17,6 +18,8 @@ import { leaveRoutes } from './modules/leaves/leave.routes.js';
 import { payrollRoutes } from './modules/payroll/payroll.routes.js';
 import { notificationRoutes } from './modules/notifications/notification.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { uploadRoutes } from './modules/upload/upload.routes.js';
+import { documentRoutes } from './modules/documents/document.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -40,6 +43,7 @@ export async function buildApp() {
   await app.register(prismaPlugin);
   await app.register(redisPlugin);
   await app.register(jwtPlugin);
+  await app.register(multipart);
   app.setErrorHandler(errorHandler);
 
   // ── Routes ─────────────────────────────────────────────────
@@ -53,6 +57,8 @@ export async function buildApp() {
   await app.register(leaveRoutes, { prefix });
   await app.register(payrollRoutes, { prefix });
   await app.register(notificationRoutes, { prefix });
+  await app.register(uploadRoutes, { prefix });
+  await app.register(documentRoutes, { prefix });
 
   await app.ready();
   return app;

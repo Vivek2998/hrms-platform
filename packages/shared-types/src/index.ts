@@ -272,7 +272,7 @@ export interface Employee {
   email: string;
   workEmail?: string;
   phone?: string;
-  avatar?: string;
+  avatarUrl?: string;
   role: UserRole;
   status: EmployeeStatus;
   employmentType: EmploymentType;
@@ -316,7 +316,7 @@ export type EmployeeSummary = Pick<
   | 'firstName'
   | 'lastName'
   | 'displayName'
-  | 'avatar'
+  | 'avatarUrl'
   | 'designation'
   | 'role'
 >;

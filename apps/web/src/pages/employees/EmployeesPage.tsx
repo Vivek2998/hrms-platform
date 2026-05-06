@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEmployees } from '@/hooks/useEmployees';
 import { AddEmployeeDialog } from '@/components/employees/AddEmployeeDialog';
@@ -75,6 +75,7 @@ export default function EmployeesPage() {
                   className="hover:bg-muted flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors"
                 >
                   <Avatar>
+                    <AvatarImage src={emp.avatarUrl ?? undefined} alt={`${emp.firstName} ${emp.lastName}`} />
                     <AvatarFallback>
                       {emp.firstName[0]}
                       {emp.lastName[0]}

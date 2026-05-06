@@ -10,6 +10,7 @@ class HomeShell extends StatelessWidget {
     ('/attendance', Icons.fingerprint_outlined, Icons.fingerprint, 'Attendance'),
     ('/leaves', Icons.event_note_outlined, Icons.event_note, 'Leaves'),
     ('/payslips', Icons.receipt_long_outlined, Icons.receipt_long, 'Payslips'),
+    ('/profile', Icons.person_outline, Icons.person, 'Profile'),
   ];
 
   int _indexOf(BuildContext context) {

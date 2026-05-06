@@ -13,6 +13,7 @@ import '../../features/leaves/presentation/leaves_screen.dart';
 import '../../features/leaves/presentation/apply_leave_screen.dart';
 import '../../features/payslips/presentation/payslips_screen.dart';
 import '../../features/payslips/presentation/payslip_detail_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 
 part 'router.g.dart';
 
@@ -82,6 +83,10 @@ GoRouter router(RouterRef ref) {
                 ),
               ),
             ],
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (_, __) => const ProfileScreen(),
           ),
         ],
       ),
