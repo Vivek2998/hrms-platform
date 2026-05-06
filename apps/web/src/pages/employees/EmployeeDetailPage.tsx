@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Pencil, Upload, Trash2, FileText, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Camera, Pencil, Upload, Trash2, FileText, ExternalLink, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,7 @@ import { useEmployee, useUpdateEmployee } from '@/hooks/useEmployees';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
 import { useUploadFile } from '@/hooks/useUpload';
 import { useDocuments, useCreateDocument, useDeleteDocument, type DocumentType } from '@/hooks/useDocuments';
+import { useSalaryRevisions, useCreateSalaryRevision } from '@/hooks/useSalary';
 import { toast } from 'sonner';
 
 const DOC_TYPE_LABELS: Record<string, string> = {
@@ -79,6 +82,145 @@ function formatBytes(bytes?: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function previewComponents(ctc: number) {
+  const monthly = ctc / 12;
+  const basic = Math.round((monthly * 0.4) / 100) * 100;
+  const hra = Math.round((basic * 0.5) / 100) * 100;
+  const lta = Math.round((basic * 0.0833) / 100) * 100;
+  const special = Math.max(0, Math.round(monthly - basic - hra - lta));
+  const gross = basic + hra + lta + special;
+  const pfEmp = basic > 15000 ? 1800 : Math.round(basic * 0.12);
+  const esiEmp = gross <= 21000 ? Math.round(gross * 0.0075) : 0;
+  const netPay = gross - pfEmp - esiEmp;
+  const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+  return { basic, hra, lta, special, gross, pfEmp, esiEmp, netPay, monthly, fmt };
+}
+
+function SetSalaryDialog({
+  employeeId: _employeeId,
+  open,
+  onClose,
+  onSave,
+  isPending,
+}: {
+  employeeId: string;
+  open: boolean;
+  onClose: () => void;
+  onSave: (ctc: number, effectiveFrom: string, reason: string) => void;
+  isPending: boolean;
+}) {
+  const [ctcInput, setCtcInput] = useState('');
+  const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10));
+  const [reason, setReason] = useState('');
+
+  const ctc = parseFloat(ctcInput.replace(/,/g, '')) || 0;
+  const preview = ctc > 0 ? previewComponents(ctc) : null;
+
+  function handleSave() {
+    if (ctc <= 0 || !effectiveFrom) return;
+    onSave(ctc, effectiveFrom, reason);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { setCtcInput(''); setReason(''); onClose(); } }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Set Salary</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Annual CTC (₹) *</Label>
+              <Input
+                placeholder="e.g. 600000"
+                value={ctcInput}
+                onChange={(e) => { setCtcInput(e.target.value); }}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Effective From *</Label>
+              <Input
+                type="date"
+                value={effectiveFrom}
+                onChange={(e) => { setEffectiveFrom(e.target.value); }}
+              />
+            </div>
+          </div>
+
+          {preview && (
+            <div className="bg-muted/40 rounded-lg p-3 text-sm">
+              <p className="mb-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                Auto-calculated breakdown
+              </p>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>Basic Salary (40%)</span>
+                  <span>{preview.fmt.format(preview.basic)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>HRA (50% of Basic)</span>
+                  <span>{preview.fmt.format(preview.hra)}</span>
+                </div>
+                {preview.lta > 0 && (
+                  <div className="flex justify-between">
+                    <span>Leave Travel Allowance</span>
+                    <span>{preview.fmt.format(preview.lta)}</span>
+                  </div>
+                )}
+                {preview.special > 0 && (
+                  <div className="flex justify-between">
+                    <span>Special Allowance</span>
+                    <span>{preview.fmt.format(preview.special)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-1 font-medium">
+                  <span>Gross / month</span>
+                  <span>{preview.fmt.format(preview.gross)}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>PF (Employee 12%)</span>
+                  <span>- {preview.fmt.format(preview.pfEmp)}</span>
+                </div>
+                {preview.esiEmp > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>ESI (Employee 0.75%)</span>
+                    <span>- {preview.fmt.format(preview.esiEmp)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-1 font-semibold text-green-700">
+                  <span>Estimated Net Pay / month</span>
+                  <span>{preview.fmt.format(preview.netPay)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <Label>Reason / Notes (optional)</Label>
+            <Textarea
+              value={reason}
+              onChange={(e) => { setReason(e.target.value); }}
+              placeholder="e.g. Annual increment, promotion, joining offer…"
+              rows={2}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            disabled={ctc <= 0 || !effectiveFrom || isPending}
+            onClick={handleSave}
+          >
+            {isPending ? 'Saving…' : 'Save Salary'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -87,6 +229,7 @@ export default function EmployeeDetailPage() {
   const [showDocUpload, setShowDocUpload] = useState(false);
   const [docType, setDocType] = useState<DocumentType>('ID_PROOF');
   const [docFile, setDocFile] = useState<File | null>(null);
+  const [showSetSalary, setShowSetSalary] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { mutate: updateEmployee } = useUpdateEmployee(id ?? '');
@@ -95,6 +238,8 @@ export default function EmployeeDetailPage() {
   const { mutate: createDocument, isPending: isSavingDoc } = useCreateDocument();
   const { mutate: deleteDocument } = useDeleteDocument(id ?? '');
   const { mutate: uploadDocFile, isPending: isUploadingDoc } = useUploadFile('documents');
+  const { data: salaryRevisions = [] } = useSalaryRevisions(id ?? '');
+  const { mutate: createSalaryRevision, isPending: isSavingSalary } = useCreateSalaryRevision(id ?? '');
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -333,10 +478,78 @@ export default function EmployeeDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Salary section */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Salary
+              </CardTitle>
+              <Button size="sm" variant="outline" onClick={() => { setShowSetSalary(true); }}>
+                <IndianRupee className="mr-1.5 h-3.5 w-3.5" />
+                {salaryRevisions.length > 0 ? 'Revise Salary' : 'Set Salary'}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {salaryRevisions.length === 0 ? (
+                <p className="text-muted-foreground py-4 text-center text-sm">
+                  No salary set. Click &ldquo;Set Salary&rdquo; to add one.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {salaryRevisions.map((rev, i) => {
+                    const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+                    return (
+                      <div key={rev.id} className={i > 0 ? 'border-t pt-4' : ''}>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            Effective {new Date(rev.effectiveFrom).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {i === 0 && <Badge variant="secondary" className="ml-2 text-xs">Current</Badge>}
+                          </span>
+                          <span className="text-sm font-semibold">{fmt.format(rev.ctc)} / year</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div className="bg-muted/40 rounded p-2 text-center">
+                            <p className="text-xs text-muted-foreground">Gross/mo</p>
+                            <p className="font-medium">{fmt.format(rev.gross)}</p>
+                          </div>
+                          <div className="bg-muted/40 rounded p-2 text-center">
+                            <p className="text-xs text-muted-foreground">Basic/mo</p>
+                            <p className="font-medium">{fmt.format(rev.basic)}</p>
+                          </div>
+                          <div className="bg-muted/40 rounded p-2 text-center">
+                            <p className="text-xs text-muted-foreground">Net Pay/mo</p>
+                            <p className="font-medium">{fmt.format(rev.netPay)}</p>
+                          </div>
+                        </div>
+                        {rev.reason && (
+                          <p className="mt-1.5 text-xs text-muted-foreground italic">{rev.reason}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <EditEmployeeDialog
             employee={employee}
             open={showEdit}
             onClose={() => { setShowEdit(false); }}
+          />
+
+          {/* Set Salary Dialog */}
+          <SetSalaryDialog
+            employeeId={id ?? ''}
+            open={showSetSalary}
+            onClose={() => { setShowSetSalary(false); }}
+            onSave={(ctc, effectiveFrom, reason) => {
+              createSalaryRevision(
+                { employeeId: id ?? '', ctc, effectiveFrom, ...(reason ? { reason } : {}) },
+                { onSuccess: () => { setShowSetSalary(false); } },
+              );
+            }}
+            isPending={isSavingSalary}
           />
 
           {/* Upload Document Dialog */}
