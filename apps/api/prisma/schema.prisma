@@ -85,6 +85,20 @@ enum NotificationType {
   SYSTEM
 }
 
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 enum DocumentType {
   OFFER_LETTER
   APPOINTMENT_LETTER
@@ -267,6 +281,9 @@ model Employee {
   regularisations          AttendanceRegularisation[]
   compOffs                 CompOff[]
   taxDeclarations          TaxDeclaration[]
+  suggestions              SuggestionBox[]
+  helpDeskTickets          HelpDeskTicket[]
+  passwordResetTokens      PasswordResetToken[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -728,6 +745,113 @@ model TaxDeclaration {
   @@unique([organizationId, employeeId, financialYear])
   @@index([organizationId, employeeId])
   @@map("tax_declarations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUGGESTION BOX
+// ─────────────────────────────────────────────────────────────
+
+model SuggestionBox {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  title          String
+  content        String
+  isAnonymous    Boolean   @default(false)
+  status         String    @default("OPEN") // OPEN | REVIEWED | CLOSED
+  response       String?
+  respondedBy    String?
+  respondedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, employeeId])
+  @@map("suggestion_box")
+}
+
+// ─────────────────────────────────────────────────────────────
+// HR POLICIES
+// ─────────────────────────────────────────────────────────────
+
+model HrPolicy {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  description    String?
+  fileUrl        String
+  fileSize       Int?
+  mimeType       String?
+  category       String    @default("GENERAL")
+  version        String?
+  isActive       Boolean   @default(true)
+  uploadedBy     String
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@map("hr_policies")
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELP DESK
+// ─────────────────────────────────────────────────────────────
+
+model HelpDeskTicket {
+  id             String         @id @default(uuid())
+  organizationId String
+  employeeId     String
+  subject        String
+  description    String
+  category       String         @default("GENERAL")
+  status         TicketStatus   @default(OPEN)
+  priority       TicketPriority @default(MEDIUM)
+  assignedTo     String?
+  resolvedAt     DateTime?
+  closedAt       DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  employee Employee                @relation(fields: [employeeId], references: [id])
+  comments HelpDeskTicketComment[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, employeeId])
+  @@map("helpdesk_tickets")
+}
+
+model HelpDeskTicketComment {
+  id         String   @id @default(uuid())
+  ticketId   String
+  authorId   String
+  body       String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  ticket HelpDeskTicket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@map("helpdesk_ticket_comments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PASSWORD RESET
+// ─────────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  employeeId String
+  token      String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("password_reset_tokens")
 }
 
 // ─────────────────────────────────────────────────────────────

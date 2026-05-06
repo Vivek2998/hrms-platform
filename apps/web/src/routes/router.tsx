@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+
 import { AuthGuard } from '@/components/guards/AuthGuard';
 import { RoleGuard } from '@/components/guards/RoleGuard';
 import { AppShell } from '@/components/layout/AppShell';
@@ -22,6 +23,10 @@ const CompOffPage = lazy(() => import('@/pages/comp-off/CompOffPage'));
 const TaxDeclarationPage = lazy(() => import('@/pages/tax-declaration/TaxDeclarationPage'));
 const DirectoryPage = lazy(() => import('@/pages/directory/DirectoryPage'));
 const OrgChartPage = lazy(() => import('@/pages/org-chart/OrgChartPage'));
+const SuggestionBoxPage = lazy(() => import('@/pages/suggestions/SuggestionBoxPage'));
+const HRPolicyPage = lazy(() => import('@/pages/hr-policy/HRPolicyPage'));
+const HelpDeskPage = lazy(() => import('@/pages/helpdesk/HelpDeskPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
@@ -34,6 +39,14 @@ export const router = createBrowserRouter([
     element: (
       <Lazy>
         <LoginPage />
+      </Lazy>
+    ),
+  },
+  {
+    path: '/reset-password',
+    element: (
+      <Lazy>
+        <ResetPasswordPage />
       </Lazy>
     ),
   },
@@ -181,6 +194,30 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <SettingsPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'suggestions',
+        element: (
+          <Lazy>
+            <SuggestionBoxPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'hr-policies',
+        element: (
+          <Lazy>
+            <HRPolicyPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'helpdesk',
+        element: (
+          <Lazy>
+            <HelpDeskPage />
           </Lazy>
         ),
       },

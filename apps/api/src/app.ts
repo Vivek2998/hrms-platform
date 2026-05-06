@@ -26,6 +26,9 @@ import { regularisationRoutes } from './modules/regularisation/regularisation.ro
 import { compOffRoutes } from './modules/comp-off/comp-off.routes.js';
 import { taxDeclarationRoutes } from './modules/tax-declaration/tax-declaration.routes.js';
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js';
+import { suggestionRoutes } from './modules/suggestions/suggestion.routes.js';
+import { hrPolicyRoutes } from './modules/hr-policy/hr-policy.routes.js';
+import { helpDeskRoutes } from './modules/helpdesk/helpdesk.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -71,6 +74,9 @@ export async function buildApp() {
   await app.register(compOffRoutes, { prefix });
   await app.register(taxDeclarationRoutes, { prefix });
   await app.register(dashboardRoutes, { prefix });
+  await app.register(suggestionRoutes, { prefix });
+  await app.register(hrPolicyRoutes, { prefix });
+  await app.register(helpDeskRoutes, { prefix });
 
   await app.ready();
   return app;
