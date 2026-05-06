@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/axios';
-import type { ApiResponse, PayrollRun } from '@hrms/shared-types';
+import type { ApiResponse, PayrollRun, Payslip } from '@hrms/shared-types';
 
 interface CreateRunInput {
   month: number;
@@ -11,6 +11,7 @@ interface CreateRunInput {
 export const payrollKeys = {
   all: ['payroll'] as const,
   runs: (params?: { page?: number; limit?: number }) => ['payroll', 'runs', params] as const,
+  runPayslips: (runId: string) => ['payroll', 'runs', runId, 'payslips'] as const,
 };
 
 export function usePayrollRuns(params?: { page?: number; limit?: number }) {
@@ -55,5 +56,16 @@ export function useProcessPayrollRun() {
     onError: () => {
       toast.error('Failed to process payroll run');
     },
+  });
+}
+
+export function useRunPayslips(runId: string | null) {
+  return useQuery({
+    queryKey: payrollKeys.runPayslips(runId ?? ''),
+    queryFn: async () => {
+      const res = await apiClient.get<ApiResponse<Payslip[]>>(`/payroll/runs/${runId!}/payslips`);
+      return res.data.data;
+    },
+    enabled: !!runId,
   });
 }

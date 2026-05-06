@@ -4,7 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useLeaves, useApproveLeave } from '@/hooks/useLeaves';
+import type { LeaveRecord } from '@/hooks/useLeaves';
 import { LeaveTypesPanel } from './LeaveTypesPage';
 import type { LeaveStatus } from '@hrms/shared-types';
 
@@ -40,20 +50,128 @@ function fmtDate(iso: string) {
   });
 }
 
+interface ApprovalTarget {
+  leave: LeaveRecord;
+  action: 'APPROVED' | 'REJECTED';
+}
+
+function ApproveDialog({
+  target,
+  onClose,
+}: {
+  target: ApprovalTarget | null;
+  onClose: () => void;
+}) {
+  const [remarks, setRemarks] = useState('');
+  const approveMutation = useApproveLeave();
+
+  if (!target) return null;
+  const { leave, action } = target;
+
+  function handleConfirm() {
+    approveMutation.mutate(
+      { id: leave.id, action, ...(remarks.trim() ? { remarks: remarks.trim() } : {}) },
+      {
+        onSuccess: () => {
+          setRemarks('');
+          onClose();
+        },
+      },
+    );
+  }
+
+  const isReject = action === 'REJECTED';
+
+  return (
+    <Dialog
+      open={!!target}
+      onOpenChange={(o) => {
+        if (!o) {
+          setRemarks('');
+          onClose();
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isReject ? 'Reject Leave Request' : 'Approve Leave Request'}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="bg-muted/40 rounded-lg p-3 text-sm">
+            <p className="font-medium">
+              {leave.employee
+                ? `${leave.employee.firstName} ${leave.employee.lastName}`
+                : leave.employeeId.slice(0, 8)}
+              {leave.employee && (
+                <span className="text-muted-foreground ml-1 font-normal">
+                  · {leave.employee.employeeCode}
+                </span>
+              )}
+            </p>
+            <p className="text-muted-foreground mt-0.5">
+              {leave.leaveType?.name ?? 'Leave'} · {fmtDate(leave.fromDate)} –{' '}
+              {fmtDate(leave.toDate)} · {leave.totalDays} day{leave.totalDays !== 1 ? 's' : ''}
+            </p>
+            {leave.reason && (
+              <p className="mt-1 text-xs italic">&ldquo;{leave.reason}&rdquo;</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <Label>
+              Remarks{isReject ? ' *' : ' (optional)'}
+            </Label>
+            <Textarea
+              value={remarks}
+              onChange={(e) => { setRemarks(e.target.value); }}
+              placeholder={
+                isReject
+                  ? 'Explain the reason for rejection…'
+                  : 'Add a note for the employee (optional)…'
+              }
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setRemarks('');
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant={isReject ? 'destructive' : 'default'}
+            disabled={approveMutation.isPending || (isReject && !remarks.trim())}
+            onClick={handleConfirm}
+          >
+            {approveMutation.isPending
+              ? 'Saving…'
+              : isReject
+                ? 'Reject'
+                : 'Approve'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function LeavesPage() {
   const [section, setSection] = useState<Section>('requests');
   const [tab, setTab] = useState<Tab>('PENDING');
   const [showAddType, setShowAddType] = useState(false);
-  const approveMutation = useApproveLeave();
+  const [approvalTarget, setApprovalTarget] = useState<ApprovalTarget | null>(null);
 
   const { data, isLoading } = useLeaves({
     limit: 50,
     ...(tab !== 'ALL' ? { status: tab } : {}),
   });
-
-  function handleAction(id: string, action: 'APPROVED' | 'REJECTED') {
-    approveMutation.mutate({ id, action });
-  }
 
   return (
     <div className="space-y-6">
@@ -186,8 +304,7 @@ export default function LeavesPage() {
                                   size="sm"
                                   variant="outline"
                                   className="h-7 gap-1 border-green-600 text-green-700 hover:bg-green-50"
-                                  disabled={approveMutation.isPending}
-                                  onClick={() => { handleAction(leave.id, 'APPROVED'); }}
+                                  onClick={() => { setApprovalTarget({ leave, action: 'APPROVED' }); }}
                                 >
                                   <CheckCircle className="h-3.5 w-3.5" />
                                   Approve
@@ -196,8 +313,7 @@ export default function LeavesPage() {
                                   size="sm"
                                   variant="outline"
                                   className="h-7 gap-1 border-red-600 text-red-700 hover:bg-red-50"
-                                  disabled={approveMutation.isPending}
-                                  onClick={() => { handleAction(leave.id, 'REJECTED'); }}
+                                  onClick={() => { setApprovalTarget({ leave, action: 'REJECTED' }); }}
                                 >
                                   <XCircle className="h-3.5 w-3.5" />
                                   Reject
@@ -220,6 +336,11 @@ export default function LeavesPage() {
           </Card>
         </>
       )}
+
+      <ApproveDialog
+        target={approvalTarget}
+        onClose={() => { setApprovalTarget(null); }}
+      />
     </div>
   );
 }

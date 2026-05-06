@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Play } from 'lucide-react';
+import { Plus, Play, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -19,8 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { usePayrollRuns, useCreatePayrollRun, useProcessPayrollRun } from '@/hooks/usePayroll';
-import type { PayrollStatus } from '@hrms/shared-types';
+import {
+  usePayrollRuns,
+  useCreatePayrollRun,
+  useProcessPayrollRun,
+  useRunPayslips,
+} from '@/hooks/usePayroll';
+import type { PayrollRun, PayrollStatus } from '@hrms/shared-types';
 
 const MONTHS = [
   'January',
@@ -127,14 +131,115 @@ function NewRunDialog({ open, onClose }: { open: boolean; onClose: () => void })
             </Select>
           </div>
         </div>
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={createMutation.isPending}>
             {createMutation.isPending ? 'Creating…' : 'Create Draft'}
           </Button>
-        </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PayslipListDialog({
+  run,
+  onClose,
+}: {
+  run: PayrollRun | null;
+  onClose: () => void;
+}) {
+  const { data: payslips, isLoading } = useRunPayslips(run?.id ?? null);
+
+  return (
+    <Dialog
+      open={!!run}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            Payslips — {run ? `${MONTHS[run.month - 1]} ${run.year}` : ''}
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : !payslips?.length ? (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            No payslips found for this run.
+          </p>
+        ) : (
+          <div className="max-h-[480px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0">
+                <tr className="bg-muted/80 text-muted-foreground border-b text-left text-xs font-medium">
+                  <th className="px-4 py-2.5">Employee</th>
+                  <th className="px-4 py-2.5">Days Present</th>
+                  <th className="px-4 py-2.5 text-right">Gross</th>
+                  <th className="px-4 py-2.5 text-right">Deductions</th>
+                  <th className="px-4 py-2.5 text-right">Net Pay</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {payslips.map((p) => (
+                  <tr key={p.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-2.5">
+                      <p className="font-medium">
+                        {p.employee
+                          ? `${p.employee.firstName} ${p.employee.lastName}`
+                          : p.employeeId.slice(0, 8)}
+                      </p>
+                      {p.employee?.designation && (
+                        <p className="text-muted-foreground text-xs">{p.employee.designation}</p>
+                      )}
+                    </td>
+                    <td className="text-muted-foreground px-4 py-2.5">
+                      {p.presentDays}/{p.workingDays}
+                      {p.lopDays > 0 && (
+                        <span className="text-destructive ml-1 text-xs">
+                          (LOP: {p.lopDays})
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">{fmtCurrency(p.grossEarnings)}</td>
+                    <td className="text-destructive px-4 py-2.5 text-right">
+                      -{fmtCurrency(p.totalDeductions)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold">
+                      {fmtCurrency(p.netPay)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-muted/40 border-t font-medium">
+                  <td className="px-4 py-2.5 text-xs font-semibold">
+                    Total ({payslips.length} employees)
+                  </td>
+                  <td />
+                  <td className="px-4 py-2.5 text-right">
+                    {fmtCurrency(payslips.reduce((s, p) => s + p.grossEarnings, 0))}
+                  </td>
+                  <td className="text-destructive px-4 py-2.5 text-right">
+                    -{fmtCurrency(payslips.reduce((s, p) => s + p.totalDeductions, 0))}
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-bold">
+                    {fmtCurrency(payslips.reduce((s, p) => s + p.netPay, 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -142,6 +247,7 @@ function NewRunDialog({ open, onClose }: { open: boolean; onClose: () => void })
 
 export default function PayrollPage() {
   const [showNew, setShowNew] = useState(false);
+  const [viewingRun, setViewingRun] = useState<PayrollRun | null>(null);
   const { data, isLoading } = usePayrollRuns({ limit: 20 });
   const processMutation = useProcessPayrollRun();
 
@@ -211,25 +317,40 @@ export default function PayrollPage() {
                         {run.totalNetPay > 0 ? fmtCurrency(run.totalNetPay) : '—'}
                       </td>
                       <td className="px-4 py-3">
-                        {run.status === 'DRAFT' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 gap-1"
-                            disabled={processMutation.isPending}
-                            onClick={() => {
-                              processMutation.mutate(run.id);
-                            }}
-                          >
-                            <Play className="h-3.5 w-3.5" />
-                            Process
-                          </Button>
-                        )}
-                        {run.processedAt && (
-                          <p className="text-muted-foreground text-xs">
-                            {new Date(run.processedAt).toLocaleDateString('en-IN')}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {run.status === 'DRAFT' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 gap-1"
+                              disabled={processMutation.isPending}
+                              onClick={() => {
+                                processMutation.mutate(run.id);
+                              }}
+                            >
+                              <Play className="h-3.5 w-3.5" />
+                              Process
+                            </Button>
+                          )}
+                          {(run.status === 'COMPLETED' || run.status === 'PAID') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 gap-1"
+                              onClick={() => {
+                                setViewingRun(run);
+                              }}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              Payslips
+                            </Button>
+                          )}
+                          {run.processedAt && (
+                            <p className="text-muted-foreground text-xs">
+                              {new Date(run.processedAt).toLocaleDateString('en-IN')}
+                            </p>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -244,6 +365,13 @@ export default function PayrollPage() {
         open={showNew}
         onClose={() => {
           setShowNew(false);
+        }}
+      />
+
+      <PayslipListDialog
+        run={viewingRun}
+        onClose={() => {
+          setViewingRun(null);
         }}
       />
     </div>
