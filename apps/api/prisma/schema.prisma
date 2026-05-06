@@ -284,6 +284,8 @@ model Employee {
   suggestions              SuggestionBox[]
   helpDeskTickets          HelpDeskTicket[]
   passwordResetTokens      PasswordResetToken[]
+  surveyResponses          SurveyResponse[]
+  onboardingAssignments    OnboardingAssignment[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -835,6 +837,156 @@ model HelpDeskTicketComment {
 
   @@index([ticketId])
   @@map("helpdesk_ticket_comments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PULSE SURVEYS
+// ─────────────────────────────────────────────────────────────
+
+model PulseSurvey {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  description    String?
+  status         String    @default("DRAFT") // DRAFT | ACTIVE | CLOSED
+  createdBy      String
+  isAnonymous    Boolean   @default(false)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+
+  @@index([organizationId, status])
+  @@map("pulse_surveys")
+}
+
+model SurveyQuestion {
+  id           String   @id @default(uuid())
+  surveyId     String
+  questionText String
+  questionType String   @default("RATING_5") // RATING_5 | RATING_10 | TEXT | MULTIPLE_CHOICE
+  options      Json?
+  isRequired   Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  survey  PulseSurvey    @relation(fields: [surveyId], references: [id])
+  answers SurveyAnswer[]
+
+  @@index([surveyId])
+  @@map("survey_questions")
+}
+
+model SurveyResponse {
+  id          String   @id @default(uuid())
+  surveyId    String
+  employeeId  String
+  submittedAt DateTime @default(now())
+
+  survey   PulseSurvey    @relation(fields: [surveyId], references: [id])
+  employee Employee       @relation(fields: [employeeId], references: [id])
+  answers  SurveyAnswer[]
+
+  @@unique([surveyId, employeeId])
+  @@index([surveyId])
+  @@map("survey_responses")
+}
+
+model SurveyAnswer {
+  id          String   @id @default(uuid())
+  responseId  String
+  questionId  String
+  ratingValue Int?
+  textValue   String?
+  createdAt   DateTime @default(now())
+
+  response SurveyResponse @relation(fields: [responseId], references: [id])
+  question SurveyQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([responseId])
+  @@index([questionId])
+  @@map("survey_answers")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ONBOARDING
+// ─────────────────────────────────────────────────────────────
+
+model OnboardingTemplate {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tasks       OnboardingTask[]
+  assignments OnboardingAssignment[]
+
+  @@index([organizationId])
+  @@map("onboarding_templates")
+}
+
+model OnboardingTask {
+  id           String   @id @default(uuid())
+  templateId   String
+  title        String
+  description  String?
+  assignedRole String   @default("HR") // HR | IT | FINANCE | MANAGER | EMPLOYEE
+  dueAfterDays Int      @default(0)
+  isRequired   Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  template        OnboardingTemplate        @relation(fields: [templateId], references: [id])
+  assignmentTasks OnboardingAssignmentTask[]
+
+  @@index([templateId])
+  @@map("onboarding_tasks")
+}
+
+model OnboardingAssignment {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  templateId     String
+  status         String    @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  employee Employee                  @relation(fields: [employeeId], references: [id])
+  template OnboardingTemplate        @relation(fields: [templateId], references: [id])
+  tasks    OnboardingAssignmentTask[]
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("onboarding_assignments")
+}
+
+model OnboardingAssignmentTask {
+  id           String    @id @default(uuid())
+  assignmentId String
+  taskId       String
+  title        String
+  assignedRole String
+  status       String    @default("PENDING") // PENDING | COMPLETED | SKIPPED
+  dueDate      DateTime? @db.Date
+  completedAt  DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignment OnboardingAssignment @relation(fields: [assignmentId], references: [id])
+  task       OnboardingTask       @relation(fields: [taskId], references: [id])
+
+  @@index([assignmentId])
+  @@map("onboarding_assignment_tasks")
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -26,6 +26,9 @@ const OrgChartPage = lazy(() => import('@/pages/org-chart/OrgChartPage'));
 const SuggestionBoxPage = lazy(() => import('@/pages/suggestions/SuggestionBoxPage'));
 const HRPolicyPage = lazy(() => import('@/pages/hr-policy/HRPolicyPage'));
 const HelpDeskPage = lazy(() => import('@/pages/helpdesk/HelpDeskPage'));
+const MyPayslipsPage = lazy(() => import('@/pages/my-payslips/MyPayslipsPage'));
+const PulseSurveyPage = lazy(() => import('@/pages/pulse-surveys/PulseSurveyPage'));
+const OnboardingPage = lazy(() => import('@/pages/onboarding/OnboardingPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
@@ -218,6 +221,30 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <HelpDeskPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'my-payslips',
+        element: (
+          <Lazy>
+            <MyPayslipsPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'pulse-surveys',
+        element: (
+          <Lazy>
+            <PulseSurveyPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'onboarding',
+        element: (
+          <Lazy>
+            <OnboardingPage />
           </Lazy>
         ),
       },

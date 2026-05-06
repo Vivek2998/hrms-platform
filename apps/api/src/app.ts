@@ -29,6 +29,8 @@ import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js';
 import { suggestionRoutes } from './modules/suggestions/suggestion.routes.js';
 import { hrPolicyRoutes } from './modules/hr-policy/hr-policy.routes.js';
 import { helpDeskRoutes } from './modules/helpdesk/helpdesk.routes.js';
+import { surveyRoutes } from './modules/surveys/survey.routes.js';
+import { onboardingRoutes } from './modules/onboarding/onboarding.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -77,6 +79,8 @@ export async function buildApp() {
   await app.register(suggestionRoutes, { prefix });
   await app.register(hrPolicyRoutes, { prefix });
   await app.register(helpDeskRoutes, { prefix });
+  await app.register(surveyRoutes, { prefix });
+  await app.register(onboardingRoutes, { prefix });
 
   await app.ready();
   return app;

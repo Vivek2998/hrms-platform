@@ -26,6 +26,9 @@ import {
   Headphones,
   BookOpen,
   LifeBuoy,
+  IndianRupee,
+  BarChart2,
+  ClipboardList,
 } from 'lucide-react';
 import type { UserRole } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
@@ -74,6 +77,7 @@ const ENTRIES: SidebarEntry[] = [
     icon: DollarSign,
     children: [
       { label: 'Payroll Runs', to: '/payroll', icon: ReceiptText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee },
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText },
     ],
   },
@@ -85,6 +89,16 @@ const ENTRIES: SidebarEntry[] = [
     children: [
       { label: 'Employee Directory', to: '/directory', icon: BookUser },
       { label: 'Organisation Chart', to: '/org-chart', icon: Network },
+    ],
+  },
+  {
+    group: true,
+    key: 'people',
+    label: 'People',
+    icon: Users,
+    children: [
+      { label: 'Onboarding', to: '/onboarding', icon: ClipboardList, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
+      { label: 'Pulse Surveys', to: '/pulse-surveys', icon: BarChart2 },
     ],
   },
   {
@@ -121,7 +135,7 @@ export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
   const { sidebarOpen, toggleSidebar } = useUiStore();
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['leaves', 'payroll', 'company', 'support']));
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   function toggleGroup(key: string) {
     setOpenGroups((prev) => {
