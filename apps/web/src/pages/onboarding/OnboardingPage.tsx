@@ -202,7 +202,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
 function AssignDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { mutate, isPending } = useCreateOnboardingAssignment();
   const { data: templates } = useOnboardingTemplates();
-  const { data: employeesData } = useEmployees({ limit: 200 });
+  const { data: employeesData } = useEmployees({ limit: 100 });
   const [templateId, setTemplateId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
 
@@ -530,8 +530,8 @@ export default function OnboardingPage() {
         </>
       )}
 
-      <CreateTemplateDialog open={showCreate} onClose={() => { setShowCreate(false); }} />
-      <AssignDialog open={showAssign} onClose={() => { setShowAssign(false); }} />
+      {isHR && <CreateTemplateDialog open={showCreate} onClose={() => { setShowCreate(false); }} />}
+      {isHR && <AssignDialog open={showAssign} onClose={() => { setShowAssign(false); }} />}
       <AssignmentDetailDialog
         assignmentId={selectedAssignmentId}
         onClose={() => { setSelectedAssignmentId(null); }}

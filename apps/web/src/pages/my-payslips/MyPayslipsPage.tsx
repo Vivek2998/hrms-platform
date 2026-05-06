@@ -64,11 +64,11 @@ function PayslipDetailDialog({
               </div>
             </div>
 
-            {payslip.earnings.length > 0 && (
+            {(payslip.earnings ?? []).length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-medium">Earnings</p>
                 <div className="rounded-lg border divide-y">
-                  {payslip.earnings.map((e) => (
+                  {(payslip.earnings ?? []).map((e) => (
                     <div key={e.code} className="flex items-center justify-between px-3 py-2">
                       <span className="text-sm">{e.name}</span>
                       <span className="text-sm font-medium">₹{fmt(e.amount)}</span>
@@ -78,11 +78,11 @@ function PayslipDetailDialog({
               </div>
             )}
 
-            {payslip.deductions.length > 0 && (
+            {(payslip.deductions ?? []).length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-medium">Deductions</p>
                 <div className="rounded-lg border divide-y">
-                  {payslip.deductions.map((d) => (
+                  {(payslip.deductions ?? []).map((d) => (
                     <div key={d.code} className="flex items-center justify-between px-3 py-2">
                       <span className="text-sm">{d.name}</span>
                       <span className="text-sm font-medium text-red-600">−₹{fmt(d.amount)}</span>
