@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import {
   createEmployeeSchema,
   updateEmployeeSchema,
@@ -15,6 +16,62 @@ import { ok } from '../../lib/response.js';
 
 export function employeeRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
+
+  // GET /employees/directory — public-safe fields, all roles
+  app.get('/employees/directory', auth, async (req, reply) => {
+    const { search } = z.object({ search: z.string().optional() }).parse(req.query);
+
+    const employees = await app.prisma.employee.findMany({
+      where: {
+        organizationId: req.user.orgId,
+        deletedAt: null,
+        status: 'ACTIVE',
+        ...(search && {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { designation: { contains: search, mode: 'insensitive' } },
+            { employeeCode: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+      select: {
+        id: true,
+        employeeCode: true,
+        firstName: true,
+        lastName: true,
+        designation: true,
+        workEmail: true,
+        phone: true,
+        avatarUrl: true,
+        dateOfJoining: true,
+        department: { select: { id: true, name: true } },
+        manager: { select: { id: true, firstName: true, lastName: true } },
+      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    });
+
+    return reply.send(ok(employees));
+  });
+
+  // GET /employees/org-chart — hierarchy data, all roles
+  app.get('/employees/org-chart', auth, async (req, reply) => {
+    const employees = await app.prisma.employee.findMany({
+      where: { organizationId: req.user.orgId, deletedAt: null, status: 'ACTIVE' },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        designation: true,
+        avatarUrl: true,
+        managerId: true,
+        department: { select: { name: true } },
+      },
+      orderBy: [{ firstName: 'asc' }],
+    });
+
+    return reply.send(ok(employees));
+  });
 
   // GET /employees
   app.get('/employees', auth, async (req, reply) => {

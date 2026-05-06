@@ -19,6 +19,9 @@ import {
   FileText,
   ListChecks,
   ReceiptText,
+  BookUser,
+  Network,
+  Globe,
 } from 'lucide-react';
 import type { UserRole } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
@@ -70,6 +73,16 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText },
     ],
   },
+  {
+    group: true,
+    key: 'company',
+    label: 'Company',
+    icon: Globe,
+    children: [
+      { label: 'Employee Directory', to: '/directory', icon: BookUser },
+      { label: 'Organisation Chart', to: '/org-chart', icon: Network },
+    ],
+  },
   { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },
@@ -93,7 +106,7 @@ export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
   const { sidebarOpen, toggleSidebar } = useUiStore();
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['leaves', 'payroll']));
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['leaves', 'payroll', 'company']));
 
   function toggleGroup(key: string) {
     setOpenGroups((prev) => {

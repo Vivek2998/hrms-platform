@@ -20,6 +20,8 @@ const MyLeavesPage = lazy(() => import('@/pages/my-leaves/MyLeavesPage'));
 const RegularisationPage = lazy(() => import('@/pages/regularisation/RegularisationPage'));
 const CompOffPage = lazy(() => import('@/pages/comp-off/CompOffPage'));
 const TaxDeclarationPage = lazy(() => import('@/pages/tax-declaration/TaxDeclarationPage'));
+const DirectoryPage = lazy(() => import('@/pages/directory/DirectoryPage'));
+const OrgChartPage = lazy(() => import('@/pages/org-chart/OrgChartPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
@@ -155,6 +157,22 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <TaxDeclarationPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'directory',
+        element: (
+          <Lazy>
+            <DirectoryPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'org-chart',
+        element: (
+          <Lazy>
+            <OrgChartPage />
           </Lazy>
         ),
       },
