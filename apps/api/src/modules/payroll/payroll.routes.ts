@@ -141,6 +141,20 @@ export function payrollRoutes(app: FastifyInstance) {
     return reply.send(paginated(payslips, query.page, query.limit, total));
   });
 
+  // POST /payroll/runs/:id/mark-paid
+  app.post('/payroll/runs/:id/mark-paid', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) throw fail('Forbidden', 403);
+    const { id } = req.params as { id: string };
+    const run = await app.prisma.payrollRun.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!run) throw fail('Payroll run not found', 404);
+    if (run.status !== 'COMPLETED') throw fail('Only COMPLETED payroll runs can be marked as paid', 400);
+    const updated = await app.prisma.payrollRun.update({
+      where: { id },
+      data: { status: 'PAID', paidAt: new Date() },
+    });
+    return reply.send(ok(updated));
+  });
+
   // GET /payroll/payslips/:employeeId  (HR view — any employee's payslips)
   app.get('/payroll/payslips/:employeeId', auth, async (req, reply) => {
     const { employeeId } = req.params as { employeeId: string };

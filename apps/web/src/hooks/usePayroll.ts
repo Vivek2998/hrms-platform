@@ -59,6 +59,23 @@ export function useProcessPayrollRun() {
   });
 }
 
+export function useMarkPayrollPaid() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post<ApiResponse<PayrollRun>>(`/payroll/runs/${id}/mark-paid`);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: payrollKeys.all });
+      toast.success('Payroll marked as paid');
+    },
+    onError: () => {
+      toast.error('Failed to mark payroll as paid');
+    },
+  });
+}
+
 export function useRunPayslips(runId: string | null) {
   return useQuery({
     queryKey: payrollKeys.runPayslips(runId ?? ''),

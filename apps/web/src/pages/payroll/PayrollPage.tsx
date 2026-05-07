@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Plus, Play, Eye } from 'lucide-react';
+import { downloadCsv } from '@/lib/downloadCsv';
+import { toast } from 'sonner';
+import { Plus, Play, Eye, CheckCircle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +24,7 @@ import {
   usePayrollRuns,
   useCreatePayrollRun,
   useProcessPayrollRun,
+  useMarkPayrollPaid,
   useRunPayslips,
 } from '@/hooks/usePayroll';
 import type { PayrollRun, PayrollStatus } from '@hrms/shared-types';
@@ -250,6 +253,7 @@ export default function PayrollPage() {
   const [viewingRun, setViewingRun] = useState<PayrollRun | null>(null);
   const { data, isLoading } = usePayrollRuns({ limit: 20 });
   const processMutation = useProcessPayrollRun();
+  const markPaidMutation = useMarkPayrollPaid();
 
   return (
     <div className="space-y-6">
@@ -332,18 +336,45 @@ export default function PayrollPage() {
                               Process
                             </Button>
                           )}
-                          {(run.status === 'COMPLETED' || run.status === 'PAID') && (
+                          {run.status === 'COMPLETED' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 gap-1"
-                              onClick={() => {
-                                setViewingRun(run);
-                              }}
+                              className="h-7 gap-1 border-green-200 text-green-700 hover:bg-green-50"
+                              disabled={markPaidMutation.isPending}
+                              onClick={() => { markPaidMutation.mutate(run.id); }}
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              Payslips
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              Mark Paid
                             </Button>
+                          )}
+                          {(run.status === 'COMPLETED' || run.status === 'PAID') && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1"
+                                onClick={() => { setViewingRun(run); }}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Payslips
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1"
+                                onClick={() => {
+                                  downloadCsv(
+                                    '/reports/payroll',
+                                    { month: run.month, year: run.year },
+                                    `payroll_${run.year}_${String(run.month).padStart(2, '0')}.csv`,
+                                  ).catch(() => toast.error('Export failed'));
+                                }}
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                CSV
+                              </Button>
+                            </>
                           )}
                           {run.processedAt && (
                             <p className="text-muted-foreground text-xs">

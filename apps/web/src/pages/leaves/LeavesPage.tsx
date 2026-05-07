@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, Pencil, Zap } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, Pencil, Zap, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useLeaves, useApproveLeave } from '@/hooks/useLeaves';
+import { downloadCsv } from '@/lib/downloadCsv';
+import { toast } from 'sonner';
 import type { LeaveRecord } from '@/hooks/useLeaves';
 import { LeaveTypesPanel } from './LeaveTypesPage';
 import {
@@ -396,6 +398,19 @@ export default function LeavesPage() {
   const [tab, setTab] = useState<Tab>('PENDING');
   const [showAddType, setShowAddType] = useState(false);
   const [approvalTarget, setApprovalTarget] = useState<ApprovalTarget | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExportLeaves() {
+    setIsExporting(true);
+    try {
+      const year = new Date().getFullYear();
+      await downloadCsv('/reports/leaves', { year }, `leaves_${year}.csv`);
+    } catch {
+      toast.error('Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   const { data, isLoading } = useLeaves({
     limit: 50,
@@ -419,6 +434,12 @@ export default function LeavesPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {section === 'requests' && (
+            <Button variant="outline" size="sm" disabled={isExporting} onClick={() => { void handleExportLeaves(); }}>
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              {isExporting ? 'Exporting…' : 'Export CSV'}
+            </Button>
+          )}
           {section === 'types' && (
             <Button onClick={() => { setShowAddType(true); }}>
               <Plus className="mr-2 h-4 w-4" />

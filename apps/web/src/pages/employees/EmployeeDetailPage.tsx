@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Pencil, Upload, Trash2, FileText, ExternalLink, IndianRupee } from 'lucide-react';
+import { ArrowLeft, Camera, Pencil, Upload, Trash2, FileText, ExternalLink, IndianRupee, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,8 @@ import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
 import { useUploadFile } from '@/hooks/useUpload';
 import { useDocuments, useCreateDocument, useDeleteDocument, type DocumentType } from '@/hooks/useDocuments';
 import { useSalaryRevisions, useCreateSalaryRevision } from '@/hooks/useSalary';
+import { fetchExperienceLetter, fetchSalaryCertificate } from '@/hooks/useLetters';
+import { printLetter } from '@/lib/printLetter';
 import { toast } from 'sonner';
 
 const DOC_TYPE_LABELS: Record<string, string> = {
@@ -240,6 +242,100 @@ export default function EmployeeDetailPage() {
   const { mutate: uploadDocFile, isPending: isUploadingDoc } = useUploadFile('documents');
   const { data: salaryRevisions = [] } = useSalaryRevisions(id ?? '');
   const { mutate: createSalaryRevision, isPending: isSavingSalary } = useCreateSalaryRevision(id ?? '');
+  const [letterPending, setLetterPending] = useState<'experience' | 'salary' | null>(null);
+
+  async function handleExperienceLetter() {
+    if (!id) return;
+    setLetterPending('experience');
+    try {
+      const data = await fetchExperienceLetter(id);
+      const pronoun = data.employee.gender === 'FEMALE' ? 'her' : 'his';
+      const fmtDate = (iso: string | null) =>
+        iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+      const html = `
+        <div class="org-header">
+          <div class="org-name">${data.organization.name}</div>
+          <div class="org-sub">${data.organization.address} · ${data.organization.email}</div>
+        </div>
+        <div class="date-line">Date: ${fmtDate(data.issuedDate)}</div>
+        <div class="letter-title">EXPERIENCE CERTIFICATE</div>
+        <div class="salutation">To Whom It May Concern,</div>
+        <p class="body-text">
+          This is to certify that <span class="highlight">${data.employee.name}</span>
+          (Employee Code: <span class="highlight">${data.employee.code}</span>)
+          was employed with <span class="highlight">${data.organization.name}</span>
+          from <span class="highlight">${fmtDate(data.employee.dateOfJoining)}</span>
+          as <span class="highlight">${data.employee.designation}</span>
+          in the <span class="highlight">${data.employee.department}</span> department.
+        </p>
+        <p class="body-text">
+          During ${pronoun} tenure with us, ${pronoun.replace('her', 'she').replace('his', 'he')} has consistently demonstrated professionalism and dedication. We found ${pronoun} to be a sincere and hardworking individual.
+        </p>
+        <p class="body-text">
+          We wish ${pronoun} all the very best in ${pronoun} future endeavours.
+        </p>
+        <div class="sign-block">
+          <p>Yours sincerely,</p>
+          <div class="sign-line"></div>
+          <p style="margin-top:6px;font-weight:bold;">Authorised Signatory</p>
+          <p>${data.organization.name}</p>
+        </div>`;
+      printLetter(html, 'Experience Certificate');
+    } catch {
+      toast.error('Failed to generate experience letter');
+    } finally {
+      setLetterPending(null);
+    }
+  }
+
+  async function handleSalaryCertificate() {
+    if (!id) return;
+    setLetterPending('salary');
+    try {
+      const data = await fetchSalaryCertificate(id);
+      const fmtDate = (iso: string | null) =>
+        iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+      const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+      const salaryRows = data.salary
+        ? `<table class="table-block">
+            <tr><td>Annual CTC</td><td>${fmt.format(data.salary.ctc)}</td></tr>
+            <tr><td>Monthly Gross</td><td>${fmt.format(data.salary.gross)}</td></tr>
+            <tr><td>Monthly Basic</td><td>${fmt.format(data.salary.basic)}</td></tr>
+            <tr><td>Monthly Net Pay</td><td>${fmt.format(data.salary.netPay)}</td></tr>
+          </table>`
+        : '<p class="body-text"><em>Salary details not available.</em></p>';
+      const html = `
+        <div class="org-header">
+          <div class="org-name">${data.organization.name}</div>
+          <div class="org-sub">${data.organization.address} · ${data.organization.email}</div>
+        </div>
+        <div class="date-line">Date: ${fmtDate(data.issuedDate)}</div>
+        <div class="letter-title">SALARY CERTIFICATE</div>
+        <div class="salutation">To Whom It May Concern,</div>
+        <p class="body-text">
+          This is to certify that <span class="highlight">${data.employee.name}</span>
+          (Employee Code: <span class="highlight">${data.employee.code}</span>)
+          is employed with <span class="highlight">${data.organization.name}</span>
+          as <span class="highlight">${data.employee.designation}</span>
+          in the <span class="highlight">${data.employee.department}</span> department
+          since <span class="highlight">${fmtDate(data.employee.dateOfJoining)}</span>.
+        </p>
+        <p class="body-text">The details of their current compensation are as follows:</p>
+        ${salaryRows}
+        <p class="body-text">This certificate is issued upon the request of the employee for the purpose as mentioned by them.</p>
+        <div class="sign-block">
+          <p>Yours sincerely,</p>
+          <div class="sign-line"></div>
+          <p style="margin-top:6px;font-weight:bold;">HR Department</p>
+          <p>${data.organization.name}</p>
+        </div>`;
+      printLetter(html, 'Salary Certificate');
+    } catch {
+      toast.error('Failed to generate salary certificate');
+    } finally {
+      setLetterPending(null);
+    }
+  }
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -529,6 +625,35 @@ export default function EmployeeDetailPage() {
                   })}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* HR Letters */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                HR Letters
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={letterPending === 'experience'}
+                onClick={() => { void handleExperienceLetter(); }}
+              >
+                <ScrollText className="mr-1.5 h-3.5 w-3.5" />
+                {letterPending === 'experience' ? 'Generating…' : 'Experience Letter'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={letterPending === 'salary'}
+                onClick={() => { void handleSalaryCertificate(); }}
+              >
+                <ScrollText className="mr-1.5 h-3.5 w-3.5" />
+                {letterPending === 'salary' ? 'Generating…' : 'Salary Certificate'}
+              </Button>
             </CardContent>
           </Card>
 

@@ -8,6 +8,7 @@ import {
   ChevronRight,
   LayoutList,
   CalendarDays,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,8 @@ import {
 import { useAttendance, useEditAttendance } from '@/hooks/useAttendance';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
+import { downloadCsv } from '@/lib/downloadCsv';
+import { toast } from 'sonner';
 import type { AttendanceRecord, AttendanceStatus } from '@hrms/shared-types';
 
 const MONTH_NAMES = [
@@ -291,6 +294,23 @@ export default function AttendancePage() {
 
   const role = useAuthStore((s) => s.user?.role);
   const isEmployee = role === 'EMPLOYEE';
+  const canExport = role != null && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(role);
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      await downloadCsv(
+        '/reports/attendance',
+        { month, year },
+        `attendance_${year}_${String(month).padStart(2, '0')}.csv`,
+      );
+    } catch {
+      toast.error('Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   function prevMonth() {
     if (month === 1) { setMonth(12); setYear((y) => y - 1); }
@@ -364,6 +384,14 @@ export default function AttendancePage() {
               ))}
             </SelectContent>
           </Select>
+        )}
+
+        {/* Export */}
+        {canExport && (
+          <Button variant="outline" size="sm" disabled={isExporting} onClick={() => { void handleExport(); }}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {isExporting ? 'Exporting…' : 'Export CSV'}
+          </Button>
         )}
 
         {/* View toggle */}

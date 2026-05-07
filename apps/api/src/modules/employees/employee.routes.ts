@@ -73,6 +73,60 @@ export function employeeRoutes(app: FastifyInstance) {
     return reply.send(ok(employees));
   });
 
+  // GET /employees/me  — current employee's own profile (self-service)
+  app.get('/employees/me', auth, async (req, reply) => {
+    const employee = await app.prisma.employee.findFirst({
+      where: { id: req.user.sub, organizationId: req.user.orgId, deletedAt: null },
+      select: {
+        id: true, firstName: true, lastName: true, phone: true,
+        dateOfBirth: true, bloodGroup: true, maritalStatus: true,
+        presentAddress: true, permanentAddress: true, emergencyContact: true,
+        bankAccountNumber: true, bankIfsc: true, bankName: true, bankBranch: true,
+      },
+    });
+    if (!employee) throw fail('Employee not found', 404);
+    return reply.send(ok(employee));
+  });
+
+  // PATCH /employees/me/profile  — employee updates their own personal/bank/address details
+  app.patch('/employees/me/profile', auth, async (req, reply) => {
+    const addressSchema = z.object({
+      line1: z.string().optional(), line2: z.string().optional(),
+      city: z.string().optional(), state: z.string().optional(),
+      pincode: z.string().optional(), country: z.string().default('IN'),
+    }).optional();
+    const selfSchema = z.object({
+      phone: z.string().optional(),
+      dateOfBirth: z.string().datetime().optional(),
+      bloodGroup: z.string().optional(),
+      maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']).optional(),
+      presentAddress: addressSchema,
+      permanentAddress: addressSchema,
+      emergencyContact: z.object({
+        name: z.string().optional(), phone: z.string().optional(), relationship: z.string().optional(),
+      }).optional(),
+      bankAccountNumber: z.string().optional(),
+      bankIfsc: z.string().optional(),
+      bankName: z.string().optional(),
+      bankBranch: z.string().optional(),
+    });
+    const input = selfSchema.parse(req.body);
+    const updated = await app.prisma.employee.update({
+      where: { id: req.user.sub },
+      data: {
+        ...input,
+        dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
+      },
+      select: {
+        id: true, firstName: true, lastName: true, phone: true,
+        dateOfBirth: true, bloodGroup: true, maritalStatus: true,
+        presentAddress: true, permanentAddress: true, emergencyContact: true,
+        bankAccountNumber: true, bankIfsc: true, bankName: true, bankBranch: true,
+      },
+    });
+    return reply.send(ok(updated));
+  });
+
   // GET /employees
   app.get('/employees', auth, async (req, reply) => {
     const query = employeeListSchema.parse(req.query);
