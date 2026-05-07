@@ -1,0 +1,215 @@
+import {
+  ResponsiveContainer,
+  AreaChart, Area,
+  BarChart, Bar,
+  LineChart, Line,
+  PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Users, UserPlus, UserMinus, TrendingDown } from 'lucide-react';
+import {
+  useAnalyticsOverview,
+  useHeadcountTrend,
+  useDepartmentBreakdown,
+  useAttendanceSummary,
+  useLeaveUtilization,
+  usePayrollTrend,
+} from '@/hooks/useAnalytics';
+
+const ATTENDANCE_COLORS: Record<string, string> = {
+  PRESENT: '#22c55e',
+  ABSENT: '#ef4444',
+  LATE: '#f59e0b',
+  HALF_DAY: '#a78bfa',
+  WFH: '#3b82f6',
+  ON_LEAVE: '#fb923c',
+  HOLIDAY: '#6366f1',
+  WEEKEND: '#d1d5db',
+  PENDING: '#94a3b8',
+};
+
+function fmt(n: number) {
+  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n);
+}
+
+function OverviewCards() {
+  const { data, isLoading } = useAnalyticsOverview();
+
+  const cards = [
+    { label: 'Active Employees', value: data?.totalActive, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'New This Month', value: data?.newThisMonth, icon: UserPlus, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Exited This Month', value: data?.termThisMonth, icon: UserMinus, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Attrition Rate', value: data ? `${data.attritionRate}%` : undefined, icon: TrendingDown, color: 'text-orange-600', bg: 'bg-orange-50' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {cards.map(({ label, value, icon: Icon, color, bg }) => (
+        <Card key={label}>
+          <CardContent className="flex items-center gap-3 pt-5">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${bg}`}>
+              <Icon className={`h-5 w-5 ${color}`} />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs">{label}</p>
+              {isLoading ? <div className="bg-muted h-6 w-12 animate-pulse rounded mt-1" /> : (
+                <p className="text-xl font-bold">{value ?? '—'}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function HeadcountTrendChart() {
+  const { data, isLoading } = useHeadcountTrend();
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Headcount Trend (12 months)</CardTitle></CardHeader>
+      <CardContent>
+        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={data ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip formatter={(v: number) => [v, 'Employees']} />
+              <Area type="monotone" dataKey="count" stroke="#6366f1" fill="#e0e7ff" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DepartmentChart() {
+  const { data, isLoading } = useDepartmentBreakdown();
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Employees by Department</CardTitle></CardHeader>
+      <CardContent>
+        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+          <p className="text-muted-foreground text-sm text-center py-8">No department data.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="department" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} name="Employees" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AttendanceChart() {
+  const { data, isLoading } = useAttendanceSummary();
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Attendance Summary (Last 30 Days)</CardTitle></CardHeader>
+      <CardContent>
+        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+          <p className="text-muted-foreground text-sm text-center py-8">No attendance data.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={data} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                {data.map((entry) => (
+                  <Cell key={entry.status} fill={ATTENDANCE_COLORS[entry.status] ?? '#94a3b8'} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v: number, name: string) => [v, name]} />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LeaveUtilizationChart() {
+  const { data, isLoading } = useLeaveUtilization();
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Leave Utilization (This Year)</CardTitle></CardHeader>
+      <CardContent>
+        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+          <p className="text-muted-foreground text-sm text-center py-8">No leave data.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="allocated" fill="#e0e7ff" radius={[4, 4, 0, 0]} name="Allocated" />
+              <Bar dataKey="used" fill="#6366f1" radius={[4, 4, 0, 0]} name="Used" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PayrollTrendChart() {
+  const { data, isLoading } = usePayrollTrend();
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Payroll Cost Trend</CardTitle></CardHeader>
+      <CardContent>
+        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+          <p className="text-muted-foreground text-sm text-center py-8">No payroll data yet.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+              <Tooltip formatter={(v: number, name: string) => [`₹${fmt(v)}`, name]} />
+              <Legend />
+              <Area type="monotone" dataKey="gross" stroke="#a78bfa" fill="#ede9fe" strokeWidth={2} name="Gross" />
+              <Area type="monotone" dataKey="netPay" stroke="#22c55e" fill="#dcfce7" strokeWidth={2} name="Net Pay" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Workforce Analytics</h1>
+        <p className="text-muted-foreground">Insights across headcount, attendance, leaves, and payroll</p>
+      </div>
+
+      <OverviewCards />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <HeadcountTrendChart />
+        <DepartmentChart />
+        <AttendanceChart />
+        <LeaveUtilizationChart />
+      </div>
+
+      <PayrollTrendChart />
+    </div>
+  );
+}

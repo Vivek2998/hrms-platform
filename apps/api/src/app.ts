@@ -31,6 +31,10 @@ import { hrPolicyRoutes } from './modules/hr-policy/hr-policy.routes.js';
 import { helpDeskRoutes } from './modules/helpdesk/helpdesk.routes.js';
 import { surveyRoutes } from './modules/surveys/survey.routes.js';
 import { onboardingRoutes } from './modules/onboarding/onboarding.routes.js';
+import { performanceRoutes } from './modules/performance/performance.routes.js';
+import { recruitmentRoutes } from './modules/recruitment/recruitment.routes.js';
+import { offboardingRoutes } from './modules/offboarding/offboarding.routes.js';
+import { analyticsRoutes } from './modules/analytics/analytics.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -81,6 +85,10 @@ export async function buildApp() {
   await app.register(helpDeskRoutes, { prefix });
   await app.register(surveyRoutes, { prefix });
   await app.register(onboardingRoutes, { prefix });
+  await app.register(performanceRoutes, { prefix });
+  await app.register(recruitmentRoutes, { prefix });
+  await app.register(offboardingRoutes, { prefix });
+  await app.register(analyticsRoutes, { prefix });
 
   await app.ready();
   return app;

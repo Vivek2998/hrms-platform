@@ -29,6 +29,10 @@ import {
   IndianRupee,
   BarChart2,
   ClipboardList,
+  Target,
+  UserMinus,
+  Briefcase,
+  TrendingUp,
 } from 'lucide-react';
 import type { UserRole } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
@@ -98,6 +102,8 @@ const ENTRIES: SidebarEntry[] = [
     icon: Users,
     children: [
       { label: 'Onboarding', to: '/onboarding', icon: ClipboardList, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
+      { label: 'Performance', to: '/performance', icon: Target },
+      { label: 'Offboarding', to: '/offboarding', icon: UserMinus, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'Pulse Surveys', to: '/pulse-surveys', icon: BarChart2 },
     ],
   },
@@ -112,6 +118,8 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'HR Policies', to: '/hr-policies', icon: BookOpen },
     ],
   },
+  { group: false, label: 'Recruitment', to: '/recruitment', icon: Briefcase, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+  { group: false, label: 'Analytics', to: '/analytics', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },

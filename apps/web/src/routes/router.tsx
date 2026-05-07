@@ -29,6 +29,10 @@ const HelpDeskPage = lazy(() => import('@/pages/helpdesk/HelpDeskPage'));
 const MyPayslipsPage = lazy(() => import('@/pages/my-payslips/MyPayslipsPage'));
 const PulseSurveyPage = lazy(() => import('@/pages/pulse-surveys/PulseSurveyPage'));
 const OnboardingPage = lazy(() => import('@/pages/onboarding/OnboardingPage'));
+const PerformancePage = lazy(() => import('@/pages/performance/PerformancePage'));
+const RecruitmentPage = lazy(() => import('@/pages/recruitment/RecruitmentPage'));
+const OffboardingPage = lazy(() => import('@/pages/offboarding/OffboardingPage'));
+const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
@@ -246,6 +250,44 @@ export const router = createBrowserRouter([
           <Lazy>
             <OnboardingPage />
           </Lazy>
+        ),
+      },
+      {
+        path: 'performance',
+        element: (
+          <Lazy>
+            <PerformancePage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'recruitment',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <RecruitmentPage />
+            </Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'offboarding',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <OffboardingPage />
+            </Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'analytics',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <AnalyticsPage />
+            </Lazy>
+          </RoleGuard>
         ),
       },
     ],
