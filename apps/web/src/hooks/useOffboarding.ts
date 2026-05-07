@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/axios';
 
 export type OffboardingTaskStatus = 'PENDING' | 'COMPLETED' | 'SKIPPED';
-export type OffboardingStatus = 'IN_PROGRESS' | 'COMPLETED';
+export type OffboardingStatus = 'INITIATED' | 'IN_PROGRESS' | 'COMPLETED';
 export type AssignedRole = 'HR' | 'IT' | 'FINANCE' | 'MANAGER' | 'EMPLOYEE';
 
 export interface OffboardingTaskDef {
@@ -12,15 +12,13 @@ export interface OffboardingTaskDef {
   description: string | null;
   assignedRole: AssignedRole;
   dueBeforeDays: number;
-  isRequired: boolean;
-  displayOrder: number;
+  order: number;
 }
 
 export interface OffboardingTemplate {
   id: string;
   name: string;
   description: string | null;
-  isActive: boolean;
   createdAt: string;
   _count?: { tasks: number; assignments: number };
   tasks?: OffboardingTaskDef[];
@@ -29,7 +27,7 @@ export interface OffboardingTemplate {
 export interface OffboardingAssignmentTask {
   id: string;
   assignmentId: string;
-  taskId: string;
+  taskId: string | null;
   title: string;
   assignedRole: AssignedRole;
   status: OffboardingTaskStatus;
@@ -41,10 +39,10 @@ export interface OffboardingAssignmentTask {
 export interface OffboardingAssignment {
   id: string;
   employeeId: string;
-  templateId: string;
+  templateId: string | null;
   lastWorkingDate: string;
+  reason: string | null;
   status: OffboardingStatus;
-  completedAt: string | null;
   createdAt: string;
   completedTasks?: number;
   employee: { id: string; firstName: string; lastName: string; designation?: string | null; avatarUrl?: string | null };
@@ -56,13 +54,12 @@ export interface OffboardingAssignment {
 export interface ExitInterview {
   id: string;
   assignmentId: string;
-  employeeId: string;
   reasonForLeaving: string | null;
-  jobSatisfaction: number | null;
+  overallRating: number | null;
   managementRating: number | null;
-  workEnvRating: number | null;
-  compensationRating: number | null;
-  wouldRecommend: boolean | null;
+  workEnvironment: number | null;
+  growthOpportunities: number | null;
+  wouldRejoin: boolean | null;
   suggestions: string | null;
   conductedAt: string | null;
 }
@@ -81,7 +78,11 @@ export function useOffboardingTemplates() {
 export function useCreateOffboardingTemplate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string; tasks: Omit<OffboardingTaskDef, 'id' | 'templateId'>[] }) => {
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      tasks: { title: string; description?: string; assignedRole: AssignedRole; dueBeforeDays: number; order: number }[];
+    }) => {
       const res = await apiClient.post<{ data: OffboardingTemplate }>('/offboarding/templates', data);
       return res.data.data;
     },
@@ -125,7 +126,7 @@ export function useOffboardingAssignment(id: string | null) {
 export function useCreateOffboardingAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { employeeId: string; templateId: string; lastWorkingDate: string }) => {
+    mutationFn: async (data: { employeeId: string; templateId: string; lastWorkingDate: string; reason?: string }) => {
       const res = await apiClient.post<{ data: OffboardingAssignment }>('/offboarding/assignments', data);
       return res.data.data;
     },
@@ -165,7 +166,16 @@ export function useExitInterview(assignmentId: string | null) {
 export function useSubmitExitInterview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ assignmentId, ...data }: { assignmentId: string; reasonForLeaving?: string; jobSatisfaction?: number; managementRating?: number; workEnvRating?: number; compensationRating?: number; wouldRecommend?: boolean; suggestions?: string }) => {
+    mutationFn: async ({ assignmentId, ...data }: {
+      assignmentId: string;
+      reasonForLeaving?: string;
+      overallRating?: number;
+      managementRating?: number;
+      workEnvironment?: number;
+      growthOpportunities?: number;
+      wouldRejoin?: boolean;
+      suggestions?: string;
+    }) => {
       const res = await apiClient.post<{ data: ExitInterview }>(`/offboarding/assignments/${assignmentId}/exit-interview`, data);
       return res.data.data;
     },

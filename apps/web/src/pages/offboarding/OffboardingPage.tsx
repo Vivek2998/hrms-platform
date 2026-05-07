@@ -37,7 +37,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
     defaultValues: {
       name: '',
       description: '',
-      tasks: [{ title: '', description: '', assignedRole: 'HR' as AssignedRole, dueBeforeDays: 0, isRequired: true, displayOrder: 0 }],
+      tasks: [{ title: '', description: '', assignedRole: 'HR' as AssignedRole, dueBeforeDays: 0, order: 0 }],
     },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'tasks' });
@@ -53,8 +53,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
           description: t.description || undefined,
           assignedRole: t.assignedRole,
           dueBeforeDays: Number(t.dueBeforeDays),
-          isRequired: true,
-          displayOrder: i,
+          order: i,
         })),
       });
       toast.success('Template created');
@@ -76,7 +75,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label>Tasks</Label>
-              <Button type="button" size="sm" variant="outline" onClick={() => { append({ title: '', description: '', assignedRole: 'HR', dueBeforeDays: 0, isRequired: true, displayOrder: 0 }); }}>
+              <Button type="button" size="sm" variant="outline" onClick={() => { append({ title: '', description: '', assignedRole: 'HR', dueBeforeDays: 0, order: 0 }); }}>
                 <Plus className="h-3 w-3 mr-1" />Add Task
               </Button>
             </div>
@@ -177,7 +176,7 @@ function AssignDialog({ open, onClose }: { open: boolean; onClose: () => void })
 function ExitInterviewDialog({ assignmentId, open, onClose }: { assignmentId: string; open: boolean; onClose: () => void }) {
   const { data: existing } = useExitInterview(assignmentId);
   const { mutateAsync, isPending } = useSubmitExitInterview();
-  const { register, handleSubmit, setValue, watch } = useForm({ defaultValues: { reasonForLeaving: '', suggestions: '', jobSatisfaction: 3, managementRating: 3, workEnvRating: 3, compensationRating: 3, wouldRecommend: true } });
+  const { register, handleSubmit, setValue, watch } = useForm({ defaultValues: { reasonForLeaving: '', suggestions: '', overallRating: 3, managementRating: 3, workEnvironment: 3, growthOpportunities: 3, wouldRejoin: true } });
 
   async function onSubmit(data: any) {
     try {
@@ -185,11 +184,11 @@ function ExitInterviewDialog({ assignmentId, open, onClose }: { assignmentId: st
         assignmentId,
         reasonForLeaving: data.reasonForLeaving || undefined,
         suggestions: data.suggestions || undefined,
-        jobSatisfaction: Number(data.jobSatisfaction),
+        overallRating: Number(data.overallRating),
         managementRating: Number(data.managementRating),
-        workEnvRating: Number(data.workEnvRating),
-        compensationRating: Number(data.compensationRating),
-        wouldRecommend: data.wouldRecommend === 'true' || data.wouldRecommend === true,
+        workEnvironment: Number(data.workEnvironment),
+        growthOpportunities: Number(data.growthOpportunities),
+        wouldRejoin: data.wouldRejoin === 'true' || data.wouldRejoin === true,
       });
       toast.success('Exit interview submitted');
       onClose();
@@ -198,7 +197,7 @@ function ExitInterviewDialog({ assignmentId, open, onClose }: { assignmentId: st
     }
   }
 
-  const RatingRow = ({ label, field }: { label: string; field: 'jobSatisfaction' | 'managementRating' | 'workEnvRating' | 'compensationRating' }) => (
+  const RatingRow = ({ label, field }: { label: string; field: 'overallRating' | 'managementRating' | 'workEnvironment' | 'growthOpportunities' }) => (
     <div className="flex items-center justify-between">
       <Label className="text-sm">{label}</Label>
       <div className="flex gap-1">
@@ -225,14 +224,14 @@ function ExitInterviewDialog({ assignmentId, open, onClose }: { assignmentId: st
             <div className="space-y-1"><Label>Reason for Leaving</Label><Textarea {...register('reasonForLeaving')} rows={2} /></div>
             <div className="space-y-3 rounded-lg border p-3">
               <p className="text-sm font-medium">Ratings</p>
-              <RatingRow label="Job Satisfaction" field="jobSatisfaction" />
+              <RatingRow label="Overall Rating" field="overallRating" />
               <RatingRow label="Management" field="managementRating" />
-              <RatingRow label="Work Environment" field="workEnvRating" />
-              <RatingRow label="Compensation" field="compensationRating" />
+              <RatingRow label="Work Environment" field="workEnvironment" />
+              <RatingRow label="Growth Opportunities" field="growthOpportunities" />
             </div>
             <div className="space-y-1">
-              <Label>Would you recommend us as an employer?</Label>
-              <Select value={String(watch('wouldRecommend'))} onValueChange={(v) => { setValue('wouldRecommend', v === 'true'); }}>
+              <Label>Would you rejoin us?</Label>
+              <Select value={String(watch('wouldRejoin'))} onValueChange={(v) => { setValue('wouldRejoin', v === 'true'); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="true">Yes</SelectItem>

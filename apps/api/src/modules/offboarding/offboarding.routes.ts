@@ -10,8 +10,7 @@ const taskSchema = z.object({
   description: z.string().optional(),
   assignedRole: z.enum(['HR', 'IT', 'FINANCE', 'MANAGER', 'EMPLOYEE']).default('HR'),
   dueBeforeDays: z.number().int().min(0).default(0),
-  isRequired: z.boolean().default(true),
-  displayOrder: z.number().int().default(0),
+  order: z.number().int().default(0),
 });
 
 const createTemplateSchema = z.object({
@@ -24,15 +23,16 @@ const createAssignmentSchema = z.object({
   employeeId: z.string().uuid(),
   templateId: z.string().uuid(),
   lastWorkingDate: z.string(),
+  reason: z.string().optional(),
 });
 
 const exitInterviewSchema = z.object({
   reasonForLeaving: z.string().optional(),
-  jobSatisfaction: z.number().int().min(1).max(5).optional(),
-  managementRating: z.number().int().min(1).max(5).optional(),
-  workEnvRating: z.number().int().min(1).max(5).optional(),
-  compensationRating: z.number().int().min(1).max(5).optional(),
-  wouldRecommend: z.boolean().optional(),
+  overallRating: z.number().min(1).max(5).optional(),
+  workEnvironment: z.number().min(1).max(5).optional(),
+  managementRating: z.number().min(1).max(5).optional(),
+  growthOpportunities: z.number().min(1).max(5).optional(),
+  wouldRejoin: z.boolean().optional(),
   suggestions: z.string().optional(),
 });
 
@@ -44,7 +44,7 @@ export function offboardingRoutes(app: FastifyInstance) {
   app.get('/offboarding/templates', auth, async (req, reply) => {
     if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
     const templates = await app.prisma.offboardingTemplate.findMany({
-      where: { organizationId: req.user.orgId, isActive: true },
+      where: { organizationId: req.user.orgId },
       include: { _count: { select: { tasks: true, assignments: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -65,12 +65,11 @@ export function offboardingRoutes(app: FastifyInstance) {
             ...(t.description ? { description: t.description } : {}),
             assignedRole: t.assignedRole,
             dueBeforeDays: t.dueBeforeDays,
-            isRequired: t.isRequired,
-            displayOrder: i,
+            order: i,
           })),
         },
       },
-      include: { tasks: { orderBy: { displayOrder: 'asc' } } },
+      include: { tasks: { orderBy: { order: 'asc' } } },
     });
     return reply.status(201).send(ok(template));
   });
@@ -78,11 +77,11 @@ export function offboardingRoutes(app: FastifyInstance) {
   app.delete('/offboarding/templates/:id', auth, async (req, reply) => {
     if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
-    const updated = await app.prisma.offboardingTemplate.updateMany({
+    const existing = await app.prisma.offboardingTemplate.findFirst({
       where: { id, organizationId: req.user.orgId },
-      data: { isActive: false },
     });
-    if (updated.count === 0) throw fail('Template not found', 404);
+    if (!existing) throw fail('Template not found', 404);
+    await app.prisma.offboardingTemplate.delete({ where: { id } });
     return reply.send(ok({ id }));
   });
 
@@ -131,8 +130,8 @@ export function offboardingRoutes(app: FastifyInstance) {
     const lastWorkingDate = new Date(input.lastWorkingDate);
 
     const template = await app.prisma.offboardingTemplate.findFirst({
-      where: { id: input.templateId, organizationId: req.user.orgId, isActive: true },
-      include: { tasks: { orderBy: { displayOrder: 'asc' } } },
+      where: { id: input.templateId, organizationId: req.user.orgId },
+      include: { tasks: { orderBy: { order: 'asc' } } },
     });
     if (!template) throw fail('Template not found', 404);
 
@@ -147,6 +146,7 @@ export function offboardingRoutes(app: FastifyInstance) {
         employeeId: input.employeeId,
         templateId: input.templateId,
         lastWorkingDate,
+        ...(input.reason ? { reason: input.reason } : {}),
         tasks: {
           create: template.tasks.map((t) => {
             const dueDate = new Date(lastWorkingDate);
@@ -178,7 +178,7 @@ export function offboardingRoutes(app: FastifyInstance) {
 
     const task = await app.prisma.offboardingAssignmentTask.update({
       where: { id: taskId },
-      data: { status, ...(notes ? { notes } : {}), completedAt: status === 'COMPLETED' ? new Date() : null },
+      data: { status, ...(notes !== undefined ? { notes } : {}), completedAt: status === 'COMPLETED' ? new Date() : null },
     });
 
     const allTasks = await app.prisma.offboardingAssignmentTask.findMany({ where: { assignmentId: id } });
@@ -186,7 +186,7 @@ export function offboardingRoutes(app: FastifyInstance) {
     if (allDone && assignment.status !== 'COMPLETED') {
       await app.prisma.offboardingAssignment.update({
         where: { id },
-        data: { status: 'COMPLETED', completedAt: new Date() },
+        data: { status: 'COMPLETED' },
       });
     }
     return reply.send(ok(task));
@@ -209,13 +209,7 @@ export function offboardingRoutes(app: FastifyInstance) {
     if (!assignment) throw fail('Assignment not found', 404);
     const interview = await app.prisma.exitInterview.upsert({
       where: { assignmentId },
-      create: {
-        organizationId: req.user.orgId,
-        assignmentId,
-        employeeId: assignment.employeeId,
-        ...input,
-        conductedAt: new Date(),
-      },
+      create: { assignmentId, ...input, conductedAt: new Date() },
       update: { ...input, conductedAt: new Date() },
     });
     return reply.status(201).send(ok(interview));
