@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ok, paginated, fail } from '../../lib/response.js';
 import { paginationArgs, paginationSchema } from '../../lib/pagination.js';
 import type { Prisma } from '@prisma/client';
+import { sendEmail, leaveDecisionEmail } from '../../lib/email.js';
 
 // Mobile sends startDate/endDate as plain date strings (YYYY-MM-DD)
 const applyLeaveSchema = z.object({
@@ -227,6 +228,9 @@ export function leaveRoutes(app: FastifyInstance) {
 
     const request = await app.prisma.leaveRequest.findFirst({
       where: { id, organizationId: req.user.orgId, deletedAt: null },
+      include: {
+        employee: { select: { id: true, firstName: true, workEmail: true } },
+      },
     });
 
     if (!request) throw fail('Leave request not found', 404);
@@ -246,7 +250,28 @@ export function leaveRoutes(app: FastifyInstance) {
           ...(input.remarks !== undefined && { remarks: input.remarks }),
         },
       }),
+      app.prisma.notification.create({
+        data: {
+          organizationId: req.user.orgId,
+          employeeId: request.employee.id,
+          type: input.action === 'APPROVED' ? 'LEAVE_APPROVED' : 'LEAVE_REJECTED',
+          title: `Leave ${input.action === 'APPROVED' ? 'Approved' : 'Rejected'}`,
+          body: `Your leave from ${request.fromDate.toISOString().slice(0, 10)} to ${request.toDate.toISOString().slice(0, 10)} has been ${input.action.toLowerCase()}.`,
+        },
+      }),
     ]);
+
+    void sendEmail(
+      request.employee.workEmail,
+      `Leave Request ${input.action === 'APPROVED' ? 'Approved' : 'Rejected'}`,
+      leaveDecisionEmail(
+        request.employee.firstName,
+        input.action,
+        request.fromDate.toISOString().slice(0, 10),
+        request.toDate.toISOString().slice(0, 10),
+        input.remarks,
+      ),
+    );
 
     return reply.send(ok({ message: `Leave request ${input.action.toLowerCase()}` }));
   });

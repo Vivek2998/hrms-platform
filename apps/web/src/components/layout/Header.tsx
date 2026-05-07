@@ -1,4 +1,6 @@
-import { Bell, Moon, Sun, LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, Moon, Sun, LogOut, User, Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUiStore } from '@/stores/ui.store';
@@ -11,7 +13,97 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  useUnreadNotificationCount,
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from '@/hooks/useNotifications';
+import { cn } from '@/lib/utils';
+
+function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const { data: unreadData } = useUnreadNotificationCount();
+  const { data: notifications, isLoading } = useNotifications(open);
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+
+  const unreadCount = unreadData?.count ?? 0;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="bg-destructive text-destructive-foreground absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold leading-none">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h3 className="text-sm font-semibold">Notifications</h3>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto px-2 py-0.5 text-xs"
+              onClick={() => void markAllRead.mutateAsync()}
+              disabled={markAllRead.isPending}
+            >
+              Mark all read
+            </Button>
+          )}
+        </div>
+
+        <ScrollArea className="h-80">
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+            </div>
+          ) : !notifications?.length ? (
+            <div className="flex flex-col items-center gap-2 py-12">
+              <Bell className="text-muted-foreground h-8 w-8" />
+              <p className="text-muted-foreground text-sm">No notifications yet</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={cn(
+                    'hover:bg-muted/50 flex cursor-pointer gap-3 px-4 py-3 transition-colors',
+                    !n.isRead && 'bg-primary/5',
+                  )}
+                  onClick={() => {
+                    if (!n.isRead) void markRead.mutateAsync(n.id);
+                  }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('text-sm', !n.isRead && 'font-medium')}>{n.title}</p>
+                    <p className="text-muted-foreground line-clamp-2 text-xs">{n.body}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {!n.isRead && (
+                    <div className="bg-primary mt-2 h-2 w-2 shrink-0 rounded-full" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function Header() {
   const navigate = useNavigate();
@@ -40,9 +132,7 @@ export function Header() {
         {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </Button>
 
-      <Button variant="ghost" size="icon" aria-label="Notifications">
-        <Bell className="h-5 w-5" />
-      </Button>
+      <NotificationBell />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

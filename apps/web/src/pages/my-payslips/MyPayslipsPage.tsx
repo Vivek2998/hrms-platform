@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, Loader2, IndianRupee } from 'lucide-react';
+import { FileText, Download, Loader2, IndianRupee, Printer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,50 @@ const STATUS_COLORS: Record<string, string> = {
 
 function fmt(amount: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount);
+}
+
+function printPayslip(payslip: ReturnType<typeof useMyPayslipDetail>['data']) {
+  if (!payslip) return;
+  const period = monthLabel(payslip.month, payslip.year);
+  const rows = (items: { name: string; amount: number }[], color = '#111827') =>
+    items
+      .map(
+        (i) =>
+          `<tr><td style="padding:6px 0;border-bottom:1px solid #f3f4f6">${i.name}</td>` +
+          `<td style="padding:6px 0;border-bottom:1px solid #f3f4f6;text-align:right;color:${color}">₹${fmt(i.amount)}</td></tr>`,
+      )
+      .join('');
+
+  const html = `<!DOCTYPE html><html><head><title>Payslip — ${period}</title>
+  <style>
+    body{font-family:sans-serif;color:#111827;padding:40px;max-width:600px;margin:0 auto}
+    h1{font-size:20px;margin:0 0 4px}
+    .sub{color:#6b7280;font-size:13px;margin:0 0 24px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th{text-align:left;padding:8px 0;border-bottom:2px solid #e5e7eb;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+    .summary{display:flex;gap:16px;margin:0 0 24px}
+    .box{flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center}
+    .box .label{font-size:11px;color:#6b7280;margin-bottom:4px}
+    .box .value{font-size:16px;font-weight:600}
+    .net .value{color:#16a34a}
+    @media print{body{padding:20px}}
+  </style></head><body>
+  <h1>Payslip — ${period}</h1>
+  <p class="sub">Status: ${payslip.status}</p>
+  <div class="summary">
+    <div class="box"><div class="label">Gross Earnings</div><div class="value">₹${fmt(payslip.grossEarnings)}</div></div>
+    <div class="box"><div class="label">Total Deductions</div><div class="value" style="color:#dc2626">₹${fmt(payslip.totalDeductions)}</div></div>
+    <div class="box net"><div class="label">Net Pay</div><div class="value">₹${fmt(payslip.netPay)}</div></div>
+  </div>
+  ${(payslip.earnings ?? []).length ? `<table><thead><tr><th>Earning</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows(payslip.earnings ?? [])}</tbody></table><br>` : ''}
+  ${(payslip.deductions ?? []).length ? `<table><thead><tr><th>Deduction</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows(payslip.deductions ?? [], '#dc2626')}</tbody></table>` : ''}
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=700,height=600');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
 }
 
 function PayslipDetailDialog({
@@ -92,14 +136,20 @@ function PayslipDetailDialog({
               </div>
             )}
 
-            {payslip.pdfUrl && (
-              <Button asChild className="w-full" variant="outline">
-                <a href={payslip.pdfUrl} target="_blank" rel="noreferrer">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </a>
+            <div className="flex gap-2">
+              <Button className="flex-1" variant="outline" onClick={() => printPayslip(payslip)}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print / Save PDF
               </Button>
-            )}
+              {payslip.pdfUrl && (
+                <Button asChild className="flex-1" variant="outline">
+                  <a href={payslip.pdfUrl} target="_blank" rel="noreferrer">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </DialogContent>
