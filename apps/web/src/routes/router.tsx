@@ -33,6 +33,7 @@ const PerformancePage = lazy(() => import('@/pages/performance/PerformancePage')
 const RecruitmentPage = lazy(() => import('@/pages/recruitment/RecruitmentPage'));
 const OffboardingPage = lazy(() => import('@/pages/offboarding/OffboardingPage'));
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
+const AnnouncementsPage = lazy(() => import('@/pages/announcements/AnnouncementsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
@@ -288,6 +289,14 @@ export const router = createBrowserRouter([
               <AnalyticsPage />
             </Lazy>
           </RoleGuard>
+        ),
+      },
+      {
+        path: 'announcements',
+        element: (
+          <Lazy>
+            <AnnouncementsPage />
+          </Lazy>
         ),
       },
     ],

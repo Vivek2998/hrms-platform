@@ -308,4 +308,115 @@ export function leaveRoutes(app: FastifyInstance) {
 
     return reply.send(ok(balances));
   });
+
+  // ────────────────────────────────────────────────────────────
+  // Leave balance management (HR)
+  // ────────────────────────────────────────────────────────────
+
+  // GET /leaves/balances  — all balances for org, grouped by employee
+  app.get('/leaves/balances', auth, async (req, reply) => {
+    const query = paginationSchema
+      .extend({
+        year: z.coerce.number().int().optional(),
+        employeeId: z.string().uuid().optional(),
+      })
+      .parse(req.query);
+
+    const year = query.year ?? new Date().getFullYear();
+
+    const employees = await app.prisma.employee.findMany({
+      where: {
+        organizationId: req.user.orgId,
+        deletedAt: null,
+        status: 'ACTIVE',
+        ...(query.employeeId && { id: query.employeeId }),
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        employeeCode: true,
+        designation: true,
+        leaveBalances: {
+          where: { year },
+          include: { leaveType: { select: { id: true, name: true, code: true } } },
+        },
+      },
+      orderBy: { firstName: 'asc' },
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+    });
+
+    const total = await app.prisma.employee.count({
+      where: {
+        organizationId: req.user.orgId,
+        deletedAt: null,
+        status: 'ACTIVE',
+        ...(query.employeeId && { id: query.employeeId }),
+      },
+    });
+
+    return reply.send(paginated(employees, query.page, query.limit, total));
+  });
+
+  // POST /leaves/balance/upsert  — set/create allocation for one employee+leaveType+year
+  app.post('/leaves/balance/upsert', auth, async (req, reply) => {
+    const input = z.object({
+      employeeId:  z.string().uuid(),
+      leaveTypeId: z.string().uuid(),
+      year:        z.coerce.number().int(),
+      allocated:   z.coerce.number().min(0),
+    }).parse(req.body);
+
+    const balance = await app.prisma.leaveBalance.upsert({
+      where: {
+        organizationId_employeeId_leaveTypeId_year: {
+          organizationId: req.user.orgId,
+          employeeId:     input.employeeId,
+          leaveTypeId:    input.leaveTypeId,
+          year:           input.year,
+        },
+      },
+      update: { allocated: input.allocated },
+      create: {
+        organizationId: req.user.orgId,
+        employeeId:     input.employeeId,
+        leaveTypeId:    input.leaveTypeId,
+        year:           input.year,
+        allocated:      input.allocated,
+      },
+    });
+
+    return reply.send(ok(balance));
+  });
+
+  // POST /leaves/balance/initialize  — bulk create balances for all active employees
+  app.post('/leaves/balance/initialize', auth, async (req, reply) => {
+    const { year } = z.object({ year: z.coerce.number().int() }).parse(req.body);
+
+    const [employees, leaveTypes] = await app.prisma.$transaction([
+      app.prisma.employee.findMany({
+        where: { organizationId: req.user.orgId, deletedAt: null, status: 'ACTIVE' },
+        select: { id: true },
+      }),
+      app.prisma.leaveType.findMany({
+        where: { organizationId: req.user.orgId, isActive: true, deletedAt: null },
+        select: { id: true, daysAllowed: true },
+      }),
+    ]);
+
+    const data = employees.flatMap((emp) =>
+      leaveTypes.map((lt) => ({
+        organizationId: req.user.orgId,
+        employeeId:     emp.id,
+        leaveTypeId:    lt.id,
+        year,
+        allocated:      lt.daysAllowed,
+      })),
+    );
+
+    const result = await app.prisma.leaveBalance.createMany({ data, skipDuplicates: true });
+
+    return reply.send(ok({ created: result.count, total: data.length }));
+  });
 }

@@ -33,6 +33,7 @@ import {
   UserMinus,
   Briefcase,
   TrendingUp,
+  Megaphone,
 } from 'lucide-react';
 import type { UserRole } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
@@ -91,6 +92,7 @@ const ENTRIES: SidebarEntry[] = [
     label: 'Company',
     icon: Globe,
     children: [
+      { label: 'Announcements', to: '/announcements', icon: Megaphone },
       { label: 'Employee Directory', to: '/directory', icon: BookUser },
       { label: 'Organisation Chart', to: '/org-chart', icon: Network },
     ],

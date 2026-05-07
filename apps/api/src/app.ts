@@ -35,6 +35,7 @@ import { performanceRoutes } from './modules/performance/performance.routes.js';
 import { recruitmentRoutes } from './modules/recruitment/recruitment.routes.js';
 import { offboardingRoutes } from './modules/offboarding/offboarding.routes.js';
 import { analyticsRoutes } from './modules/analytics/analytics.routes.js';
+import { announcementRoutes } from './modules/announcements/announcement.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -89,6 +90,7 @@ export async function buildApp() {
   await app.register(recruitmentRoutes, { prefix });
   await app.register(offboardingRoutes, { prefix });
   await app.register(analyticsRoutes, { prefix });
+  await app.register(announcementRoutes, { prefix });
 
   await app.ready();
   return app;

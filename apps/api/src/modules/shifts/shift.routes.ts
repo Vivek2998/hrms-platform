@@ -86,4 +86,33 @@ export function shiftRoutes(app: FastifyInstance) {
     });
     return reply.status(201).send(ok(assignment));
   });
+
+  // GET /shifts/assignments  — all assignments for the org with employee + shift info
+  app.get('/shifts/assignments', auth, async (req, reply) => {
+    const query = paginationSchema.parse(req.query);
+
+    const [assignments, total] = await app.prisma.$transaction([
+      app.prisma.shiftAssignment.findMany({
+        where: { organizationId: req.user.orgId },
+        include: {
+          employee: { select: { id: true, firstName: true, lastName: true, employeeCode: true } },
+          shift:    { select: { id: true, name: true, code: true, startTime: true, endTime: true } },
+        },
+        ...paginationArgs(query),
+        orderBy: { createdAt: 'desc' },
+      }),
+      app.prisma.shiftAssignment.count({ where: { organizationId: req.user.orgId } }),
+    ]);
+
+    return reply.send(paginated(assignments, query.page, query.limit, total));
+  });
+
+  // DELETE /shifts/assignments/:id  — remove a shift assignment
+  app.delete('/shifts/assignments/:id', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await app.prisma.shiftAssignment.deleteMany({
+      where: { id, organizationId: req.user.orgId },
+    });
+    return reply.status(204).send();
+  });
 }

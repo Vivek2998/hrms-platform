@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Moon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Moon, UserPlus, X } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,13 +27,24 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   useShifts,
   useCreateShift,
   useUpdateShift,
   useDeleteShift,
+  useShiftAssignments,
+  useAssignShift,
+  useRemoveShiftAssignment,
   type Shift,
   type ShiftPayload,
 } from '@/hooks/useShifts';
+import { useEmployees } from '@/hooks/useEmployees';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -210,7 +221,174 @@ function fmt12(time: string) {
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;
 }
 
+// ─── Assign Shift Dialog ──────────────────────────────────────────────────────
+
+function AssignShiftDialog({ open, onClose, shifts }: { open: boolean; onClose: () => void; shifts: Shift[] }) {
+  const assignMutation = useAssignShift();
+  const { data } = useEmployees({ limit: 200 });
+  const employees = data?.employees ?? [];
+
+  const [form, setForm] = useState({ employeeId: '', shiftId: '', effectiveFrom: '' });
+
+  function handleSubmit() {
+    if (!form.employeeId || !form.shiftId || !form.effectiveFrom) return;
+    assignMutation.mutate(
+      {
+        employeeId: form.employeeId,
+        shiftId: form.shiftId,
+        effectiveFrom: new Date(form.effectiveFrom + 'T00:00:00.000Z').toISOString(),
+      },
+      { onSuccess: () => { setForm({ employeeId: '', shiftId: '', effectiveFrom: '' }); onClose(); } },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign Shift to Employee</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Employee</Label>
+            <Select value={form.employeeId} onValueChange={(v) => { setForm((f) => ({ ...f, employeeId: v })); }}>
+              <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
+              <SelectContent>
+                {employees.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.firstName} {e.lastName} · {e.employeeCode}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Shift</Label>
+            <Select value={form.shiftId} onValueChange={(v) => { setForm((f) => ({ ...f, shiftId: v })); }}>
+              <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+              <SelectContent>
+                {shifts.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} ({s.startTime} – {s.endTime})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Effective From</Label>
+            <Input
+              type="date"
+              value={form.effectiveFrom}
+              onChange={(e) => { setForm((f) => ({ ...f, effectiveFrom: e.target.value })); }}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={assignMutation.isPending || !form.employeeId || !form.shiftId || !form.effectiveFrom}
+          >
+            {assignMutation.isPending ? 'Assigning…' : 'Assign Shift'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Assignments Panel ────────────────────────────────────────────────────────
+
+function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
+  const [showAssign, setShowAssign] = useState(false);
+  const { data: assignments = [], isLoading } = useShiftAssignments();
+  const removeMutation = useRemoveShiftAssignment();
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => { setShowAssign(true); }}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Assign Shift
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Assignments</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="space-y-3 p-6">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : assignments.length === 0 ? (
+            <p className="text-muted-foreground py-12 text-center text-sm">
+              No shift assignments yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 text-muted-foreground border-b text-left text-xs font-medium">
+                    <th className="px-4 py-3">Employee</th>
+                    <th className="px-4 py-3">Shift</th>
+                    <th className="px-4 py-3">Effective From</th>
+                    <th className="px-4 py-3">Effective To</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {assignments.map((a) => (
+                    <tr key={a.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{a.employee.firstName} {a.employee.lastName}</p>
+                        <p className="text-muted-foreground text-xs">{a.employee.employeeCode}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{a.shift.name}</p>
+                        <p className="text-muted-foreground text-xs">{a.shift.startTime} – {a.shift.endTime}</p>
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3">{fmtDate(a.effectiveFrom)}</td>
+                      <td className="text-muted-foreground px-4 py-3">
+                        {a.effectiveTo ? fmtDate(a.effectiveTo) : 'Ongoing'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive h-7 w-7"
+                          disabled={removeMutation.isPending}
+                          onClick={() => { removeMutation.mutate(a.id); }}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <AssignShiftDialog open={showAssign} onClose={() => { setShowAssign(false); }} shifts={shifts} />
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+type ShiftTab = 'shifts' | 'assignments';
+
 export default function ShiftsPage() {
+  const [tab, setTab] = useState<ShiftTab>('shifts');
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Shift | undefined>();
   const [deleting, setDeleting] = useState<Shift | undefined>();
@@ -223,14 +401,39 @@ export default function ShiftsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Shifts</h1>
-          <p className="text-muted-foreground">Configure work shifts and timings</p>
+          <p className="text-muted-foreground">Configure work shifts and employee assignments</p>
         </div>
-        <Button onClick={() => { setShowAdd(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Shift
-        </Button>
+        <div className="flex items-center gap-3">
+          {tab === 'shifts' && (
+            <Button onClick={() => { setShowAdd(true); }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Shift
+            </Button>
+          )}
+          <div className="bg-muted/30 flex gap-1 rounded-lg border p-1">
+            <button
+              onClick={() => { setTab('shifts'); }}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                tab === 'shifts' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Shifts
+            </button>
+            <button
+              onClick={() => { setTab('assignments'); }}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                tab === 'assignments' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Assignments
+            </button>
+          </div>
+        </div>
       </div>
 
+      {tab === 'assignments' ? (
+        <AssignmentsPanel shifts={shifts} />
+      ) : (
       <Card>
         <CardHeader>
           <CardTitle>All Shifts</CardTitle>
@@ -334,6 +537,7 @@ export default function ShiftsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      )}
     </div>
   );
 }
