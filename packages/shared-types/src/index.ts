@@ -10,6 +10,8 @@
 
 export type UserRole = 'SUPER_ADMIN' | 'ORG_ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
 
+export type OrgPlan = 'FREE' | 'STARTER' | 'GROWTH' | 'ENTERPRISE';
+
 export type AttendanceStatus =
   | 'PRESENT'
   | 'ABSENT'
@@ -147,6 +149,7 @@ export interface JwtPayload {
   sub: string; // userId
   orgId: string; // organizationId (multi-tenancy)
   role: UserRole;
+  orgPlan?: OrgPlan; // absent for super-admin tokens
   iat?: number;
   exp?: number;
 }

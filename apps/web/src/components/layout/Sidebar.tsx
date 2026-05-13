@@ -34,11 +34,14 @@ import {
   Briefcase,
   TrendingUp,
   Megaphone,
+  Lock,
 } from 'lucide-react';
-import type { UserRole } from '@hrms/shared-types';
+import { toast } from 'sonner';
+import type { UserRole, OrgPlan } from '@hrms/shared-types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUiStore } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
+import { canAccess, requiredPlan, PLAN_LABELS } from '@/lib/feature-flags';
 
 type IconType = React.ComponentType<{ className?: string }>;
 
@@ -47,6 +50,7 @@ interface NavItem {
   to: string;
   icon: IconType;
   allow?: UserRole[];
+  feature?: string;
 }
 
 interface NavGroup {
@@ -71,8 +75,8 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Leave Management', to: '/leaves', icon: ListChecks, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
       { label: 'Holiday Calendar', to: '/holidays', icon: Palmtree },
       { label: 'My Leaves', to: '/my-leaves', icon: CalendarCheck },
-      { label: 'Regularisation', to: '/regularisation', icon: ClockAlert },
-      { label: 'Comp Off', to: '/comp-off', icon: CalendarPlus },
+      { label: 'Regularisation', to: '/regularisation', icon: ClockAlert, feature: 'regularisation' },
+      { label: 'Comp Off', to: '/comp-off', icon: CalendarPlus, feature: 'comp-off' },
     ],
   },
   {
@@ -81,9 +85,9 @@ const ENTRIES: SidebarEntry[] = [
     label: 'Payroll',
     icon: DollarSign,
     children: [
-      { label: 'Payroll Runs', to: '/payroll', icon: ReceiptText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-      { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee },
-      { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText },
+      { label: 'Payroll Runs', to: '/payroll', icon: ReceiptText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'payroll' },
+      { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee, feature: 'my-payslips' },
+      { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
     ],
   },
   {
@@ -103,10 +107,10 @@ const ENTRIES: SidebarEntry[] = [
     label: 'People',
     icon: Users,
     children: [
-      { label: 'Onboarding', to: '/onboarding', icon: ClipboardList, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
-      { label: 'Performance', to: '/performance', icon: Target },
-      { label: 'Offboarding', to: '/offboarding', icon: UserMinus, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-      { label: 'Pulse Surveys', to: '/pulse-surveys', icon: BarChart2 },
+      { label: 'Onboarding', to: '/onboarding', icon: ClipboardList, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'], feature: 'onboarding' },
+      { label: 'Performance', to: '/performance', icon: Target, feature: 'performance' },
+      { label: 'Offboarding', to: '/offboarding', icon: UserMinus, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'offboarding' },
+      { label: 'Pulse Surveys', to: '/pulse-surveys', icon: BarChart2, feature: 'pulse-surveys' },
     ],
   },
   {
@@ -115,20 +119,25 @@ const ENTRIES: SidebarEntry[] = [
     label: 'Support',
     icon: LifeBuoy,
     children: [
-      { label: 'Help Desk', to: '/helpdesk', icon: Headphones },
-      { label: 'Suggestion Box', to: '/suggestions', icon: Lightbulb },
-      { label: 'HR Policies', to: '/hr-policies', icon: BookOpen },
+      { label: 'Help Desk', to: '/helpdesk', icon: Headphones, feature: 'helpdesk' },
+      { label: 'Suggestion Box', to: '/suggestions', icon: Lightbulb, feature: 'suggestions' },
+      { label: 'HR Policies', to: '/hr-policies', icon: BookOpen, feature: 'hr-policies' },
     ],
   },
-  { group: false, label: 'Recruitment', to: '/recruitment', icon: Briefcase, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-  { group: false, label: 'Analytics', to: '/analytics', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-  { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-  { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+  { group: false, label: 'Recruitment', to: '/recruitment', icon: Briefcase, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'recruitment' },
+  { group: false, label: 'Analytics', to: '/analytics', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'analytics' },
+  { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'departments' },
+  { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'shifts' },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },
 ];
 
 function isVisible(item: NavItem, role: UserRole | undefined): boolean {
   return !item.allow || (role != null && item.allow.includes(role));
+}
+
+function isLocked(item: NavItem, orgPlan: OrgPlan | undefined): boolean {
+  if (!item.feature || !orgPlan) return false;
+  return !canAccess(orgPlan, item.feature);
 }
 
 function itemClass(isActive: boolean, indent: boolean) {
@@ -144,6 +153,7 @@ function itemClass(isActive: boolean, indent: boolean) {
 export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
+  const orgPlan = useAuthStore((s) => s.user?.orgPlan);
   const { sidebarOpen, toggleSidebar } = useUiStore();
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
@@ -200,17 +210,44 @@ export function Sidebar() {
                   )}
                   {(isOpen || !sidebarOpen) && (
                     <ul className={cn('space-y-1', sidebarOpen && 'mt-1')}>
-                      {visible.map((child) => (
-                        <li key={child.to}>
-                          <NavLink
-                            to={child.to}
-                            className={({ isActive }) => itemClass(isActive, sidebarOpen)}
-                          >
-                            <child.icon className="h-5 w-5 shrink-0" />
-                            {sidebarOpen && <span>{child.label}</span>}
-                          </NavLink>
-                        </li>
-                      ))}
+                      {visible.map((child) => {
+                        const locked = isLocked(child, orgPlan);
+                        if (locked) {
+                          return (
+                            <li key={child.to}>
+                              <button
+                                onClick={() => {
+                                  const plan = child.feature ? requiredPlan(child.feature) : null;
+                                  if (plan) toast.info(`${child.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                                }}
+                                className={cn(
+                                  itemClass(false, sidebarOpen),
+                                  'w-full cursor-pointer opacity-50',
+                                )}
+                              >
+                                <child.icon className="h-5 w-5 shrink-0" />
+                                {sidebarOpen && (
+                                  <>
+                                    <span className="flex-1 text-left">{child.label}</span>
+                                    <Lock className="h-3 w-3 shrink-0" />
+                                  </>
+                                )}
+                              </button>
+                            </li>
+                          );
+                        }
+                        return (
+                          <li key={child.to}>
+                            <NavLink
+                              to={child.to}
+                              className={({ isActive }) => itemClass(isActive, sidebarOpen)}
+                            >
+                              <child.icon className="h-5 w-5 shrink-0" />
+                              {sidebarOpen && <span>{child.label}</span>}
+                            </NavLink>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </li>
@@ -218,6 +255,30 @@ export function Sidebar() {
             }
 
             if (!isVisible(entry, role)) return null;
+
+            const locked = isLocked(entry, orgPlan);
+            if (locked) {
+              return (
+                <li key={entry.to}>
+                  <button
+                    onClick={() => {
+                      const plan = entry.feature ? requiredPlan(entry.feature) : null;
+                      if (plan) toast.info(`${entry.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                    }}
+                    className={cn(itemClass(false, false), 'w-full cursor-pointer opacity-50')}
+                  >
+                    <entry.icon className="h-5 w-5 shrink-0" />
+                    {sidebarOpen && (
+                      <>
+                        <span className="flex-1 text-left">{entry.label}</span>
+                        <Lock className="h-3 w-3 shrink-0" />
+                      </>
+                    )}
+                  </button>
+                </li>
+              );
+            }
+
             return (
               <li key={entry.to}>
                 <NavLink

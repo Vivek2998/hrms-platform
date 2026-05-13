@@ -60,7 +60,7 @@ export function authRoutes(app: FastifyInstance) {
       passwordHash,
     });
 
-    const jwtPayload = { sub: admin.id, orgId: org.id, role: admin.role };
+    const jwtPayload = { sub: admin.id, orgId: org.id, role: admin.role, orgPlan: org.plan };
     const accessToken = signAccessToken(jwtPayload);
     const refreshToken = signRefreshToken(jwtPayload);
     const tokenHash = await bcrypt.hash(refreshToken, 8);
@@ -74,6 +74,7 @@ export function authRoutes(app: FastifyInstance) {
           id: admin.id,
           organizationId: org.id,
           orgName: org.name,
+          orgPlan: org.plan,
           role: admin.role,
           firstName: admin.firstName,
           lastName: admin.lastName,
@@ -164,13 +165,14 @@ export function authRoutes(app: FastifyInstance) {
   app.get('/auth/me', { preHandler: [app.authenticate] }, async (req, reply) => {
     const employee = await app.prisma.employee.findUniqueOrThrow({
       where: { id: req.user.sub, deletedAt: null },
-      include: { organization: { select: { id: true, name: true } } },
+      include: { organization: { select: { id: true, name: true, plan: true } } },
     });
     return reply.status(200).send(
       ok({
         id: employee.id,
         orgId: employee.organizationId,
         orgName: employee.organization.name,
+        orgPlan: employee.organization.plan,
         role: employee.role,
         firstName: employee.firstName,
         lastName: employee.lastName,

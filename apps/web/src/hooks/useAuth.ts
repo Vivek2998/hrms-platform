@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
-import type { ApiResponse, UserRole } from '@hrms/shared-types';
+import type { ApiResponse, UserRole, OrgPlan } from '@hrms/shared-types';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
@@ -20,6 +20,7 @@ interface LoginResponse {
     id: string;
     organizationId: string;
     orgName: string;
+    orgPlan: OrgPlan;
     role: UserRole;
     firstName: string;
     lastName: string;
@@ -47,6 +48,7 @@ export function useLogin() {
         id: data.employee.id,
         organizationId: data.employee.organizationId,
         orgName: data.employee.orgName,
+        orgPlan: data.employee.orgPlan,
         role: data.employee.role,
         firstName: data.employee.firstName,
         lastName: data.employee.lastName,

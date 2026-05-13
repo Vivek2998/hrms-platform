@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ok, paginated, fail } from '../../lib/response.js';
 import { paginationArgs, paginationSchema } from '../../lib/pagination.js';
 import { initPayrollRun, processPayrollRun } from './payroll.service.js';
+import { requirePlan } from '../../lib/plan-guard.js';
 
 const runSchema = z.object({
   month: z.number().int().min(1).max(12),
@@ -10,7 +11,7 @@ const runSchema = z.object({
 });
 
 export function payrollRoutes(app: FastifyInstance) {
-  const auth = { preHandler: [app.authenticate] };
+  const auth = { preHandler: [app.authenticate, requirePlan('STARTER')] };
 
   // ────────────────────────────────────────────────────────────
   // Mobile employee endpoints — /payroll/my-payslips*

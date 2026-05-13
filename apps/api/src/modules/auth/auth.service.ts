@@ -14,7 +14,7 @@ export async function loginService(input: LoginInput, prisma: PrismaClient, redi
       deletedAt: null,
       status: { not: 'TERMINATED' },
     },
-    include: { organization: { select: { id: true, name: true, isActive: true } } },
+    include: { organization: { select: { id: true, name: true, isActive: true, plan: true } } },
   });
 
   if (!employee) throw fail('Invalid email or password', 401);
@@ -27,6 +27,7 @@ export async function loginService(input: LoginInput, prisma: PrismaClient, redi
     sub: employee.id,
     orgId: employee.organizationId,
     role: employee.role,
+    orgPlan: employee.organization.plan,
   };
 
   const accessToken = signAccessToken(payload);
@@ -48,6 +49,7 @@ export async function loginService(input: LoginInput, prisma: PrismaClient, redi
       id: employee.id,
       organizationId: employee.organizationId,
       orgName: employee.organization.name,
+      orgPlan: employee.organization.plan,
       role: employee.role,
       firstName: employee.firstName,
       lastName: employee.lastName,

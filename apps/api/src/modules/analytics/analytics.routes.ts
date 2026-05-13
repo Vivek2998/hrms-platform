@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { ok, fail } from '../../lib/response.js';
+import { requirePlan } from '../../lib/plan-guard.js';
 
 const HR_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] as const;
 type HrRole = (typeof HR_ROLES)[number];
@@ -10,6 +11,7 @@ export function analyticsRoutes(app: FastifyInstance) {
   const hrAuth = {
     preHandler: [
       app.authenticate,
+      requirePlan('GROWTH'),
       async (req: any, reply: any) => {
         if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
       },

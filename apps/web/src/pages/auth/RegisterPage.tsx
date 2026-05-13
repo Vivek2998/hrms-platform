@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
-import type { UserRole } from '@hrms/shared-types';
+import type { UserRole, OrgPlan } from '@hrms/shared-types';
 
 const schema = z
   .object({
@@ -40,6 +40,7 @@ interface RegisterResponse {
     id: string;
     organizationId: string;
     orgName: string;
+    orgPlan: OrgPlan;
     role: string;
     firstName: string;
     lastName: string;
@@ -84,6 +85,7 @@ export default function RegisterPage() {
         id: employee.id,
         organizationId: employee.organizationId,
         orgName: employee.orgName,
+        orgPlan: employee.orgPlan,
         role: employee.role as UserRole,
         firstName: employee.firstName,
         lastName: employee.lastName,
