@@ -508,6 +508,7 @@ export default function ShiftsPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       <ShiftDialog open={showAdd} onClose={() => { setShowAdd(false); }} />
       {editing && (
@@ -537,7 +538,6 @@ export default function ShiftsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      )}
     </div>
   );
 }

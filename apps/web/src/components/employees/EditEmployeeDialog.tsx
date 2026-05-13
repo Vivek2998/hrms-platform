@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DateSelectPicker } from '@/components/ui/date-select-picker';
 import { useUpdateEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -257,7 +258,13 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                     <Input placeholder="+91XXXXXXXXXX" {...form.register('phone')} />
                   </Field>
                   <Field label="Date of Birth">
-                    <Input type="date" {...form.register('dateOfBirth')} />
+                    <Controller
+                      control={form.control}
+                      name="dateOfBirth"
+                      render={({ field }) => (
+                        <DateSelectPicker value={field.value} onChange={field.onChange} />
+                      )}
+                    />
                   </Field>
                   <Field label="Gender">
                     <Controller
@@ -339,7 +346,13 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                     />
                   </Field>
                   <Field label="Date of Joining">
-                    <Input type="date" {...form.register('dateOfJoining')} />
+                    <Controller
+                      control={form.control}
+                      name="dateOfJoining"
+                      render={({ field }) => (
+                        <DateSelectPicker value={field.value} onChange={field.onChange} maxYear={new Date().getFullYear() + 2} />
+                      )}
+                    />
                   </Field>
                   <Field label="Department">
                     <Controller

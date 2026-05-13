@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DateSelectPicker } from '@/components/ui/date-select-picker';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMyProfile, useUpdateMyProfile, type MyProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,7 +152,7 @@ export default function SettingsPage() {
                 <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+91 98765 43210" />
               </F>
               <F label="Date of Birth">
-                <Input type="date" value={form.dateOfBirth} onChange={(e) => set('dateOfBirth', e.target.value)} />
+                <DateSelectPicker value={form.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} />
               </F>
               <F label="Blood Group">
                 <Select value={form.bloodGroup} onValueChange={(v) => set('bloodGroup', v)}>

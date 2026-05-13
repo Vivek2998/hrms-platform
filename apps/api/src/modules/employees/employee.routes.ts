@@ -12,7 +12,7 @@ import {
   updateEmployee,
   softDeleteEmployee,
 } from './employee.service.js';
-import { ok } from '../../lib/response.js';
+import { ok, fail } from '../../lib/response.js';
 
 export function employeeRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };

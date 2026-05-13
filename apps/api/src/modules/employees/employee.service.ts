@@ -149,6 +149,22 @@ export async function createEmployee(
       });
     }
 
+    // Auto-assign General Shift (code=GEN) if it exists for this org
+    const generalShift = await tx.shift.findFirst({
+      where: { organizationId: orgId, code: 'GEN', deletedAt: null, isActive: true },
+      select: { id: true },
+    });
+    if (generalShift) {
+      await tx.shiftAssignment.create({
+        data: {
+          organizationId: orgId,
+          employeeId: created.id,
+          shiftId: generalShift.id,
+          effectiveFrom: input.dateOfJoining ? new Date(input.dateOfJoining) : new Date(),
+        },
+      });
+    }
+
     return created;
   });
 
