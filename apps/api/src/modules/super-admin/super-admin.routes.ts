@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { signAccessToken } from '../../lib/jwt.js';
 import { ok, fail } from '../../lib/response.js';
+import { provisionOrganization } from '../../lib/provision-org.js';
 
 const PLAN_LIMITS: Record<string, number> = {
   FREE: 10,
@@ -106,82 +107,16 @@ export function superAdminRoutes(app: FastifyInstance) {
     if (existing) throw fail('Slug already taken — choose a different one', 409);
 
     const passwordHash = await bcrypt.hash(input.adminPassword, 12);
-    const maxEmployees = PLAN_LIMITS[input.plan] ?? 10;
 
-    const org = await app.prisma.$transaction(async (tx) => {
-      const org = await tx.organization.create({
-        data: {
-          name: input.name,
-          slug: input.slug,
-          email: input.email,
-          plan: input.plan,
-          maxEmployees,
-        },
-      });
-
-      await tx.employee.create({
-        data: {
-          organizationId: org.id,
-          employeeCode: 'EMP001',
-          firstName: input.adminFirstName,
-          lastName: input.adminLastName,
-          email: input.adminEmail,
-          workEmail: input.adminEmail,
-          role: 'ORG_ADMIN',
-          status: 'ACTIVE',
-          employmentType: 'FULL_TIME',
-          passwordHash,
-          dateOfJoining: new Date(),
-        },
-      });
-
-      await tx.shift.create({
-        data: {
-          organizationId: org.id,
-          name: 'General Shift',
-          code: 'GEN',
-          startTime: '09:00',
-          endTime: '18:00',
-          graceMinutes: 15,
-          halfDayAfterMinutes: 270,
-          absentAfterMinutes: 480,
-          breakDurationMinutes: 60,
-          weeklyOffDays: [0, 6],
-        },
-      });
-
-      const leaveTypes = [
-        { name: 'Casual Leave', code: 'CL', daysAllowed: 12, isPaid: true },
-        { name: 'Sick Leave', code: 'SL', daysAllowed: 12, isPaid: true },
-        {
-          name: 'Earned Leave',
-          code: 'EL',
-          daysAllowed: 21,
-          isPaid: true,
-          isCarryForward: true,
-          maxCarryForward: 30,
-          isEncashable: true,
-        },
-        { name: 'Leave Without Pay', code: 'LWP', daysAllowed: 365, isPaid: false },
-      ];
-      for (const lt of leaveTypes) {
-        await tx.leaveType.create({ data: { organizationId: org.id, ...lt } });
-      }
-
-      const salaryComponents = [
-        { name: 'Basic Salary', code: 'BASIC', type: 'EARNING', defaultPercent: 40, isTaxable: true, displayOrder: 1 },
-        { name: 'HRA', code: 'HRA', type: 'EARNING', defaultPercent: 20, isTaxable: false, displayOrder: 2 },
-        { name: 'Special Allowance', code: 'SPEC_ALLOW', type: 'EARNING', defaultPercent: 20, isTaxable: true, displayOrder: 3 },
-        { name: 'Provident Fund (Employee)', code: 'PF_EMP', type: 'DEDUCTION', isTaxable: false, displayOrder: 10 },
-        { name: 'ESI (Employee)', code: 'ESI_EMP', type: 'DEDUCTION', isTaxable: false, displayOrder: 11 },
-        { name: 'Professional Tax', code: 'PT', type: 'DEDUCTION', isTaxable: false, displayOrder: 12 },
-        { name: 'TDS', code: 'TDS', type: 'DEDUCTION', isTaxable: false, displayOrder: 13 },
-      ];
-      for (const c of salaryComponents) {
-        await tx.salaryComponent.create({ data: { organizationId: org.id, ...c } });
-      }
-
-      return org;
+    const { org } = await provisionOrganization(app.prisma, {
+      name: input.name,
+      slug: input.slug,
+      email: input.email,
+      plan: input.plan,
+      adminFirstName: input.adminFirstName,
+      adminLastName: input.adminLastName,
+      adminEmail: input.adminEmail,
+      passwordHash,
     });
 
     return reply.status(201).send(ok({ id: org.id, name: org.name, slug: org.slug }));

@@ -36,6 +36,7 @@ const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
 const AnnouncementsPage = lazy(() => import('@/pages/announcements/AnnouncementsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const SuperAdminLoginPage = lazy(() => import('@/pages/super-admin/SuperAdminLoginPage'));
 const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/SuperAdminDashboard'));
 
@@ -49,6 +50,14 @@ export const router = createBrowserRouter([
     element: (
       <Lazy>
         <LoginPage />
+      </Lazy>
+    ),
+  },
+  {
+    path: '/register',
+    element: (
+      <Lazy>
+        <RegisterPage />
       </Lazy>
     ),
   },

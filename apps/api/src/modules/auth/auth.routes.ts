@@ -10,6 +10,23 @@ import {
   changePasswordService,
 } from './auth.service.js';
 import { ok, fail } from '../../lib/response.js';
+import { signAccessToken, signRefreshToken } from '../../lib/jwt.js';
+import { provisionOrganization } from '../../lib/provision-org.js';
+
+const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
+
+const registerSchema = z.object({
+  name: z.string().min(2),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  email: z.string().email(),
+  adminFirstName: z.string().min(1),
+  adminLastName: z.string().min(1),
+  adminEmail: z.string().email(),
+  adminPassword: z.string().min(8),
+});
 
 const forgotPasswordSchema = z.object({
   email: z.string().email(),
@@ -21,6 +38,54 @@ const resetPasswordSchema = z.object({
 });
 
 export function authRoutes(app: FastifyInstance) {
+  // POST /auth/register — public self-serve organisation registration
+  app.post('/auth/register', async (req, reply) => {
+    const input = registerSchema.parse(req.body);
+
+    const [slugTaken, emailTaken] = await Promise.all([
+      app.prisma.organization.findUnique({ where: { slug: input.slug } }),
+      app.prisma.employee.findFirst({ where: { workEmail: input.adminEmail, deletedAt: null } }),
+    ]);
+    if (slugTaken) throw fail('This URL slug is already taken — try a different one', 409);
+    if (emailTaken) throw fail('An account with this email already exists', 409);
+
+    const passwordHash = await bcrypt.hash(input.adminPassword, 12);
+    const { org, admin } = await provisionOrganization(app.prisma, {
+      name: input.name,
+      slug: input.slug,
+      email: input.email,
+      adminFirstName: input.adminFirstName,
+      adminLastName: input.adminLastName,
+      adminEmail: input.adminEmail,
+      passwordHash,
+    });
+
+    const jwtPayload = { sub: admin.id, orgId: org.id, role: admin.role };
+    const accessToken = signAccessToken(jwtPayload);
+    const refreshToken = signRefreshToken(jwtPayload);
+    const tokenHash = await bcrypt.hash(refreshToken, 8);
+    await app.redis.setex(`refresh:${admin.id}`, REFRESH_TOKEN_TTL, tokenHash);
+
+    return reply.status(201).send(
+      ok({
+        accessToken,
+        refreshToken,
+        employee: {
+          id: admin.id,
+          organizationId: org.id,
+          orgName: org.name,
+          role: admin.role,
+          firstName: admin.firstName,
+          lastName: admin.lastName,
+          workEmail: admin.workEmail,
+          employeeCode: admin.employeeCode,
+          avatarUrl: null,
+          mustChangePassword: false,
+        },
+      }),
+    );
+  });
+
   // POST /auth/login
   app.post('/auth/login', async (req, reply) => {
     const input = loginSchema.parse(req.body);
