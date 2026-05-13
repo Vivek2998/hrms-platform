@@ -244,7 +244,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
             {/* Fixed-height content area — always same size regardless of active tab */}
             <div className="h-[55vh] overflow-y-auto px-6 py-5">
               <TabsContent value="personal" className="mt-0 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="First Name" required error={errors.firstName?.message}>
                     <Input {...form.register('firstName')} />
                   </Field>
@@ -320,7 +320,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
               </TabsContent>
 
               <TabsContent value="employment" className="mt-0 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Work Email" required error={errors.workEmail?.message}>
                     <Input type="email" {...form.register('workEmail')} />
                   </Field>
@@ -396,7 +396,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                     Current Address
                   </p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Address Line 1"><Input {...form.register('presentLine1')} /></Field>
                     <Field label="Address Line 2"><Input {...form.register('presentLine2')} /></Field>
                     <Field label="City"><Input {...form.register('presentCity')} /></Field>
@@ -408,7 +408,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                     Permanent Address
                   </p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Address Line 1"><Input {...form.register('permLine1')} /></Field>
                     <Field label="Address Line 2"><Input {...form.register('permLine2')} /></Field>
                     <Field label="City"><Input {...form.register('permCity')} /></Field>
@@ -420,7 +420,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                     Emergency Contact
                   </p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Contact Name"><Input {...form.register('emergencyName')} /></Field>
                     <Field label="Contact Phone">
                       <Input placeholder="+91XXXXXXXXXX" {...form.register('emergencyPhone')} />
@@ -437,7 +437,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                     Highest Education Qualification
                   </p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Degree / Qualification">
                       <Input placeholder="e.g. B.Tech, MBA" {...form.register('eduDegree')} />
                     </Field>
@@ -453,7 +453,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                     Work Experience
                   </p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Total Experience (Years)">
                       <Input type="number" step="0.5" placeholder="e.g. 3.5" {...form.register('expTotalYears')} />
                     </Field>

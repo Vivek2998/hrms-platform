@@ -15,7 +15,7 @@ export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
       theme: 'system',
-      sidebarOpen: true,
+      sidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
 
       setTheme: (theme) => {
         set({ theme });

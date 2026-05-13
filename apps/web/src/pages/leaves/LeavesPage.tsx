@@ -427,13 +427,13 @@ export default function LeavesPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{sectionLabel}</h1>
           <p className="text-muted-foreground">{sectionDesc}</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {section === 'requests' && (
             <Button variant="outline" size="sm" disabled={isExporting} onClick={() => { void handleExportLeaves(); }}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
@@ -472,7 +472,8 @@ export default function LeavesPage() {
       ) : (
         <>
           {/* Status filter tabs */}
-          <div className="bg-muted/30 flex w-fit gap-1 rounded-lg border p-1">
+          <div className="overflow-x-auto">
+          <div className="bg-muted/30 flex w-max gap-1 rounded-lg border p-1">
             {STATUS_TABS.map((t) => (
               <button
                 key={t.value}
@@ -486,6 +487,7 @@ export default function LeavesPage() {
                 {t.label}
               </button>
             ))}
+          </div>
           </div>
 
           <Card>

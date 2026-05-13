@@ -147,7 +147,7 @@ export default function SettingsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Personal Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <F label="Phone">
                 <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+91 98765 43210" />
               </F>
@@ -182,7 +182,7 @@ export default function SettingsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Current Address</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {(['presentLine1', 'presentLine2', 'presentCity', 'presentState', 'presentPincode'] as const).map((key) => {
                 const labels: Record<typeof key, string> = {
                   presentLine1: 'Address Line 1', presentLine2: 'Address Line 2',
@@ -202,7 +202,7 @@ export default function SettingsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Permanent Address</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {(['permanentLine1', 'permanentLine2', 'permanentCity', 'permanentState', 'permanentPincode'] as const).map((key) => {
                 const labels: Record<typeof key, string> = {
                   permanentLine1: 'Address Line 1', permanentLine2: 'Address Line 2',
@@ -222,7 +222,7 @@ export default function SettingsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Emergency Contact</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <F label="Contact Name">
                 <Input value={form.ecName} onChange={(e) => set('ecName', e.target.value)} placeholder="Full name" />
               </F>
@@ -240,7 +240,7 @@ export default function SettingsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Bank Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <F label="Bank Name">
                 <Input value={form.bankName} onChange={(e) => set('bankName', e.target.value)} placeholder="e.g. HDFC Bank" />
               </F>

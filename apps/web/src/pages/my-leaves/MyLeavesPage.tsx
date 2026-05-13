@@ -206,7 +206,7 @@ export default function MyLeavesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">My Leaves</h1>
           <p className="text-muted-foreground">View your leave balance and apply for leave</p>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Moon, Sun, LogOut, User, Loader2 } from 'lucide-react';
+import { Bell, Moon, Sun, LogOut, User, Loader2, Menu } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
@@ -108,7 +108,7 @@ function NotificationBell() {
 export function Header() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { theme, setTheme } = useUiStore();
+  const { theme, setTheme, toggleSidebar } = useUiStore();
 
   function handleLogout() {
     logout();
@@ -120,7 +120,18 @@ export function Header() {
     : '??';
 
   return (
-    <header className="bg-background flex h-16 shrink-0 items-center justify-end gap-3 border-b px-6">
+    <header className="bg-background flex h-16 shrink-0 items-center border-b px-4 md:px-6">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="mr-2 md:hidden"
+        onClick={toggleSidebar}
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      <div className="flex flex-1 items-center justify-end gap-3">
       <Button
         variant="ghost"
         size="icon"
@@ -172,6 +183,7 @@ export function Header() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   );
 }

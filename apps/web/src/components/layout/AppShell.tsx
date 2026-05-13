@@ -13,11 +13,12 @@ export function AppShell() {
       <div
         className={cn(
           'flex flex-1 flex-col overflow-hidden transition-all duration-300',
-          sidebarOpen ? 'ml-64' : 'ml-16',
+          'ml-0',
+          sidebarOpen ? 'md:ml-64' : 'md:ml-16',
         )}
       >
         <Header />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>

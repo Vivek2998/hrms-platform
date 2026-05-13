@@ -202,7 +202,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
 
             {/* ── Tab 1: Personal ── */}
             <TabsContent value="personal" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="First Name" required error={errors.firstName?.message}>
                   <Input {...form.register('firstName')} />
                 </Field>
@@ -287,7 +287,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
 
             {/* ── Tab 2: Employment ── */}
             <TabsContent value="employment" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field
                   label="Work Email"
                   required
@@ -376,7 +376,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                   Current Address
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Address Line 1">
                     <Input {...form.register('presentLine1')} />
                   </Field>
@@ -399,7 +399,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                   Emergency Contact
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Contact Name">
                     <Input {...form.register('emergencyName')} />
                   </Field>
@@ -419,7 +419,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                   Highest Education Qualification
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Degree / Qualification">
                     <Input placeholder="e.g. B.Tech, MBA" {...form.register('eduDegree')} />
                   </Field>
@@ -436,7 +436,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
                   Work Experience
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Total Experience (Years)">
                     <Input type="number" step="0.5" placeholder="e.g. 3.5" {...form.register('expTotalYears')} />
                   </Field>

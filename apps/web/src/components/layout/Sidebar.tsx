@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -154,7 +154,12 @@ export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
   const orgPlan = useAuthStore((s) => s.user?.orgPlan);
-  const { sidebarOpen, toggleSidebar } = useUiStore();
+  const { sidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (window.innerWidth < 768) setSidebarOpen(false);
+  }, [location.pathname, setSidebarOpen]);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   function toggleGroup(key: string) {
@@ -162,10 +167,21 @@ export function Sidebar() {
   }
 
   return (
+    <>
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
     <aside
       className={cn(
         'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r transition-all duration-300',
-        sidebarOpen ? 'w-64' : 'w-16',
+        'w-64',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        'md:translate-x-0',
+        sidebarOpen ? 'md:w-64' : 'md:w-16',
       )}
     >
       <div className="flex h-16 items-center justify-between border-b px-4">
@@ -294,5 +310,6 @@ export function Sidebar() {
         </ul>
       </nav>
     </aside>
+    </>
   );
 }
