@@ -36,6 +36,8 @@ const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
 const AnnouncementsPage = lazy(() => import('@/pages/announcements/AnnouncementsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
+const SuperAdminLoginPage = lazy(() => import('@/pages/super-admin/SuperAdminLoginPage'));
+const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/SuperAdminDashboard'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -300,6 +302,22 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: '/super-admin/login',
+    element: (
+      <Lazy>
+        <SuperAdminLoginPage />
+      </Lazy>
+    ),
+  },
+  {
+    path: '/super-admin/dashboard',
+    element: (
+      <Lazy>
+        <SuperAdminDashboard />
+      </Lazy>
+    ),
   },
   {
     path: '*',

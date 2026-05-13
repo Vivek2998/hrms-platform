@@ -14,6 +14,7 @@ declare module '@fastify/jwt' {
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authenticateSuperAdmin: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -26,6 +27,25 @@ export const jwtPlugin = fp(async (app: FastifyInstance) => {
   app.decorate('authenticate', async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       await req.jwtVerify();
+    } catch {
+      return reply.status(401).send({
+        success: false,
+        data: null,
+        error: 'Unauthorized — invalid or expired token',
+      });
+    }
+  });
+
+  app.decorate('authenticateSuperAdmin', async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await req.jwtVerify();
+      if (req.user.role !== 'SUPER_ADMIN') {
+        return reply.status(403).send({
+          success: false,
+          data: null,
+          error: 'Forbidden — Super Admin access only',
+        });
+      }
     } catch {
       return reply.status(401).send({
         success: false,

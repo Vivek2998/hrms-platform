@@ -6,6 +6,19 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding HRMS database...');
 
+  // Default super admin
+  const superAdminHash = await bcrypt.hash('SuperAdmin@123', 12);
+  await prisma.superAdmin.upsert({
+    where: { email: 'superadmin@hrms.io' },
+    update: {},
+    create: {
+      email: 'superadmin@hrms.io',
+      name: 'Super Admin',
+      passwordHash: superAdminHash,
+    },
+  });
+  console.log('✅ Super Admin: superadmin@hrms.io / SuperAdmin@123');
+
   // Super admin org
   const org = await prisma.organization.upsert({
     where: { slug: 'demo-corp' },

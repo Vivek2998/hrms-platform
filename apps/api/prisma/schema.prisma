@@ -172,6 +172,13 @@ enum OffboardingStatus {
   COMPLETED
 }
 
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
 // ─────────────────────────────────────────────────────────────
 // ORGANIZATIONS (Tenants)
 // ─────────────────────────────────────────────────────────────
@@ -200,6 +207,9 @@ model Organization {
   esiEnabled  Boolean  @default(true)
   ptEnabled   Boolean  @default(false)
   ptState     String?
+  plan        SubscriptionPlan @default(FREE)
+  maxEmployees Int             @default(10)
+  trialEndsAt DateTime?
   isActive    Boolean  @default(true)
   deletedAt   DateTime?
   createdAt   DateTime @default(now())
@@ -223,6 +233,21 @@ model Organization {
   offboardingAssignments  OffboardingAssignment[]
 
   @@map("organizations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUPER ADMIN
+// ─────────────────────────────────────────────────────────────
+
+model SuperAdmin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("super_admins")
 }
 
 // ─────────────────────────────────────────────────────────────
