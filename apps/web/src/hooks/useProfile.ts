@@ -7,6 +7,7 @@ export interface MyProfile {
   id: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   phone: string | null;
   dateOfBirth: string | null;
   bloodGroup: string | null;

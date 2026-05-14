@@ -109,6 +109,7 @@ export function employeeRoutes(app: FastifyInstance) {
       bankIfsc: z.string().optional(),
       bankName: z.string().optional(),
       bankBranch: z.string().optional(),
+      avatarUrl: z.string().url().optional(),
     });
     const input = selfSchema.parse(req.body);
     const updated = await app.prisma.employee.update({
@@ -122,6 +123,7 @@ export function employeeRoutes(app: FastifyInstance) {
         dateOfBirth: true, bloodGroup: true, maritalStatus: true,
         presentAddress: true, permanentAddress: true, emergencyContact: true,
         bankAccountNumber: true, bankIfsc: true, bankName: true, bankBranch: true,
+        avatarUrl: true,
       },
     });
     return reply.send(ok(updated));

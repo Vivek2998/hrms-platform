@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Camera, Loader2 } from 'lucide-react';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMyProfile, useUpdateMyProfile, type MyProfile } from '@/hooks/useProfile';
+import { useUploadFile } from '@/hooks/useUpload';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,9 +70,31 @@ function F({ label, children }: { label: string; children: React.ReactNode }) {
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
   const { data: profile, isLoading } = useMyProfile();
   const { mutate: save, isPending } = useUpdateMyProfile();
+  const { mutate: uploadFile, isPending: isUploadingAvatar } = useUploadFile('avatars');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(blankForm());
+
+  const initials = user
+    ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
+    : '?';
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadFile(file, {
+      onSuccess: ({ url }) => {
+        save({ avatarUrl: url } as Parameters<typeof save>[0], {
+          onSuccess: () => {
+            if (user) setUser({ ...user, avatarUrl: url });
+          },
+        });
+      },
+    });
+    e.target.value = '';
+  }
 
   useEffect(() => {
     if (profile) setForm(profileToForm(profile));
@@ -116,6 +141,41 @@ export default function SettingsPage() {
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Account</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
+
+          {/* ── Profile photo ── */}
+          <div className="flex items-center gap-4 pb-4 border-b border-border/50">
+            <div className="relative group">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={user?.avatarUrl ?? undefined} alt={user?.firstName} />
+                <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
+                aria-label="Change profile photo"
+              >
+                {isUploadingAvatar
+                  ? <Loader2 className="h-5 w-5 animate-spin text-white" />
+                  : <Camera className="h-5 w-5 text-white" />}
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </div>
+            <div>
+              <p className="font-semibold">{user?.firstName} {user?.lastName}</p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                Hover over the photo and click to upload a new picture
+              </p>
+            </div>
+          </div>
+
           <div className="flex justify-between py-1 border-b border-border/50">
             <span className="text-muted-foreground">Name</span>
             <span className="font-medium">{user?.firstName} {user?.lastName}</span>
