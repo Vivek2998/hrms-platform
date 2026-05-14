@@ -6,8 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 import { apiClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -49,6 +48,23 @@ interface RegisterResponse {
     avatarUrl: string | null;
     mustChangePassword: boolean;
   };
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+      {children}
+    </p>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-center gap-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{children}</p>
+      <div className="h-px flex-1 bg-slate-100" />
+    </div>
+  );
 }
 
 export default function RegisterPage() {
@@ -104,180 +120,192 @@ export default function RegisterPage() {
   const slugValue = form.watch('slug');
 
   return (
-    <div className="bg-muted/40 flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-lg space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <div className="bg-primary h-12 w-12 rounded-xl" />
-          <h1 className="text-2xl font-bold">HRMS Platform</h1>
-          <p className="text-muted-foreground text-sm">
-            Start managing your team today — free
-          </p>
+    <AuthLayout variant="register">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your account</h1>
+        <p className="mt-1.5 text-sm text-slate-500">
+          Set up your company and admin account — free forever on the Starter plan.
+        </p>
+      </div>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+        {/* ── Company ── */}
+        <div className="space-y-4">
+          <SectionHeading>Company</SectionHeading>
+
+          <div>
+            <FieldLabel>Company Name</FieldLabel>
+            <Input
+              placeholder="Acme Pvt Ltd"
+              className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+              {...form.register('name', {
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const slug = e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .slice(0, 50);
+                  form.setValue('slug', slug, { shouldValidate: false });
+                },
+              })}
+            />
+            {form.formState.errors.name && (
+              <p className="mt-1 text-xs text-red-500">{form.formState.errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <FieldLabel>URL Slug</FieldLabel>
+              <Input
+                placeholder="acme-pvt-ltd"
+                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                {...form.register('slug')}
+              />
+              {form.formState.errors.slug ? (
+                <p className="mt-1 text-xs text-red-500">{form.formState.errors.slug.message}</p>
+              ) : (
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Login URL: /login?org={slugValue || 'slug'}
+                </p>
+              )}
+            </div>
+            <div>
+              <FieldLabel>Company Email</FieldLabel>
+              <Input
+                type="email"
+                placeholder="hr@acme.in"
+                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                {...form.register('email')}
+              />
+              {form.formState.errors.email && (
+                <p className="mt-1 text-xs text-red-500">{form.formState.errors.email.message}</p>
+              )}
+            </div>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Create your account</CardTitle>
-            <CardDescription>Set up your company and admin account in one step</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              {/* Company section */}
-              <div className="space-y-3">
-                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-                  Company
+        {/* ── Admin account ── */}
+        <div className="space-y-4">
+          <SectionHeading>Your Account</SectionHeading>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <FieldLabel>First Name</FieldLabel>
+              <Input
+                className="h-10 border-slate-200 text-slate-900"
+                {...form.register('adminFirstName')}
+              />
+              {form.formState.errors.adminFirstName && (
+                <p className="mt-1 text-xs text-red-500">
+                  {form.formState.errors.adminFirstName.message}
                 </p>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Company Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Acme Pvt Ltd"
-                    {...form.register('name', {
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                        const slug = e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9\s-]/g, '')
-                          .replace(/\s+/g, '-')
-                          .replace(/-+/g, '-')
-                          .slice(0, 50);
-                        form.setValue('slug', slug, { shouldValidate: false });
-                      },
-                    })}
-                  />
-                  {form.formState.errors.name && (
-                    <p className="text-destructive text-xs">
-                      {form.formState.errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="slug">URL Slug</Label>
-                    <Input id="slug" placeholder="acme-pvt-ltd" {...form.register('slug')} />
-                    {form.formState.errors.slug ? (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.slug.message}
-                      </p>
-                    ) : (
-                      <p className="text-muted-foreground text-xs">
-                        Login: /login?org={slugValue || 'slug'}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Company Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="hr@acme.in"
-                      {...form.register('email')}
-                    />
-                    {form.formState.errors.email && (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Admin account section */}
-              <div className="space-y-3">
-                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-                  Your Account
+              )}
+            </div>
+            <div>
+              <FieldLabel>Last Name</FieldLabel>
+              <Input
+                className="h-10 border-slate-200 text-slate-900"
+                {...form.register('adminLastName')}
+              />
+              {form.formState.errors.adminLastName && (
+                <p className="mt-1 text-xs text-red-500">
+                  {form.formState.errors.adminLastName.message}
                 </p>
+              )}
+            </div>
+          </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="adminFirstName">First Name</Label>
-                    <Input id="adminFirstName" {...form.register('adminFirstName')} />
-                    {form.formState.errors.adminFirstName && (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.adminFirstName.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="adminLastName">Last Name</Label>
-                    <Input id="adminLastName" {...form.register('adminLastName')} />
-                    {form.formState.errors.adminLastName && (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.adminLastName.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="adminEmail">Work Email</Label>
-                  <Input
-                    id="adminEmail"
-                    type="email"
-                    placeholder="you@acme.in"
-                    {...form.register('adminEmail')}
-                  />
-                  {form.formState.errors.adminEmail && (
-                    <p className="text-destructive text-xs">
-                      {form.formState.errors.adminEmail.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="adminPassword">Password</Label>
-                    <Input
-                      id="adminPassword"
-                      type="password"
-                      placeholder="Min 8 characters"
-                      {...form.register('adminPassword')}
-                    />
-                    {form.formState.errors.adminPassword && (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.adminPassword.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      {...form.register('confirmPassword')}
-                    />
-                    {form.formState.errors.confirmPassword && (
-                      <p className="text-destructive text-xs">
-                        {form.formState.errors.confirmPassword.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {serverError && <p className="text-destructive text-sm">{serverError}</p>}
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Create Account — Free
-              </Button>
-
-              <p className="text-muted-foreground text-center text-sm">
-                Already have an account?{' '}
-                <Link to="/login" className="text-primary hover:underline">
-                  Sign in
-                </Link>
+          <div>
+            <FieldLabel>Work Email</FieldLabel>
+            <Input
+              type="email"
+              placeholder="you@acme.in"
+              className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+              {...form.register('adminEmail')}
+            />
+            {form.formState.errors.adminEmail && (
+              <p className="mt-1 text-xs text-red-500">
+                {form.formState.errors.adminEmail.message}
               </p>
-            </form>
-          </CardContent>
-        </Card>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <FieldLabel>Password</FieldLabel>
+              <Input
+                type="password"
+                placeholder="Min 8 characters"
+                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                {...form.register('adminPassword')}
+              />
+              {form.formState.errors.adminPassword && (
+                <p className="mt-1 text-xs text-red-500">
+                  {form.formState.errors.adminPassword.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <FieldLabel>Confirm Password</FieldLabel>
+              <Input
+                type="password"
+                className="h-10 border-slate-200 text-slate-900"
+                {...form.register('confirmPassword')}
+              />
+              {form.formState.errors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-500">
+                  {form.formState.errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {serverError && (
+          <p className="rounded-md bg-red-50 px-3 py-2.5 text-sm text-red-600">{serverError}</p>
+        )}
+
+        <Button
+          type="submit"
+          disabled={form.formState.isSubmitting}
+          className="h-10 w-full bg-slate-900 text-white hover:bg-slate-800"
+        >
+          {form.formState.isSubmitting && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Create Account — Free
+        </Button>
+
+        <p className="text-center text-xs text-slate-400">
+          By creating an account, you agree to our{' '}
+          <a href="#" className="text-slate-500 hover:text-slate-700 hover:underline">Terms of Service</a>{' '}
+          and{' '}
+          <a href="#" className="text-slate-500 hover:text-slate-700 hover:underline">Privacy Policy</a>.
+        </p>
+      </form>
+
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-100" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-xs text-slate-400">Already have an account?</span>
+        </div>
       </div>
-    </div>
+
+      <Link to="/login">
+        <Button
+          variant="outline"
+          type="button"
+          className="h-10 w-full border-slate-200 text-slate-700 hover:bg-slate-50"
+        >
+          Sign in instead
+        </Button>
+      </Link>
+    </AuthLayout>
   );
 }
