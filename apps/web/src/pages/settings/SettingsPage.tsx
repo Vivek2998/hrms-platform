@@ -170,9 +170,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <p className="font-semibold">{user?.firstName} {user?.lastName}</p>
-              <p className="text-muted-foreground text-xs mt-0.5">
-                Hover over the photo and click to upload a new picture
-              </p>
+              <p className="text-muted-foreground text-xs mt-0.5">{user?.workEmail}</p>
             </div>
           </div>
 
