@@ -75,3 +75,21 @@ export function useInitializeLeaveBalances() {
     },
   });
 }
+
+export function useCarryForwardLeaveBalances() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ fromYear, toYear }: { fromYear: number; toYear: number }) => {
+      const res = await apiClient.post<{ data: { carried: number; message: string } }>(
+        '/leaves/balance/carry-forward',
+        { fromYear, toYear },
+      );
+      return res.data.data;
+    },
+    onSuccess: (data) => {
+      void qc.invalidateQueries({ queryKey: balanceKeys.all });
+      toast.success(data.message);
+    },
+    onError: () => toast.error('Carry-forward failed'),
+  });
+}

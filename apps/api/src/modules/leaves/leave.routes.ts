@@ -419,4 +419,75 @@ export function leaveRoutes(app: FastifyInstance) {
 
     return reply.send(ok({ created: result.count, total: data.length }));
   });
+
+  // POST /leaves/balance/carry-forward — copy unused balance from fromYear to toYear for carry-forward leave types
+  app.post('/leaves/balance/carry-forward', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) throw fail('Forbidden', 403);
+
+    const { fromYear, toYear } = z
+      .object({
+        fromYear: z.coerce.number().int(),
+        toYear: z.coerce.number().int(),
+      })
+      .refine((d) => d.toYear === d.fromYear + 1, { message: 'toYear must be fromYear + 1' })
+      .parse(req.body);
+
+    // Only carry-forward enabled leave types
+    const leaveTypes = await app.prisma.leaveType.findMany({
+      where: { organizationId: req.user.orgId, isCarryForward: true, isActive: true, deletedAt: null },
+    });
+
+    if (leaveTypes.length === 0) return reply.send(ok({ carried: 0, message: 'No carry-forward leave types configured' }));
+
+    // Fetch all balances for fromYear for these leave types
+    const fromBalances = await app.prisma.leaveBalance.findMany({
+      where: {
+        organizationId: req.user.orgId,
+        year: fromYear,
+        leaveTypeId: { in: leaveTypes.map((lt) => lt.id) },
+      },
+    });
+
+    let carried = 0;
+    for (const balance of fromBalances) {
+      const leaveType = leaveTypes.find((lt) => lt.id === balance.leaveTypeId);
+      if (!leaveType) continue;
+
+      const remaining = Math.max(0, balance.allocated - balance.used - balance.pending);
+      const carryDays = Math.min(remaining, leaveType.maxCarryForward);
+      if (carryDays === 0) continue;
+
+      // Upsert: add carry-forward days on top of any existing toYear allocation
+      const existing = await app.prisma.leaveBalance.findUnique({
+        where: {
+          organizationId_employeeId_leaveTypeId_year: {
+            organizationId: req.user.orgId,
+            employeeId: balance.employeeId,
+            leaveTypeId: balance.leaveTypeId,
+            year: toYear,
+          },
+        },
+      });
+
+      if (existing) {
+        await app.prisma.leaveBalance.update({
+          where: { id: existing.id },
+          data: { allocated: existing.allocated + carryDays },
+        });
+      } else {
+        await app.prisma.leaveBalance.create({
+          data: {
+            organizationId: req.user.orgId,
+            employeeId: balance.employeeId,
+            leaveTypeId: balance.leaveTypeId,
+            year: toYear,
+            allocated: leaveType.daysAllowed + carryDays,
+          },
+        });
+      }
+      carried++;
+    }
+
+    return reply.send(ok({ carried, message: `Carried forward balances for ${carried} employee-leave combinations` }));
+  });
 }

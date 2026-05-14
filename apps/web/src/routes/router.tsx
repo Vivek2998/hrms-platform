@@ -33,6 +33,8 @@ const PerformancePage = lazy(() => import('@/pages/performance/PerformancePage')
 const RecruitmentPage = lazy(() => import('@/pages/recruitment/RecruitmentPage'));
 const OffboardingPage = lazy(() => import('@/pages/offboarding/OffboardingPage'));
 const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
+const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'));
+const SalaryStructurePage = lazy(() => import('@/pages/salary/SalaryStructurePage'));
 const AnnouncementsPage = lazy(() => import('@/pages/announcements/AnnouncementsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
@@ -128,6 +130,16 @@ export const router = createBrowserRouter([
           <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
             <Lazy>
               <PayrollPage />
+            </Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'salary-structure',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <SalaryStructurePage />
             </Lazy>
           </RoleGuard>
         ),
@@ -298,6 +310,16 @@ export const router = createBrowserRouter([
           <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
             <Lazy>
               <AnalyticsPage />
+            </Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'reports',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <ReportsPage />
             </Lazy>
           </RoleGuard>
         ),

@@ -10,6 +10,17 @@ const revisionSchema = z.object({
   reason: z.string().optional(),
 });
 
+const componentSchema = z.object({
+  name: z.string().min(1).max(100),
+  code: z.string().min(1).max(20).toUpperCase(),
+  type: z.enum(['EARNING', 'DEDUCTION', 'STATUTORY']),
+  isFixedAmount: z.boolean().default(false),
+  defaultPercent: z.number().min(0).max(100).optional(),
+  defaultAmount: z.number().min(0).optional(),
+  isTaxable: z.boolean().default(true),
+  displayOrder: z.number().int().min(0).default(0),
+});
+
 function buildComponents(ctc: number) {
   const monthly = ctc / 12;
   const basic = Math.round((monthly * 0.4) / 100) * 100;
@@ -25,8 +36,74 @@ function buildComponents(ctc: number) {
   };
 }
 
+const ADMIN_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'];
+
 export function salaryRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
+
+  // ── Salary Components (org-level master data) ──────────────
+
+  // GET /salary-components
+  app.get('/salary-components', auth, async (req, reply) => {
+    const components = await app.prisma.salaryComponent.findMany({
+      where: { organizationId: req.user.orgId, deletedAt: null },
+      orderBy: [{ type: 'asc' }, { displayOrder: 'asc' }, { name: 'asc' }],
+    });
+    return reply.send(ok(components));
+  });
+
+  // POST /salary-components
+  app.post('/salary-components', auth, async (req, reply) => {
+    if (!ADMIN_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const input = componentSchema.parse(req.body);
+
+    const existing = await app.prisma.salaryComponent.findFirst({
+      where: { organizationId: req.user.orgId, code: input.code, deletedAt: null },
+    });
+    if (existing) throw fail(`Component with code "${input.code}" already exists`, 409);
+
+    const component = await app.prisma.salaryComponent.create({
+      data: { ...input, organizationId: req.user.orgId },
+    });
+    return reply.status(201).send(ok(component));
+  });
+
+  // PATCH /salary-components/:id
+  app.patch('/salary-components/:id', auth, async (req, reply) => {
+    if (!ADMIN_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { id } = req.params as { id: string };
+    const input = componentSchema.partial().parse(req.body);
+
+    const existing = await app.prisma.salaryComponent.findFirst({
+      where: { id, organizationId: req.user.orgId, deletedAt: null },
+    });
+    if (!existing) throw fail('Component not found', 404);
+
+    const updated = await app.prisma.salaryComponent.update({
+      where: { id },
+      data: input,
+    });
+    return reply.send(ok(updated));
+  });
+
+  // DELETE /salary-components/:id (soft delete)
+  app.delete('/salary-components/:id', auth, async (req, reply) => {
+    if (!ADMIN_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { id } = req.params as { id: string };
+
+    const existing = await app.prisma.salaryComponent.findFirst({
+      where: { id, organizationId: req.user.orgId, deletedAt: null },
+    });
+    if (!existing) throw fail('Component not found', 404);
+
+    await app.prisma.salaryComponent.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    return reply.status(204).send();
+  });
+
+  // ── Salary Revisions ───────────────────────────────────────
 
   // GET /salary-revisions?employeeId=
   app.get('/salary-revisions', auth, async (req, reply) => {

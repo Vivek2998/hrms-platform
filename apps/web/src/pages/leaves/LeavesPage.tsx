@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, Pencil, Zap, Download } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, Pencil, Zap, Download, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import {
   useLeaveBalances,
   useUpsertLeaveBalance,
   useInitializeLeaveBalances,
+  useCarryForwardLeaveBalances,
   type EmployeeLeaveBalance,
 } from '@/hooks/useLeaveBalance';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
@@ -264,6 +265,7 @@ function LeaveBalancesPanel() {
   const { data, isLoading } = useLeaveBalances(year);
   const { data: leaveTypes = [] } = useLeaveTypes();
   const initMutation = useInitializeLeaveBalances();
+  const carryMutation = useCarryForwardLeaveBalances();
 
   const employees = data?.data ?? [];
 
@@ -286,15 +288,27 @@ function LeaveBalancesPanel() {
           </Button>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={initMutation.isPending}
-          onClick={() => { initMutation.mutate(year); }}
-        >
-          <Zap className="mr-2 h-4 w-4" />
-          {initMutation.isPending ? 'Initializing…' : 'Initialize Balances'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={carryMutation.isPending}
+            title={`Copy unused balance from ${year - 1} → ${year} for carry-forward leave types`}
+            onClick={() => { carryMutation.mutate({ fromYear: year - 1, toYear: year }); }}
+          >
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
+            {carryMutation.isPending ? 'Carrying…' : `Carry Forward from ${year - 1}`}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={initMutation.isPending}
+            onClick={() => { initMutation.mutate(year); }}
+          >
+            <Zap className="mr-2 h-4 w-4" />
+            {initMutation.isPending ? 'Initializing…' : 'Initialize Balances'}
+          </Button>
+        </div>
       </div>
 
       <Card>

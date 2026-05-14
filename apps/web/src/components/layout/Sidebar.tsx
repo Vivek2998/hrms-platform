@@ -86,6 +86,7 @@ const ENTRIES: SidebarEntry[] = [
     icon: DollarSign,
     children: [
       { label: 'Payroll Runs', to: '/payroll', icon: ReceiptText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'payroll' },
+      { label: 'Salary Structure', to: '/salary-structure', icon: BarChart2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee, feature: 'my-payslips' },
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
     ],
@@ -126,6 +127,7 @@ const ENTRIES: SidebarEntry[] = [
   },
   { group: false, label: 'Recruitment', to: '/recruitment', icon: Briefcase, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'recruitment' },
   { group: false, label: 'Analytics', to: '/analytics', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'analytics' },
+  { group: false, label: 'Reports', to: '/reports', icon: FileText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'departments' },
   { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'shifts' },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },
@@ -212,20 +214,22 @@ export function Sidebar() {
 
               return (
                 <li key={entry.key}>
-                  {sidebarOpen && (
-                    <button
-                      onClick={() => { toggleGroup(entry.key); }}
-                      className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-                    >
-                      <entry.icon className="h-5 w-5 shrink-0" />
-                      <span className="flex-1 text-left">{entry.label}</span>
-                      <ChevronDown
-                        className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-180')}
-                      />
-                    </button>
-                  )}
-                  {(isOpen || !sidebarOpen) && (
-                    <ul className={cn('space-y-1', sidebarOpen && 'mt-1')}>
+                  <button
+                    onClick={() => { toggleGroup(entry.key); }}
+                    className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                  >
+                    <entry.icon className="h-5 w-5 shrink-0" />
+                    {sidebarOpen && (
+                      <>
+                        <span className="flex-1 text-left">{entry.label}</span>
+                        <ChevronDown
+                          className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-180')}
+                        />
+                      </>
+                    )}
+                  </button>
+                  {sidebarOpen && isOpen && (
+                    <ul className="mt-1 space-y-1">
                       {visible.map((child) => {
                         const locked = isLocked(child, orgPlan);
                         if (locked) {
