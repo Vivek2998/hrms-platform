@@ -81,15 +81,15 @@ export default function EmployeesPage() {
                       {emp.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
                       {emp.firstName} {emp.lastName}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-muted-foreground truncate text-xs">
                       {emp.employeeCode} · {emp.workEmail}
                     </p>
                   </div>
-                  <Badge variant={emp.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                  <Badge variant={emp.status === 'ACTIVE' ? 'success' : 'secondary'} className="shrink-0">
                     {emp.status}
                   </Badge>
                 </button>

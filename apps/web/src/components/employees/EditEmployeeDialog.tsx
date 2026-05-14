@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,16 +21,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useUpdateEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useAuthStore } from '@/stores/auth.store';
 import type { Employee } from '@hrms/shared-types';
 
 const schema = z.object({
   firstName: z.string().min(1, 'Required').max(50),
   lastName: z.string().min(1, 'Required').max(50),
   email: z.string().email('Invalid email'),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || isValidPhoneNumber(v), {
+      message: 'Invalid phone number — use international format, e.g. +91 98765 43210',
+    }),
   dateOfBirth: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   bloodGroup: z.string().optional(),
@@ -41,6 +48,7 @@ const schema = z.object({
   departmentId: z.string().optional(),
   managerId: z.string().optional(),
   dateOfJoining: z.string().optional(),
+  noticePeriodDays: z.string().optional(),
   presentLine1: z.string().optional(),
   presentLine2: z.string().optional(),
   presentCity: z.string().optional(),
@@ -60,6 +68,17 @@ const schema = z.object({
   expTotalYears: z.string().optional(),
   expLastCompany: z.string().optional(),
   expLastDesignation: z.string().optional(),
+  // Statutory
+  panNumber: z.string().optional(),
+  aadhaarNumber: z.string().optional(),
+  pfAccountNumber: z.string().optional(),
+  esiNumber: z.string().optional(),
+  uanNumber: z.string().optional(),
+  // Bank
+  bankName: z.string().optional(),
+  bankIfsc: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  bankBranch: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -114,6 +133,7 @@ function buildDefaults(employee: Employee): FormValues {
     departmentId: employee.departmentId ?? '',
     managerId: employee.managerId ?? '',
     dateOfJoining: toDateInput(employee.dateOfJoining),
+    noticePeriodDays: employee.noticePeriodDays != null ? String(employee.noticePeriodDays) : '',
     presentLine1: employee.presentAddress?.line1 ?? '',
     presentLine2: employee.presentAddress?.line2 ?? '',
     presentCity: employee.presentAddress?.city ?? '',
@@ -133,14 +153,34 @@ function buildDefaults(employee: Employee): FormValues {
     expTotalYears: employee.experienceDetails?.totalYears != null ? String(employee.experienceDetails.totalYears) : '',
     expLastCompany: employee.experienceDetails?.lastCompany ?? '',
     expLastDesignation: employee.experienceDetails?.lastDesignation ?? '',
+    panNumber: employee.panNumber ?? '',
+    aadhaarNumber: employee.aadhaarNumber ?? '',
+    pfAccountNumber: employee.pfAccountNumber ?? '',
+    esiNumber: employee.esiNumber ?? '',
+    uanNumber: employee.uanNumber ?? '',
+    bankName: employee.bankName ?? '',
+    bankIfsc: employee.bankIfsc ?? '',
+    bankAccountNumber: employee.bankAccountNumber ?? '',
+    bankBranch: employee.bankBranch ?? '',
   };
 }
 
+const TABS = [
+  { value: 'personal', label: 'Personal' },
+  { value: 'employment', label: 'Employment' },
+  { value: 'address', label: 'Address' },
+  { value: 'education', label: 'Education' },
+  { value: 'statutory', label: 'Statutory & Bank' },
+] as const;
+
 export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDialogProps) {
+  const [activeTab, setActiveTab] = useState<string>('personal');
   const { mutate: updateEmployee, isPending } = useUpdateEmployee(employee.id);
   const { data: departments = [] } = useDepartments();
   const { data: employeeList } = useEmployees({ limit: 100 });
   const managers = (employeeList?.employees ?? []).filter((e) => e.id !== employee.id);
+  const currentUserRole = useAuthStore((s) => s.user?.role);
+  const canEditWorkEmail = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(currentUserRole ?? '');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -170,6 +210,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
       departmentId: values.departmentId || undefined,
       managerId: values.managerId || undefined,
       dateOfJoining: toIso(values.dateOfJoining),
+      noticePeriodDays: values.noticePeriodDays ? parseInt(values.noticePeriodDays) : undefined,
       presentAddress:
         values.presentLine1 || values.presentCity
           ? {
@@ -216,6 +257,15 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
               lastDesignation: values.expLastDesignation,
             }
           : undefined,
+      panNumber: values.panNumber || undefined,
+      aadhaarNumber: values.aadhaarNumber || undefined,
+      pfAccountNumber: values.pfAccountNumber || undefined,
+      esiNumber: values.esiNumber || undefined,
+      uanNumber: values.uanNumber || undefined,
+      bankName: values.bankName || undefined,
+      bankIfsc: values.bankIfsc || undefined,
+      bankAccountNumber: values.bankAccountNumber || undefined,
+      bankBranch: values.bankBranch || undefined,
     };
 
     updateEmployee(payload, { onSuccess: onClose });
@@ -223,21 +273,30 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {/* No overflow on the dialog itself — prevents Select dropdowns from being clipped */}
-      <DialogContent className="max-w-2xl gap-0 p-0">
+      <DialogContent aria-describedby={undefined} className="max-w-2xl gap-0 p-0">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Edit Employee</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Tabs defaultValue="personal" className="w-full">
-            {/* Tab bar stays pinned — never scrolls away */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b px-6 py-3">
-              <TabsList className="w-full">
-                <TabsTrigger value="personal" className="flex-1 text-xs sm:text-sm">Personal</TabsTrigger>
-                <TabsTrigger value="employment" className="flex-1 text-xs sm:text-sm">Employment</TabsTrigger>
-                <TabsTrigger value="address" className="flex-1 text-xs sm:text-sm">Address</TabsTrigger>
-                <TabsTrigger value="education" className="flex-1 text-xs sm:text-sm">Education</TabsTrigger>
+              {/* Mobile: select dropdown */}
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="sm:hidden">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TABS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Desktop: tab bar */}
+              <TabsList className="hidden w-full sm:flex">
+                {TABS.map((t) => (
+                  <TabsTrigger key={t.value} value={t.value} className="flex-1">{t.label}</TabsTrigger>
+                ))}
               </TabsList>
             </div>
 
@@ -254,8 +313,8 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <Field label="Personal Email" required error={errors.email?.message}>
                     <Input type="email" {...form.register('email')} />
                   </Field>
-                  <Field label="Phone">
-                    <Input placeholder="+91XXXXXXXXXX" {...form.register('phone')} />
+                  <Field label="Phone" error={errors.phone?.message}>
+                    <Input placeholder="+91 98765 43210" {...form.register('phone')} />
                   </Field>
                   <Field label="Date of Birth">
                     <Controller
@@ -321,9 +380,11 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
 
               <TabsContent value="employment" className="mt-0 space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Work Email" required error={errors.workEmail?.message}>
-                    <Input type="email" {...form.register('workEmail')} />
-                  </Field>
+                  {canEditWorkEmail && (
+                    <Field label="Work Email" required error={errors.workEmail?.message}>
+                      <Input type="email" {...form.register('workEmail')} />
+                    </Field>
+                  )}
                   <Field label="Designation">
                     <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
                   </Field>
@@ -388,6 +449,14 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                       )}
                     />
                   </Field>
+                  <Field label="Notice Period (Days)">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 30"
+                      {...form.register('noticePeriodDays')}
+                    />
+                  </Field>
                 </div>
               </TabsContent>
 
@@ -423,7 +492,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Contact Name"><Input {...form.register('emergencyName')} /></Field>
                     <Field label="Contact Phone">
-                      <Input placeholder="+91XXXXXXXXXX" {...form.register('emergencyPhone')} />
+                      <Input placeholder="+91 98765 43210" {...form.register('emergencyPhone')} />
                     </Field>
                     <Field label="Relationship">
                       <Input placeholder="e.g. Spouse, Parent" {...form.register('emergencyRelation')} />
@@ -459,6 +528,62 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                     </Field>
                     <Field label="Last Company"><Input {...form.register('expLastCompany')} /></Field>
                     <Field label="Last Designation"><Input {...form.register('expLastDesignation')} /></Field>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="statutory" className="mt-0 space-y-6">
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Statutory Details
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="PAN Number">
+                      <Input
+                        placeholder="e.g. ABCDE1234F"
+                        className="uppercase"
+                        {...form.register('panNumber', {
+                          onChange: (e) => { e.target.value = e.target.value.toUpperCase(); },
+                        })}
+                      />
+                    </Field>
+                    <Field label="Aadhaar Number">
+                      <Input placeholder="12-digit Aadhaar number" {...form.register('aadhaarNumber')} />
+                    </Field>
+                    <Field label="PF Account Number">
+                      <Input placeholder="e.g. MH/BAN/1234567/000/1234567" {...form.register('pfAccountNumber')} />
+                    </Field>
+                    <Field label="ESI Number">
+                      <Input placeholder="ESI registration number" {...form.register('esiNumber')} />
+                    </Field>
+                    <Field label="UAN Number">
+                      <Input placeholder="Universal Account Number" {...form.register('uanNumber')} />
+                    </Field>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                    Bank Details
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="Bank Name">
+                      <Input placeholder="e.g. State Bank of India" {...form.register('bankName')} />
+                    </Field>
+                    <Field label="IFSC Code">
+                      <Input
+                        placeholder="e.g. SBIN0001234"
+                        className="uppercase"
+                        {...form.register('bankIfsc', {
+                          onChange: (e) => { e.target.value = e.target.value.toUpperCase(); },
+                        })}
+                      />
+                    </Field>
+                    <Field label="Account Number">
+                      <Input placeholder="Bank account number" {...form.register('bankAccountNumber')} />
+                    </Field>
+                    <Field label="Branch">
+                      <Input placeholder="Branch name" {...form.register('bankBranch')} />
+                    </Field>
                   </div>
                 </div>
               </TabsContent>

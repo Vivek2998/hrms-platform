@@ -152,6 +152,10 @@ export function employeeRoutes(app: FastifyInstance) {
   app.patch('/employees/:id', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
     const input = updateEmployeeSchema.parse(req.body);
+    const adminRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'];
+    if (!adminRoles.includes(req.user.role)) {
+      delete input.workEmail;
+    }
     const employee = await updateEmployee(id, req.user.orgId, input, app.prisma);
     return reply.send(ok(employee));
   });

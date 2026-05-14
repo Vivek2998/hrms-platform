@@ -37,15 +37,22 @@ export function isValidGSTIN(gstin: string): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Indian Mobile Number
+// International Phone Number (libphonenumber-js)
+// Accepts E.164 format (+CountryCode Number) for all countries.
 // ─────────────────────────────────────────────────────────────
+import { isValidPhoneNumber } from 'libphonenumber-js';
+
+export function isValidPhone(phone: string): boolean {
+  try {
+    return isValidPhoneNumber(phone);
+  } catch {
+    return false;
+  }
+}
+
+/** @deprecated Use isValidPhone — supports all countries */
 export function isValidIndianMobile(phone: string): boolean {
-  const clean = phone.replace(/[\s\-+]/g, '');
-  // 10-digit starting with 6-9
-  if (/^[6-9]\d{9}$/.test(clean)) return true;
-  // With country code: 91 prefix
-  if (/^91[6-9]\d{9}$/.test(clean)) return true;
-  return false;
+  return isValidPhone(phone);
 }
 
 // ─────────────────────────────────────────────────────────────

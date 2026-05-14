@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isValidPAN, isValidAadhaar, isValidIFSC, isValidIndianMobile } from '@hrms/shared-utils';
+import { isValidPAN, isValidAadhaar, isValidIFSC, isValidPhone } from '@hrms/shared-utils';
 import { paginationSchema } from '../../lib/pagination.js';
 
 const addressSchema = z
@@ -46,7 +46,7 @@ export const createEmployeeSchema = z.object({
   phone: z
     .string()
     .optional()
-    .refine((v) => !v || isValidIndianMobile(v), { message: 'Invalid Indian mobile number' }),
+    .refine((v) => !v || isValidPhone(v), { message: 'Invalid phone number — use international format, e.g. +91 98765 43210' }),
   dateOfBirth: z.string().datetime().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   bloodGroup: z.string().optional(),
@@ -102,8 +102,10 @@ export const createEmployeeSchema = z.object({
 });
 
 export const updateEmployeeSchema = createEmployeeSchema
-  .omit({ password: true, workEmail: true })
-  .partial();
+  .omit({ password: true })
+  .partial()
+  // Remove the default(30) so partial updates don't silently overwrite the existing value
+  .extend({ noticePeriodDays: z.number().int().min(0).optional() });
 
 export const employeeListSchema = paginationSchema.extend({
   status: z.enum(['ACTIVE', 'INACTIVE', 'ON_NOTICE', 'TERMINATED', 'ABSCONDED']).optional(),

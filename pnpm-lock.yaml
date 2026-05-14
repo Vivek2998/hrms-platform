@@ -267,6 +267,9 @@ importers:
       date-fns:
         specifier: 'catalog:'
         version: 4.1.0
+      libphonenumber-js:
+        specifier: ^1.13.1
+        version: 1.13.1
       lucide-react:
         specifier: ^0.511.0
         version: 0.511.0(react@19.2.5)
@@ -379,6 +382,9 @@ importers:
       date-fns:
         specifier: 'catalog:'
         version: 4.1.0
+      libphonenumber-js:
+        specifier: ^1.13.1
+        version: 1.13.1
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
@@ -3372,6 +3378,9 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  libphonenumber-js@1.13.1:
+    resolution: {integrity: sha512-GEw0GLL7YUUA6nv21IsCvVjtI5Ejn84sjbdfQ9KxdbqEVOk1PZh7xejn01EEiniKw+dBeCfim+8MGeuvVuE2BA==}
 
   light-my-request@6.6.0:
     resolution: {integrity: sha512-CHYbu8RtboSIoVsHZ6Ye4cj4Aw/yg2oAFimlF7mNvfDV192LR7nDiKtSIfCuLT7KokPSTn/9kfVLm5OGN0A28A==}
@@ -7773,6 +7782,8 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  libphonenumber-js@1.13.1: {}
 
   light-my-request@6.6.0:
     dependencies:

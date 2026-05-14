@@ -26,6 +26,7 @@
     }
   },
   "scripts": {
+    "dev": "tsc --watch",
     "build": "tsc",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
@@ -35,7 +36,8 @@
   },
   "dependencies": {
     "@hrms/shared-types": "workspace:*",
-    "date-fns": "catalog:"
+    "date-fns": "catalog:",
+    "libphonenumber-js": "^1.13.1"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "catalog:",

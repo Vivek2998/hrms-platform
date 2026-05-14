@@ -65,8 +65,10 @@ export function useUpdateEmployee(id: string) {
       const res = await apiClient.patch<ApiResponse<Employee>>(`/employees/${id}`, data);
       return res.data.data;
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: employeeKeys.detail(id) });
+    onSuccess: (updatedEmployee) => {
+      if (updatedEmployee) {
+        qc.setQueryData(employeeKeys.detail(id), updatedEmployee);
+      }
       void qc.invalidateQueries({ queryKey: employeeKeys.all });
       toast.success('Employee updated successfully');
     },

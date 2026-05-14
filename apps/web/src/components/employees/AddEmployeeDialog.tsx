@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useCreateEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -29,7 +31,12 @@ const schema = z.object({
   firstName: z.string().min(1, 'Required').max(50),
   lastName: z.string().min(1, 'Required').max(50),
   email: z.string().email('Invalid email'),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || isValidPhoneNumber(v), {
+      message: 'Invalid phone number — use international format, e.g. +91 98765 43210',
+    }),
   dateOfBirth: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   bloodGroup: z.string().optional(),
@@ -101,7 +108,16 @@ function Field({
   );
 }
 
+const TABS = [
+  { value: 'personal', label: 'Personal' },
+  { value: 'employment', label: 'Employment' },
+  { value: 'address', label: 'Address' },
+  { value: 'education', label: 'Education' },
+  { value: 'account', label: 'Account' },
+] as const;
+
 export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
+  const [activeTab, setActiveTab] = useState<string>('personal');
   const { mutate: createEmployee, isPending } = useCreateEmployee();
   const { data: departments = [] } = useDepartments();
   const { data: employeeList } = useEmployees({ limit: 100 });
@@ -180,24 +196,35 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
 
   const handleClose = () => {
     form.reset();
+    setActiveTab('personal');
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Employee</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="mb-4 grid w-full grid-cols-5">
-              <TabsTrigger value="personal">Personal</TabsTrigger>
-              <TabsTrigger value="employment">Employment</TabsTrigger>
-              <TabsTrigger value="address">Address</TabsTrigger>
-              <TabsTrigger value="education">Education</TabsTrigger>
-              <TabsTrigger value="account">Account</TabsTrigger>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {/* Mobile: select dropdown */}
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="mb-4 sm:hidden">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TABS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Desktop: tab bar */}
+            <TabsList className="mb-4 hidden w-full sm:grid sm:grid-cols-5">
+              {TABS.map((t) => (
+                <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>
+              ))}
             </TabsList>
 
             {/* ── Tab 1: Personal ── */}
@@ -212,8 +239,8 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 <Field label="Personal Email" required error={errors.email?.message}>
                   <Input type="email" {...form.register('email')} />
                 </Field>
-                <Field label="Phone">
-                  <Input placeholder="+91XXXXXXXXXX" {...form.register('phone')} />
+                <Field label="Phone" error={errors.phone?.message}>
+                  <Input placeholder="+91 98765 43210" {...form.register('phone')} />
                 </Field>
                 <Field label="Date of Birth">
                   <Controller
@@ -404,7 +431,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                     <Input {...form.register('emergencyName')} />
                   </Field>
                   <Field label="Contact Phone">
-                    <Input placeholder="+91XXXXXXXXXX" {...form.register('emergencyPhone')} />
+                    <Input placeholder="+91 98765 43210" {...form.register('emergencyPhone')} />
                   </Field>
                   <Field label="Relationship">
                     <Input placeholder="e.g. Spouse, Parent" {...form.register('emergencyRelation')} />

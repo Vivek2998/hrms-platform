@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -72,19 +73,34 @@ interface DateSelectPickerProps {
   maxYear?: number;
 }
 
+function parseParts(v?: string) {
+  const parts = v ? v.split('-') : ['', '', ''];
+  return { year: parts[0] ?? '', month: parts[1] ?? '', day: parts[2] ?? '' };
+}
+
 export function DateSelectPicker({ value, onChange, minYear, maxYear }: DateSelectPickerProps) {
   const now = new Date().getFullYear();
   const lo = minYear ?? now - 100;
   const hi = maxYear ?? now;
 
-  const parts  = value ? value.split('-') : ['', '', ''];
-  const year   = parts[0] ?? '';
-  const month  = parts[1] ?? '';
-  const day    = parts[2] ?? '';
+  // Local state holds in-progress selections independently of the parent value.
+  // This lets users pick day/month/year in any order without losing earlier choices.
+  const [local, setLocal] = useState(parseParts(value));
 
-  const numYear  = parseInt(year)  || now;
-  const numMonth = parseInt(month) || 1;
-  const maxDay   = year && month ? daysInMonth(numMonth, numYear) : 31;
+  // Sync when the external value changes (form reset, dialog re-open).
+  useEffect(() => {
+    setLocal(parseParts(value));
+  }, [value]);
+
+  function handleChange(field: 'day' | 'month' | 'year', val: string) {
+    const next = { ...local, [field]: val };
+    setLocal(next);
+    onChange(next.day && next.month && next.year ? `${next.year}-${next.month}-${next.day}` : '');
+  }
+
+  const numYear  = parseInt(local.year)  || now;
+  const numMonth = parseInt(local.month) || 1;
+  const maxDay   = local.year && local.month ? daysInMonth(numMonth, numYear) : 31;
 
   const dayOpts   = Array.from({ length: maxDay }, (_, i) => {
     const v = String(i + 1).padStart(2, '0');
@@ -96,31 +112,27 @@ export function DateSelectPicker({ value, onChange, minYear, maxYear }: DateSele
     return { value: y, label: y };
   });
 
-  function emit(d: string, m: string, y: string) {
-    onChange(d && m && y ? `${y}-${m}-${d}` : '');
-  }
-
   return (
     <div className="flex gap-2">
       <ColSelect
-        value={day}
+        value={local.day}
         placeholder="Day"
         options={dayOpts}
-        onChange={(d) => emit(d, month, year)}
+        onChange={(d) => handleChange('day', d)}
         className="flex-1"
       />
       <ColSelect
-        value={month}
+        value={local.month}
         placeholder="Month"
         options={monthOpts}
-        onChange={(m) => emit(day, m, year)}
+        onChange={(m) => handleChange('month', m)}
         className="flex-1"
       />
       <ColSelect
-        value={year}
+        value={local.year}
         placeholder="Year"
         options={yearOpts}
-        onChange={(y) => emit(day, month, y)}
+        onChange={(y) => handleChange('year', y)}
         className="flex-[1.4]"
       />
     </div>
