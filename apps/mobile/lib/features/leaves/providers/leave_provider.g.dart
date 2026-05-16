@@ -52,6 +52,40 @@ final leaveBalancesProvider =
 );
 
 typedef LeaveBalancesRef = AutoDisposeFutureProviderRef<List<LeaveBalance>>;
+String _$pendingLeavesHash() => r'2b9a7250620c0323072c3435dcb88b8a2e3a074b';
+
+/// See also [pendingLeaves].
+@ProviderFor(pendingLeaves)
+final pendingLeavesProvider =
+    AutoDisposeFutureProvider<List<PendingLeaveRequest>>.internal(
+  pendingLeaves,
+  name: r'pendingLeavesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$pendingLeavesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef PendingLeavesRef
+    = AutoDisposeFutureProviderRef<List<PendingLeaveRequest>>;
+String _$leaveApprovalNotifierHash() =>
+    r'523d7d10c6c8e38460e83ba19d3511c42d5cfd47';
+
+/// See also [LeaveApprovalNotifier].
+@ProviderFor(LeaveApprovalNotifier)
+final leaveApprovalNotifierProvider = AutoDisposeNotifierProvider<
+    LeaveApprovalNotifier, AsyncValue<void>>.internal(
+  LeaveApprovalNotifier.new,
+  name: r'leaveApprovalNotifierProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$leaveApprovalNotifierHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$LeaveApprovalNotifier = AutoDisposeNotifier<AsyncValue<void>>;
 String _$applyLeaveNotifierHash() =>
     r'a9c62237fa78304092fe2cdebf026991ecfb6b62';
 

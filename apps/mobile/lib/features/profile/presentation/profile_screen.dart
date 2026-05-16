@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -12,6 +13,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authAsync = ref.watch(authNotifierProvider);
+    final profileAsync = ref.watch(myProfileProvider);
     final uploadState = ref.watch(avatarUploadNotifierProvider);
     final scheme = Theme.of(context).colorScheme;
 
@@ -30,25 +32,35 @@ class ProfileScreen extends ConsumerWidget {
             backgroundColor: Colors.green,
           ),
         );
+        ref.invalidate(myProfileProvider);
       }
     });
 
     return authAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) =>
+          Scaffold(body: Center(child: Text('Error: $e'))),
       data: (auth) {
         final user = auth.user;
         if (user == null) return const Scaffold(body: SizedBox.shrink());
-
         final initials =
             '${user.firstName[0]}${user.lastName[0]}'.toUpperCase();
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Profile')),
+          appBar: AppBar(
+            title: const Text('My Profile'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_outlined),
+                onPressed: () => ref.invalidate(myProfileProvider),
+              ),
+            ],
+          ),
           body: SingleChildScrollView(
             child: Column(
               children: [
-                // ── Avatar banner ───────────────────────────────────────
+                // ── Avatar banner ─────────────────────────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 32),
@@ -87,9 +99,7 @@ class ProfileScreen extends ConsumerWidget {
                                   color: scheme.primary,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: scheme.surface,
-                                    width: 2,
-                                  ),
+                                      color: scheme.surface, width: 2),
                                 ),
                                 child: uploadState.isLoading
                                     ? SizedBox(
@@ -100,11 +110,8 @@ class ProfileScreen extends ConsumerWidget {
                                           color: scheme.onPrimary,
                                         ),
                                       )
-                                    : Icon(
-                                        Icons.camera_alt,
-                                        size: 14,
-                                        color: scheme.onPrimary,
-                                      ),
+                                    : Icon(Icons.camera_alt,
+                                        size: 14, color: scheme.onPrimary),
                               ),
                             ),
                           ),
@@ -119,6 +126,18 @@ class ProfileScreen extends ConsumerWidget {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
+                      profileAsync.maybeWhen(
+                        data: (p) => p.designation != null
+                            ? Text(
+                                p.designation!,
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: scheme.onSurfaceVariant),
+                              )
+                            : const SizedBox.shrink(),
+                        orElse: () => const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 2),
                       Text(
                         user.workEmail,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -129,12 +148,14 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
 
-                // ── Info rows ───────────────────────────────────────────
+                // ── Work info ──────────────────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Card(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        _SectionHeader('Work Information'),
                         _InfoTile(
                           icon: Icons.badge_outlined,
                           label: 'Employee Code',
@@ -151,6 +172,26 @@ class ProfileScreen extends ConsumerWidget {
                                   w.substring(1).toLowerCase())
                               .join(' '),
                         ),
+                        profileAsync.maybeWhen(
+                          data: (p) => Column(
+                            children: [
+                              if (p.departmentName != null)
+                                _InfoTile(
+                                  icon: Icons.business_outlined,
+                                  label: 'Department',
+                                  value: p.departmentName!,
+                                ),
+                              if (p.dateOfJoining != null)
+                                _InfoTile(
+                                  icon: Icons.calendar_today_outlined,
+                                  label: 'Date of Joining',
+                                  value: DateFormat('d MMM y')
+                                      .format(p.dateOfJoining!),
+                                ),
+                            ],
+                          ),
+                          orElse: () => const SizedBox.shrink(),
+                        ),
                         _InfoTile(
                           icon: Icons.email_outlined,
                           label: 'Work Email',
@@ -162,9 +203,89 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
 
-                // ── Actions ─────────────────────────────────────────────
+                // ── Personal info ──────────────────────────────────────
+                profileAsync.maybeWhen(
+                  data: (p) {
+                    final hasPersonal = p.phone != null ||
+                        p.dateOfBirth != null ||
+                        p.bloodGroup != null;
+                    if (!hasPersonal) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Card(
+                        child: Column(
+                          children: [
+                            _SectionHeader('Personal Information'),
+                            if (p.phone != null)
+                              _InfoTile(
+                                icon: Icons.phone_outlined,
+                                label: 'Phone',
+                                value: p.phone!,
+                              ),
+                            if (p.dateOfBirth != null)
+                              _InfoTile(
+                                icon: Icons.cake_outlined,
+                                label: 'Date of Birth',
+                                value: DateFormat('d MMM y')
+                                    .format(p.dateOfBirth!),
+                              ),
+                            if (p.bloodGroup != null)
+                              _InfoTile(
+                                icon: Icons.favorite_border,
+                                label: 'Blood Group',
+                                value: p.bloodGroup!,
+                                isLast: true,
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  orElse: () => const SizedBox.shrink(),
+                ),
+
+                // ── Bank info ──────────────────────────────────────────
+                profileAsync.maybeWhen(
+                  data: (p) {
+                    if (p.bankName == null && p.bankAccountNumber == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Card(
+                        child: Column(
+                          children: [
+                            _SectionHeader('Bank Details'),
+                            if (p.bankName != null)
+                              _InfoTile(
+                                icon: Icons.account_balance_outlined,
+                                label: 'Bank',
+                                value: p.bankName!,
+                              ),
+                            if (p.bankAccountNumber != null)
+                              _InfoTile(
+                                icon: Icons.credit_card_outlined,
+                                label: 'Account Number',
+                                value: '••••${p.bankAccountNumber!.length > 4 ? p.bankAccountNumber!.substring(p.bankAccountNumber!.length - 4) : p.bankAccountNumber!}',
+                              ),
+                            if (p.bankIfsc != null)
+                              _InfoTile(
+                                icon: Icons.numbers_outlined,
+                                label: 'IFSC',
+                                value: p.bankIfsc!,
+                                isLast: true,
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  orElse: () => const SizedBox.shrink(),
+                ),
+
+                // ── Actions ────────────────────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Column(
                     children: [
                       ListTile(
@@ -172,29 +293,24 @@ class ProfileScreen extends ConsumerWidget {
                         title: const Text('Change Password'),
                         trailing: const Icon(Icons.chevron_right),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        tileColor:
-                            Theme.of(context).colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(12)),
+                        tileColor: scheme.surfaceContainerLow,
                         onTap: () => context.push('/change-password'),
                       ),
                       const SizedBox(height: 12),
                       ListTile(
-                        leading: Icon(Icons.logout,
-                            color: scheme.error),
+                        leading: Icon(Icons.logout, color: scheme.error),
                         title: Text('Logout',
                             style: TextStyle(color: scheme.error)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        tileColor:
-                            scheme.errorContainer.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12)),
+                        tileColor: scheme.errorContainer.withValues(alpha: 0.3),
                         onTap: () => _confirmLogout(context, ref),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -211,9 +327,7 @@ class ProfileScreen extends ConsumerWidget {
       maxWidth: 800,
     );
     if (picked == null) return;
-    await ref
-        .read(avatarUploadNotifierProvider.notifier)
-        .upload(picked.path);
+    await ref.read(avatarUploadNotifierProvider.notifier).upload(picked.path);
   }
 
   void _confirmLogout(BuildContext context, WidgetRef ref) {
@@ -232,13 +346,31 @@ class ProfileScreen extends ConsumerWidget {
               Navigator.of(ctx).pop();
               ref.read(authNotifierProvider.notifier).logout();
             },
-            child: Text(
-              'Logout',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.error),
-            ),
+            child: Text('Logout',
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }
@@ -263,24 +395,30 @@ class _InfoTile extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: scheme.onSurfaceVariant),
+              Icon(icon, size: 18, color: scheme.onSurfaceVariant),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(label,
                     style: TextStyle(
                         color: scheme.onSurfaceVariant, fontSize: 13)),
               ),
-              Text(value,
+              Flexible(
+                child: Text(
+                  value,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 13)),
+                      fontWeight: FontWeight.w500, fontSize: 13),
+                  textAlign: TextAlign.end,
+                ),
+              ),
             ],
           ),
         ),
         if (!isLast)
-          Divider(height: 1, indent: 48, color: scheme.outlineVariant),
+          Divider(height: 1, indent: 46, color: scheme.outlineVariant),
       ],
     );
   }

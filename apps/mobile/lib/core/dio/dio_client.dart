@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../constants/api_constants.dart';
+import '../providers/session_provider.dart';
 import '../storage/secure_storage.dart';
 
 part 'dio_client.g.dart';
@@ -15,17 +16,20 @@ Dio dioClient(DioClientRef ref) {
     receiveTimeout: ApiConstants.receiveTimeout,
     headers: {'Content-Type': 'application/json'},
   ));
-  dio.interceptors.add(_AuthInterceptor(dio, storage));
+  dio.interceptors.add(_AuthInterceptor(dio, storage, onSessionExpired: () {
+    ref.read(sessionExpiredProvider.notifier).update((n) => n + 1);
+  }));
   return dio;
 }
 
 class _AuthInterceptor extends Interceptor {
   final Dio _dio;
   final SecureStorageService _storage;
+  final void Function() onSessionExpired;
   bool _isRefreshing = false;
   final List<Completer<String>> _refreshQueue = [];
 
-  _AuthInterceptor(this._dio, this._storage);
+  _AuthInterceptor(this._dio, this._storage, {required this.onSessionExpired});
 
   @override
   Future<void> onRequest(
@@ -45,6 +49,12 @@ class _AuthInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     if (err.response?.statusCode != 401) {
+      handler.next(err);
+      return;
+    }
+    // The refresh endpoint itself returned 401 — tokens are truly invalid.
+    // Bail immediately to avoid deadlock (onError re-entering while _isRefreshing).
+    if (err.requestOptions.path.contains('/auth/refresh')) {
       handler.next(err);
       return;
     }
@@ -93,6 +103,7 @@ class _AuthInterceptor extends Interceptor {
       }
       _refreshQueue.clear();
       await _storage.clearAll();
+      onSessionExpired();
       handler.next(err);
     } finally {
       _isRefreshing = false;

@@ -51,6 +51,50 @@ class CachedLeaveRequest {
   late DateTime cachedAt;
 }
 
+/// A single pending leave request as returned by GET /leaves?status=PENDING (manager view)
+class PendingLeaveRequest {
+  final String id;
+  final String employeeName;
+  final String employeeCode;
+  final String leaveTypeName;
+  final String leaveTypeCode;
+  final DateTime startDate;
+  final DateTime endDate;
+  final double totalDays;
+  final String reason;
+  final DateTime appliedAt;
+
+  const PendingLeaveRequest({
+    required this.id,
+    required this.employeeName,
+    required this.employeeCode,
+    required this.leaveTypeName,
+    required this.leaveTypeCode,
+    required this.startDate,
+    required this.endDate,
+    required this.totalDays,
+    required this.reason,
+    required this.appliedAt,
+  });
+
+  factory PendingLeaveRequest.fromJson(Map<String, dynamic> j) {
+    final emp = j['employee'] as Map<String, dynamic>;
+    final lt = j['leaveType'] as Map<String, dynamic>;
+    return PendingLeaveRequest(
+      id: j['id'] as String,
+      employeeName: '${emp['firstName']} ${emp['lastName']}',
+      employeeCode: emp['employeeCode'] as String,
+      leaveTypeName: lt['name'] as String,
+      leaveTypeCode: lt['code'] as String,
+      startDate: DateTime.parse(j['fromDate'] as String),
+      endDate: DateTime.parse(j['toDate'] as String),
+      totalDays: (j['totalDays'] as num).toDouble(),
+      reason: j['reason'] as String,
+      appliedAt: DateTime.parse(j['createdAt'] as String),
+    );
+  }
+}
+
 class LeaveBalance {
   final String leaveTypeId;
   final String leaveTypeName;

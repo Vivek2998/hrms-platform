@@ -14,6 +14,11 @@ import '../../features/leaves/presentation/apply_leave_screen.dart';
 import '../../features/payslips/presentation/payslips_screen.dart';
 import '../../features/payslips/presentation/payslip_detail_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/leaves/presentation/pending_leaves_screen.dart';
+import '../../features/team/presentation/team_screen.dart';
+import '../../features/holidays/presentation/holidays_screen.dart';
+import '../../features/documents/presentation/documents_screen.dart';
 
 part 'router.g.dart';
 
@@ -44,6 +49,26 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/change-password',
         builder: (_, __) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (_, __) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/leaves/pending',
+        builder: (_, __) => const PendingLeavesScreen(),
+      ),
+      GoRoute(
+        path: '/team',
+        builder: (_, __) => const TeamScreen(),
+      ),
+      GoRoute(
+        path: '/holidays',
+        builder: (_, __) => const HolidaysScreen(),
+      ),
+      GoRoute(
+        path: '/documents',
+        builder: (_, __) => const DocumentsScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

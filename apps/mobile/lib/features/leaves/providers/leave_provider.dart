@@ -20,6 +20,25 @@ Future<List<LeaveBalance>> leaveBalances(LeaveBalancesRef ref) {
 }
 
 @riverpod
+Future<List<PendingLeaveRequest>> pendingLeaves(PendingLeavesRef ref) {
+  return ref.read(leaveRepositoryProvider).getPendingLeaves();
+}
+
+@riverpod
+class LeaveApprovalNotifier extends _$LeaveApprovalNotifier {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  Future<void> approve(String id, String action, {String? remarks}) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(leaveRepositoryProvider).approveLeave(id, action, remarks: remarks),
+    );
+    if (state.hasValue) ref.invalidate(pendingLeavesProvider);
+  }
+}
+
+@riverpod
 class ApplyLeaveNotifier extends _$ApplyLeaveNotifier {
   @override
   AsyncValue<void> build() => const AsyncData(null);

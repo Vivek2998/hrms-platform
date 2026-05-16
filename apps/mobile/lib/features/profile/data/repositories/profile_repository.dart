@@ -5,6 +5,7 @@ import '../../../../core/dio/dio_client.dart';
 import '../../../../core/isar/isar_service.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/data/models/auth_model.dart';
+import '../models/profile_model.dart';
 
 part 'profile_repository.g.dart';
 
@@ -55,4 +56,10 @@ class ProfileRepository {
   }
 
   Future<String?> getCurrentEmployeeId() => _storage.getEmployeeId();
+
+  Future<EmployeeProfile> getMyProfile() async {
+    final res = await _dio.get('/employees/me');
+    return EmployeeProfile.fromJson(
+        res.data['data'] as Map<String, dynamic>);
+  }
 }

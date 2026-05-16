@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/leave_provider.dart';
 import '../data/models/leave_model.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class LeavesScreen extends ConsumerWidget {
   const LeavesScreen({super.key});
@@ -12,6 +13,9 @@ class LeavesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final leavesAsync = ref.watch(leaveListProvider);
     final balancesAsync = ref.watch(leaveBalancesProvider);
+    final auth = ref.watch(authNotifierProvider);
+    final role = auth.valueOrNull?.user?.role ?? 'EMPLOYEE';
+    final isManager = role != 'EMPLOYEE';
 
     return Scaffold(
       appBar: AppBar(
@@ -38,6 +42,12 @@ class LeavesScreen extends ConsumerWidget {
         },
         child: CustomScrollView(
           slivers: [
+            if (isManager)
+              SliverToBoxAdapter(
+                child: _PendingApprovalsBanner(
+                  onTap: () => context.push('/leaves/pending'),
+                ),
+              ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -51,10 +61,10 @@ class LeavesScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: balancesAsync.when(
                 data: (balances) => SizedBox(
-                  height: 100,
+                  height: 130,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: balances.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (_, i) => _BalanceChip(balance: balances[i]),
@@ -206,6 +216,68 @@ class _LeaveTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingApprovalsBanner extends ConsumerWidget {
+  final VoidCallback onTap;
+  const _PendingApprovalsBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingAsync = ref.watch(pendingLeavesProvider);
+    final scheme = Theme.of(context).colorScheme;
+    final count = pendingAsync.valueOrNull?.length ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: scheme.tertiaryContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.pending_actions, color: scheme.onTertiaryContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pending Approvals',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onTertiaryContainer),
+                    ),
+                    pendingAsync.when(
+                      data: (leaves) => Text(
+                        count == 0
+                            ? 'No pending requests'
+                            : '$count request${count != 1 ? "s" : ""} awaiting your decision',
+                        style: TextStyle(
+                            fontSize: 12, color: scheme.onTertiaryContainer),
+                      ),
+                      loading: () => Text('Loading...',
+                          style: TextStyle(
+                              fontSize: 12, color: scheme.onTertiaryContainer)),
+                      error: (_, __) => Text('Tap to view',
+                          style: TextStyle(
+                              fontSize: 12, color: scheme.onTertiaryContainer)),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: scheme.onTertiaryContainer),
+            ],
+          ),
         ),
       ),
     );

@@ -6,6 +6,20 @@ part of 'profile_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+String _$myProfileHash() => r'ae7b04a44536b6b9dd949b33cf493267bb044b46';
+
+/// See also [myProfile].
+@ProviderFor(myProfile)
+final myProfileProvider = AutoDisposeFutureProvider<EmployeeProfile>.internal(
+  myProfile,
+  name: r'myProfileProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$myProfileHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef MyProfileRef = AutoDisposeFutureProviderRef<EmployeeProfile>;
 String _$avatarUploadNotifierHash() =>
     r'21a7fa66caa3ee295710ef127f457bf8e8f34ed6';
 

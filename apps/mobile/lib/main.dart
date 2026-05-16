@@ -12,8 +12,16 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Firebase requires google-services.json (Android) / GoogleService-Info.plist (iOS).
+  // Skip gracefully during development when those files aren't present yet.
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('[Firebase] init skipped — add platform config files to enable: $e');
+  }
+
   await IsarService.init();
   runApp(const ProviderScope(child: HrmsApp()));
 }

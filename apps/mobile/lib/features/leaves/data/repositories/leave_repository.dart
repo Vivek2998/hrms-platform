@@ -75,6 +75,21 @@ class LeaveRepository {
     });
   }
 
+  Future<List<PendingLeaveRequest>> getPendingLeaves() async {
+    final res = await _dio.get('/leaves',
+        queryParameters: {'status': 'PENDING', 'limit': 50});
+    return (res.data['data'] as List)
+        .map((e) => PendingLeaveRequest.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> approveLeave(String id, String action, {String? remarks}) async {
+    await _dio.patch('/leaves/$id/approve', data: {
+      'action': action,
+      if (remarks != null && remarks.isNotEmpty) 'remarks': remarks,
+    });
+  }
+
   Future<void> cancelLeave(String leaveId) async {
     await _dio.patch('/leaves/$leaveId/cancel');
   }
