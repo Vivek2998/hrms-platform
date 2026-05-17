@@ -6,6 +6,15 @@ import type { Prisma } from '@prisma/client';
 import { sendEmail, leaveDecisionEmail } from '../../lib/email.js';
 
 // Mobile sends startDate/endDate as plain date strings (YYYY-MM-DD)
+const applyLeaveBehalfSchema = z.object({
+  employeeId:  z.string().uuid(),
+  leaveTypeId: z.string().uuid(),
+  startDate:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
+  endDate:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
+  reason:      z.string().min(3).max(500),
+  session:     z.enum(['FIRST_HALF', 'SECOND_HALF']).optional(),
+});
+
 const applyLeaveSchema = z.object({
   leaveTypeId: z.string().uuid(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
@@ -294,6 +303,55 @@ export function leaveRoutes(app: FastifyInstance) {
     });
 
     return reply.send(ok({ message: 'Leave request cancelled' }));
+  });
+
+  // POST /leaves/behalf  (manager/HR applies leave on behalf of an employee)
+  app.post('/leaves/behalf', auth, async (req, reply) => {
+    const allowedRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'];
+    if (!allowedRoles.includes(req.user.role)) throw fail('Forbidden', 403);
+
+    const input = applyLeaveBehalfSchema.parse(req.body);
+    const from = new Date(input.startDate + 'T00:00:00.000Z');
+    const to   = new Date(input.endDate   + 'T00:00:00.000Z');
+
+    if (to < from) throw fail('End date cannot be before start date', 400);
+    if (input.session && from.getTime() !== to.getTime())
+      throw fail('Half-day session requires start and end date to be the same', 400);
+
+    const employee = await app.prisma.employee.findFirst({
+      where: { id: input.employeeId, organizationId: req.user.orgId, deletedAt: null },
+    });
+    if (!employee) throw fail('Employee not found', 404);
+
+    const msPerDay = 86_400_000;
+    const totalDays = input.session
+      ? 0.5
+      : Math.floor((to.getTime() - from.getTime()) / msPerDay) + 1;
+
+    const request = await app.prisma.leaveRequest.create({
+      data: {
+        organizationId: req.user.orgId,
+        employeeId:     input.employeeId,
+        leaveTypeId:    input.leaveTypeId,
+        fromDate:       from,
+        toDate:         to,
+        totalDays,
+        reason:         input.reason,
+        ...(input.session && { session: input.session }),
+      },
+    });
+
+    await app.prisma.notification.create({
+      data: {
+        organizationId: req.user.orgId,
+        employeeId:     input.employeeId,
+        type:           'LEAVE_APPLIED',
+        title:          'Leave Applied on Your Behalf',
+        body:           `A leave request was applied for you from ${input.startDate} to ${input.endDate}.`,
+      },
+    });
+
+    return reply.status(201).send(ok(request));
   });
 
   // GET /leaves/balance/:employeeId  (HR view — any employee's balance)

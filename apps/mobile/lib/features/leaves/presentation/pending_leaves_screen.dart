@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/leave_provider.dart';
 import '../data/models/leave_model.dart';
@@ -29,9 +30,13 @@ class PendingLeavesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Pending Approvals'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(pendingLeavesProvider),
+          TextButton.icon(
+            onPressed: () => context.push('/leaves/apply-behalf'),
+            icon: const Icon(Icons.person_add_outlined, size: 18),
+            label: const Text('Apply on Behalf'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ],
       ),

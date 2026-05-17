@@ -103,5 +103,39 @@ final applyLeaveNotifierProvider =
 );
 
 typedef _$ApplyLeaveNotifier = AutoDisposeNotifier<AsyncValue<void>>;
+String _$cancelLeaveNotifierHash() =>
+    r'51fedf037682b660fafbb87b2c2ee36aa83dda54';
+
+/// See also [CancelLeaveNotifier].
+@ProviderFor(CancelLeaveNotifier)
+final cancelLeaveNotifierProvider =
+    AutoDisposeNotifierProvider<CancelLeaveNotifier, AsyncValue<void>>.internal(
+  CancelLeaveNotifier.new,
+  name: r'cancelLeaveNotifierProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$cancelLeaveNotifierHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$CancelLeaveNotifier = AutoDisposeNotifier<AsyncValue<void>>;
+String _$applyLeaveBehalfNotifierHash() =>
+    r'473c8ed80be32646765fe58bef3fe2510ffdc45a';
+
+/// See also [ApplyLeaveBehalfNotifier].
+@ProviderFor(ApplyLeaveBehalfNotifier)
+final applyLeaveBehalfNotifierProvider = AutoDisposeNotifierProvider<
+    ApplyLeaveBehalfNotifier, AsyncValue<void>>.internal(
+  ApplyLeaveBehalfNotifier.new,
+  name: r'applyLeaveBehalfNotifierProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$applyLeaveBehalfNotifierHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ApplyLeaveBehalfNotifier = AutoDisposeNotifier<AsyncValue<void>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

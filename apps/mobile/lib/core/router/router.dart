@@ -19,6 +19,12 @@ import '../../features/leaves/presentation/pending_leaves_screen.dart';
 import '../../features/team/presentation/team_screen.dart';
 import '../../features/holidays/presentation/holidays_screen.dart';
 import '../../features/documents/presentation/documents_screen.dart';
+import '../../features/admin/presentation/employee_location_screen.dart';
+import '../../features/helpdesk/presentation/helpdesk_screen.dart';
+import '../../features/regularisation/presentation/regularisation_screen.dart';
+import '../../features/comp_off/presentation/comp_off_screen.dart';
+import '../../features/team/presentation/org_chart_screen.dart';
+import '../../features/leaves/presentation/apply_leave_behalf_screen.dart';
 
 part 'router.g.dart';
 
@@ -38,10 +44,18 @@ GoRouter router(RouterRef ref) {
     redirect: (context, state) {
       final auth = ref.read(authNotifierProvider);
       final isLoggedIn = auth.valueOrNull?.isAuthenticated ?? false;
+      final mustChange = auth.valueOrNull?.user?.mustChangePassword ?? false;
       final loc = state.matchedLocation;
       final isAuthRoute = loc == '/login' || loc == '/change-password';
+
       if (!isLoggedIn && !isAuthRoute) return '/login';
-      if (isLoggedIn && loc == '/login') return '/dashboard';
+      if (isLoggedIn && loc == '/login') {
+        return mustChange ? '/change-password' : '/dashboard';
+      }
+      // Prevent skipping the forced password change on first login.
+      if (isLoggedIn && mustChange && !isAuthRoute) return '/change-password';
+      // Once password is changed, don't let the user navigate back to that screen.
+      if (isLoggedIn && !mustChange && loc == '/change-password') return '/dashboard';
       return null;
     },
     routes: [
@@ -70,6 +84,30 @@ GoRouter router(RouterRef ref) {
         path: '/documents',
         builder: (_, __) => const DocumentsScreen(),
       ),
+      GoRoute(
+        path: '/admin/employee-locations',
+        builder: (_, __) => const EmployeeLocationScreen(),
+      ),
+      GoRoute(
+        path: '/helpdesk',
+        builder: (_, __) => const HelpdeskScreen(),
+      ),
+      GoRoute(
+        path: '/regularisation',
+        builder: (_, __) => const RegularisationScreen(),
+      ),
+      GoRoute(
+        path: '/comp-off',
+        builder: (_, __) => const CompOffScreen(),
+      ),
+      GoRoute(
+        path: '/org-chart',
+        builder: (_, __) => const OrgChartScreen(),
+      ),
+      GoRoute(
+        path: '/leaves/apply-behalf',
+        builder: (_, __) => const ApplyLeaveBehalfScreen(),
+      ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),
         routes: [
@@ -93,7 +131,9 @@ GoRouter router(RouterRef ref) {
             routes: [
               GoRoute(
                 path: 'apply',
-                builder: (_, __) => const ApplyLeaveScreen(),
+                builder: (_, state) => ApplyLeaveScreen(
+                  preSelectedTypeId: state.uri.queryParameters['typeId'],
+                ),
               ),
             ],
           ),

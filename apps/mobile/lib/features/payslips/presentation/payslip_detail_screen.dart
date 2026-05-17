@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
 import '../providers/payslip_provider.dart';
 
 class PayslipDetailScreen extends ConsumerWidget {
@@ -52,10 +56,10 @@ class PayslipDetailScreen extends ConsumerWidget {
               ),
               if (pdfUrl != null) ...[
                 const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: () => launchUrl(Uri.parse(pdfUrl)),
-                  icon: const Icon(Icons.download_outlined),
-                  label: const Text('Download Payslip PDF'),
+                _PdfActions(
+                  pdfUrl: pdfUrl,
+                  month: data['month'] as int,
+                  year: data['year'] as int,
                 ),
               ],
               const SizedBox(height: 32),
@@ -68,6 +72,122 @@ class PayslipDetailScreen extends ConsumerWidget {
     );
   }
 }
+
+// ─── PDF Actions ──────────────────────────────────────────────────────────────
+
+class _PdfActions extends StatefulWidget {
+  final String pdfUrl;
+  final int month;
+  final int year;
+  const _PdfActions(
+      {required this.pdfUrl, required this.month, required this.year});
+
+  @override
+  State<_PdfActions> createState() => _PdfActionsState();
+}
+
+class _PdfActionsState extends State<_PdfActions> {
+  bool _busy = false;
+
+  static const _months = [
+    '', 'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  String get _fileName =>
+      'Payslip_${_months[widget.month]}_${widget.year}.pdf';
+
+  Future<String> _localPath() async {
+    final dir = await getTemporaryDirectory();
+    return '${dir.path}/$_fileName';
+  }
+
+  Future<String> _ensureDownloaded() async {
+    final path = await _localPath();
+    if (!File(path).existsSync()) {
+      await Dio().download(widget.pdfUrl, path);
+    }
+    return path;
+  }
+
+  Future<void> _open() async {
+    setState(() => _busy = true);
+    try {
+      final path = await _ensureDownloaded();
+      await OpenFilex.open(path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _share() async {
+    setState(() => _busy = true);
+    try {
+      final path = await _ensureDownloaded();
+      await Share.shareXFiles(
+        [XFile(path, mimeType: 'application/pdf')],
+        subject: 'Payslip – ${_months[widget.month]} ${widget.year}',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not share: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: _busy ? null : _open,
+            icon: _busy
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: scheme.primary),
+                  )
+                : const Icon(Icons.open_in_new_outlined, size: 18),
+            label: const Text('Open PDF'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _busy ? null : _share,
+            icon: const Icon(Icons.share_outlined, size: 18),
+            label: const Text('Share'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Summary Card ─────────────────────────────────────────────────────────────
 
 class _SummaryCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -104,8 +224,7 @@ class _SummaryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _SummaryItem('Gross Earnings', fmt.format(gross), context),
-                _SummaryItem(
-                    'Total Deductions', fmt.format(deductions), context),
+                _SummaryItem('Total Deductions', fmt.format(deductions), context),
               ],
             ),
           ],
@@ -159,7 +278,9 @@ class _LineItem extends StatelessWidget {
             fmt.format(amount),
             style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: isPositive ? Colors.green.shade700 : Colors.red.shade700),
+                color: isPositive
+                    ? Colors.green.shade700
+                    : Colors.red.shade700),
           ),
         ],
       ),

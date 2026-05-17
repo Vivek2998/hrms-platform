@@ -63,3 +63,48 @@ class ApplyLeaveNotifier extends _$ApplyLeaveNotifier {
     if (state.hasValue) ref.invalidate(leaveListProvider);
   }
 }
+
+@riverpod
+class CancelLeaveNotifier extends _$CancelLeaveNotifier {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  Future<void> cancel(String leaveId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(leaveRepositoryProvider).cancelLeave(leaveId),
+    );
+    if (state.hasValue) {
+      ref.invalidate(leaveListProvider);
+      ref.invalidate(leaveBalancesProvider);
+    }
+  }
+}
+
+@riverpod
+class ApplyLeaveBehalfNotifier extends _$ApplyLeaveBehalfNotifier {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  Future<void> apply({
+    required String employeeId,
+    required String leaveTypeId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String reason,
+    String? session,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(leaveRepositoryProvider).applyLeaveOnBehalf(
+            employeeId: employeeId,
+            leaveTypeId: leaveTypeId,
+            startDate: startDate,
+            endDate: endDate,
+            reason: reason,
+            session: session,
+          ),
+    );
+    if (state.hasValue) ref.invalidate(pendingLeavesProvider);
+  }
+}

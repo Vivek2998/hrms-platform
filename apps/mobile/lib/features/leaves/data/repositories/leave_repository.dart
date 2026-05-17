@@ -94,6 +94,24 @@ class LeaveRepository {
     await _dio.patch('/leaves/$leaveId/cancel');
   }
 
+  Future<void> applyLeaveOnBehalf({
+    required String employeeId,
+    required String leaveTypeId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String reason,
+    String? session,
+  }) async {
+    await _dio.post('/leaves/behalf', data: {
+      'employeeId': employeeId,
+      'leaveTypeId': leaveTypeId,
+      'startDate': startDate.toIso8601String().substring(0, 10),
+      'endDate': endDate.toIso8601String().substring(0, 10),
+      'reason': reason,
+      if (session != null) 'session': session,
+    });
+  }
+
   CachedLeaveRequest _mapToModel(Map<String, dynamic> e) {
     final leaveType = e['leaveType'] as Map<String, dynamic>;
     return CachedLeaveRequest()

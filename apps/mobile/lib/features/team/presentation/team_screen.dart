@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/models/team_member_model.dart';
 import '../providers/team_provider.dart';
@@ -33,6 +34,13 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Team Directory'),
+        actions: [
+          IconButton(
+            tooltip: 'Org Chart',
+            icon: const Icon(Icons.account_tree_outlined),
+            onPressed: () => context.push('/org-chart'),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(64),
           child: Padding(
