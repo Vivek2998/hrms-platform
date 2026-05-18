@@ -49,6 +49,19 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Location usage — required for attendance punch-in and geofence smart punch -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HRMS uses your location to record where you punch in for attendance.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>HRMS uses your location in the background to notify you when you arrive at your assigned office so you can punch in with one tap.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>HRMS uses your location in the background to notify you when you arrive at your assigned office so you can punch in with one tap.</string>
+	<!-- Background modes for geofence monitoring -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

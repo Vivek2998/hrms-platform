@@ -53,6 +53,12 @@ dependencies:
   geocoding: ^3.0.0
 
   # ─────────────────────────────────────
+  # Geofence + Local Notifications (smart punch-in)
+  # ─────────────────────────────────────
+  geofence_service: ^6.0.0+1
+  flutter_local_notifications: ^18.0.0
+
+  # ─────────────────────────────────────
   # Camera (selfie for punch-in)
   # ─────────────────────────────────────
   camera: ^0.11.0+2
@@ -73,10 +79,6 @@ dependencies:
   connectivity_plus: ^6.1.1
   package_info_plus: ^8.1.3
 
-  # ─────────────────────────────────────
-  # Deep Links
-  # ─────────────────────────────────────
-  uni_links: ^0.5.1
 
 dev_dependencies:
   flutter_test:

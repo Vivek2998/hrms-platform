@@ -224,6 +224,7 @@ model Organization {
   announcements   Announcement[]
   payrollRuns     PayrollRun[]
   notifications           Notification[]
+  officeLocations         OfficeLocation[]
   performanceCycles       PerformanceCycle[]
   performanceGoals        PerformanceGoal[]
   performanceReviews      PerformanceReview[]
@@ -346,6 +347,8 @@ model Employee {
   presentAddress      Json?
   permanentAddress    Json?
   emergencyContact    Json?
+  // Office location (for geofence smart punch-in)
+  officeLocationId    String?
   // Auth
   passwordHash        String
   passwordChangedAt   DateTime?
@@ -358,6 +361,7 @@ model Employee {
   updatedAt           DateTime        @updatedAt
 
   organization     Organization      @relation(fields: [organizationId], references: [id])
+  officeLocation   OfficeLocation?   @relation(fields: [officeLocationId], references: [id])
   department       Department?       @relation(fields: [departmentId], references: [id])
   team             Team?             @relation(fields: [teamId], references: [id])
   manager          Employee?         @relation("ReportsTo", fields: [managerId], references: [id])
@@ -439,6 +443,29 @@ model ShiftAssignment {
   @@index([organizationId])
   @@index([employeeId])
   @@map("shift_assignments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// OFFICE LOCATIONS (geofence smart punch-in)
+// ─────────────────────────────────────────────────────────────
+
+model OfficeLocation {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  address        String?
+  latitude       Float
+  longitude      Float
+  radiusMeters   Int      @default(100)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employees    Employee[]
+
+  @@index([organizationId])
+  @@map("office_locations")
 }
 
 // ─────────────────────────────────────────────────────────────

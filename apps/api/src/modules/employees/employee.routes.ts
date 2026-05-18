@@ -47,6 +47,8 @@ export function employeeRoutes(app: FastifyInstance) {
         dateOfJoining: true,
         department: { select: { id: true, name: true } },
         manager: { select: { id: true, firstName: true, lastName: true } },
+        officeLocationId: true,
+        officeLocation: { select: { id: true, name: true } },
       },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     });
@@ -78,10 +80,12 @@ export function employeeRoutes(app: FastifyInstance) {
     const employee = await app.prisma.employee.findFirst({
       where: { id: req.user.sub, organizationId: req.user.orgId, deletedAt: null },
       select: {
-        id: true, firstName: true, lastName: true, phone: true,
-        dateOfBirth: true, bloodGroup: true, maritalStatus: true,
+        id: true, firstName: true, lastName: true, avatarUrl: true, phone: true,
+        dateOfBirth: true, dateOfJoining: true, bloodGroup: true, maritalStatus: true, designation: true,
         presentAddress: true, permanentAddress: true, emergencyContact: true,
         bankAccountNumber: true, bankIfsc: true, bankName: true, bankBranch: true,
+        department: { select: { id: true, name: true } },
+        officeLocation: { select: { id: true, name: true } },
       },
     });
     if (!employee) throw fail('Employee not found', 404);

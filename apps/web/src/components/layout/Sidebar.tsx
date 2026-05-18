@@ -9,9 +9,9 @@ import {
   Building2,
   Timer,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
+  PanelLeftClose,
+  PanelLeftOpen,
   Palmtree,
   CalendarCheck,
   ClockAlert,
@@ -35,6 +35,7 @@ import {
   TrendingUp,
   Megaphone,
   Lock,
+  MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -42,6 +43,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useUiStore } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
 import { canAccess, requiredPlan, PLAN_LABELS } from '@/lib/feature-flags';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type IconType = React.ComponentType<{ className?: string }>;
 
@@ -130,6 +133,7 @@ const ENTRIES: SidebarEntry[] = [
   { group: false, label: 'Reports', to: '/reports', icon: FileText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'departments' },
   { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'shifts' },
+  { group: false, label: 'Office Locations', to: '/office-locations', icon: MapPin, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },
 ];
 
@@ -142,13 +146,33 @@ function isLocked(item: NavItem, orgPlan: OrgPlan | undefined): boolean {
   return !canAccess(orgPlan, item.feature);
 }
 
-function itemClass(isActive: boolean, indent: boolean) {
+// ── Expanded mode item classes ──
+function expandedItemClass(isActive: boolean, indent: boolean = false) {
   return cn(
     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
     indent && 'ml-4',
     isActive
       ? 'bg-sidebar-primary text-sidebar-primary-foreground'
       : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+  );
+}
+
+// ── Collapsed mode: fixed 36×36 square, mx-auto in li ──
+function collapsedIconClass(isActive: boolean) {
+  return cn(
+    'relative flex h-9 w-9 items-center justify-center rounded-md transition-colors',
+    isActive
+      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+  );
+}
+
+function flyoutItemClass(isActive: boolean) {
+  return cn(
+    'flex w-full items-center gap-2.5 rounded-sm px-3 py-2 text-sm transition-colors',
+    isActive
+      ? 'bg-accent font-semibold text-accent-foreground'
+      : 'text-popover-foreground hover:bg-accent hover:text-accent-foreground',
   );
 }
 
@@ -159,161 +183,297 @@ export function Sidebar() {
   const { sidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const location = useLocation();
 
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
+
   useEffect(() => {
     if (window.innerWidth < 768) setSidebarOpen(false);
+    setFlyoutGroup(null);
   }, [location.pathname, setSidebarOpen]);
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (sidebarOpen) setFlyoutGroup(null);
+  }, [sidebarOpen]);
+
+  // Auto-open the group whose child matches the current path
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    for (const entry of ENTRIES) {
+      if (!entry.group) continue;
+      const hasActive = entry.children.some(
+        (c) => location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
+      );
+      if (hasActive) {
+        setOpenGroups(new Set([entry.key]));
+        return;
+      }
+    }
+  }, [location.pathname, sidebarOpen]);
 
   function toggleGroup(key: string) {
     setOpenGroups((prev) => new Set(prev.has(key) ? [] : [key]));
   }
 
   return (
-    <>
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-    <aside
-      className={cn(
-        'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r transition-all duration-300',
-        'w-64',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        'md:translate-x-0',
-        sidebarOpen ? 'md:w-64' : 'md:w-16',
-      )}
-    >
-      <div className="flex h-16 items-center justify-between border-b px-4">
+    <TooltipProvider delayDuration={400}>
+      <>
         {sidebarOpen && (
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="bg-primary h-8 w-8 shrink-0 rounded-lg" />
-            <span className="text-sidebar-foreground truncate text-sm font-semibold">
-              {orgName ?? 'HRMS'}
-            </span>
-          </div>
+          <div
+            className="fixed inset-0 z-30 bg-black/50 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
         )}
-        <button
-          onClick={toggleSidebar}
-          className="text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ml-auto rounded-md p-1.5"
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+
+        <aside
+          className={cn(
+            'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r transition-all duration-300',
+            sidebarOpen ? 'w-64' : 'w-16',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+          )}
         >
-          {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </button>
-      </div>
+          {/* ── Header: logo + brand + collapse toggle ── */}
+          <div className={cn('flex h-16 shrink-0 items-center border-b', sidebarOpen ? 'px-4' : 'justify-center')}>
+            {sidebarOpen ? (
+              <>
+                <div className="flex flex-1 items-center gap-2.5 overflow-hidden">
+                  <div className="bg-primary h-8 w-8 shrink-0 rounded-lg" />
+                  <span className="text-sidebar-foreground truncate text-sm font-semibold">
+                    {orgName ?? 'WorkAxis'}
+                  </span>
+                </div>
+                {/* Desktop-only collapse button in header */}
+                <button
+                  onClick={toggleSidebar}
+                  className="ml-1 hidden h-7 w-7 shrink-0 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
+                  aria-label="Collapse sidebar"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              /* In collapsed state the expand button IS the header */
+              <button
+                onClick={toggleSidebar}
+                className="hidden h-9 w-9 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
+                aria-label="Expand sidebar"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </button>
+            )}
+          </div>
 
-      <nav className="flex-1 overflow-y-auto py-4">
-        <ul className="space-y-1 px-2">
-          {ENTRIES.map((entry) => {
-            if (entry.group) {
-              const visible = entry.children.filter((c) => isVisible(c, role));
-              if (visible.length === 0) return null;
-              const isOpen = openGroups.has(entry.key);
+          {/* ── Navigation ── */}
+          <nav className="flex-1 overflow-y-auto py-3">
+            {/* Expanded: px-2 gutters. Collapsed: no gutters — items center themselves */}
+            <ul className={cn('space-y-0.5', sidebarOpen ? 'px-2' : 'px-0')}>
+              {ENTRIES.map((entry) => {
+                // ── Group entries ──
+                if (entry.group) {
+                  const visible = entry.children.filter((c) => isVisible(c, role));
+                  if (visible.length === 0) return null;
 
-              return (
-                <li key={entry.key}>
-                  <button
-                    onClick={() => { toggleGroup(entry.key); }}
-                    className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-                  >
-                    <entry.icon className="h-5 w-5 shrink-0" />
-                    {sidebarOpen && (
-                      <>
+                  // Collapsed → Popover flyout
+                  if (!sidebarOpen) {
+                    const isChildActive = visible.some((c) =>
+                      location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
+                    );
+                    return (
+                      <li key={entry.key} className="flex justify-center py-0.5">
+                        <Popover
+                          open={flyoutGroup === entry.key}
+                          onOpenChange={(open) => setFlyoutGroup(open ? entry.key : null)}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              className={collapsedIconClass(flyoutGroup === entry.key)}
+                              aria-label={entry.label}
+                            >
+                              <entry.icon className="h-5 w-5 shrink-0" />
+                              {isChildActive && flyoutGroup !== entry.key && (
+                                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary/50 blur-[2px]" />
+                              )}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="right" align="start" sideOffset={10} className="w-52 p-0">
+                            <div className="border-b px-3 py-2.5">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                {entry.label}
+                              </p>
+                            </div>
+                            <div className="py-1">
+                              {visible.map((child) => {
+                                const locked = isLocked(child, orgPlan);
+                                if (locked) {
+                                  return (
+                                    <button
+                                      key={child.to}
+                                      onClick={() => {
+                                        const plan = child.feature ? requiredPlan(child.feature) : null;
+                                        if (plan) toast.info(`${child.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                                      }}
+                                      className={cn(flyoutItemClass(false), 'cursor-pointer opacity-50')}
+                                    >
+                                      <child.icon className="h-4 w-4 shrink-0" />
+                                      <span className="flex-1 text-left">{child.label}</span>
+                                      <Lock className="h-3 w-3 shrink-0" />
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <NavLink
+                                    key={child.to}
+                                    to={child.to}
+                                    className={({ isActive }) => flyoutItemClass(isActive)}
+                                    onClick={() => setFlyoutGroup(null)}
+                                  >
+                                    <child.icon className="h-4 w-4 shrink-0" />
+                                    <span>{child.label}</span>
+                                  </NavLink>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </li>
+                    );
+                  }
+
+                  // Expanded → inline accordion
+                  const isOpen = openGroups.has(entry.key);
+                  const isChildActive = visible.some(
+                    (c) => location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
+                  );
+                  return (
+                    <li key={entry.key}>
+                      <button
+                        onClick={() => toggleGroup(entry.key)}
+                        className="group/nav text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                      >
+                        <entry.icon className="h-5 w-5 shrink-0" />
                         <span className="flex-1 text-left">{entry.label}</span>
+                        {isChildActive && !isOpen && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-primary/50 blur-[2px]" />
+                        )}
                         <ChevronDown
-                          className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-180')}
+                          className={cn(
+                            'h-4 w-4 shrink-0 transition-all duration-200',
+                            isOpen
+                              ? 'rotate-180 opacity-100'
+                              : 'opacity-0 group-hover/nav:opacity-100',
+                          )}
                         />
-                      </>
-                    )}
-                  </button>
-                  {sidebarOpen && isOpen && (
-                    <ul className="mt-1 space-y-1">
-                      {visible.map((child) => {
-                        const locked = isLocked(child, orgPlan);
-                        if (locked) {
-                          return (
-                            <li key={child.to}>
-                              <button
-                                onClick={() => {
-                                  const plan = child.feature ? requiredPlan(child.feature) : null;
-                                  if (plan) toast.info(`${child.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
-                                }}
-                                className={cn(
-                                  itemClass(false, sidebarOpen),
-                                  'w-full cursor-pointer opacity-50',
-                                )}
-                              >
-                                <child.icon className="h-5 w-5 shrink-0" />
-                                {sidebarOpen && (
-                                  <>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-0.5 space-y-0.5">
+                          {visible.map((child) => {
+                            const locked = isLocked(child, orgPlan);
+                            if (locked) {
+                              return (
+                                <li key={child.to}>
+                                  <button
+                                    onClick={() => {
+                                      const plan = child.feature ? requiredPlan(child.feature) : null;
+                                      if (plan) toast.info(`${child.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                                    }}
+                                    className={cn(expandedItemClass(false, true), 'w-full cursor-pointer opacity-50')}
+                                  >
+                                    <child.icon className="h-4 w-4 shrink-0" />
                                     <span className="flex-1 text-left">{child.label}</span>
                                     <Lock className="h-3 w-3 shrink-0" />
-                                  </>
-                                )}
-                              </button>
-                            </li>
-                          );
-                        }
-                        return (
-                          <li key={child.to}>
-                            <NavLink
-                              to={child.to}
-                              className={({ isActive }) => itemClass(isActive, sidebarOpen)}
+                                  </button>
+                                </li>
+                              );
+                            }
+                            return (
+                              <li key={child.to}>
+                                <NavLink
+                                  to={child.to}
+                                  className={({ isActive }) => expandedItemClass(isActive, true)}
+                                >
+                                  <child.icon className="h-4 w-4 shrink-0" />
+                                  <span>{child.label}</span>
+                                </NavLink>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                }
+
+                // ── Flat entries ──
+                if (!isVisible(entry, role)) return null;
+                const locked = isLocked(entry, orgPlan);
+
+                // Collapsed → centered square icon + tooltip
+                if (!sidebarOpen) {
+                  return (
+                    <li key={entry.to} className="flex justify-center py-0.5">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {locked ? (
+                            <button
+                              onClick={() => {
+                                const plan = entry.feature ? requiredPlan(entry.feature) : null;
+                                if (plan) toast.info(`${entry.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                              }}
+                              className={cn(collapsedIconClass(false), 'opacity-50')}
+                              aria-label={entry.label}
                             >
-                              <child.icon className="h-5 w-5 shrink-0" />
-                              {sidebarOpen && <span>{child.label}</span>}
+                              <entry.icon className="h-5 w-5 shrink-0" />
+                            </button>
+                          ) : (
+                            <NavLink
+                              to={entry.to}
+                              className={({ isActive }) => collapsedIconClass(isActive)}
+                              aria-label={entry.label}
+                            >
+                              <entry.icon className="h-5 w-5 shrink-0" />
                             </NavLink>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </li>
-              );
-            }
+                          )}
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          {entry.label}
+                          {locked && ' — upgrade required'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </li>
+                  );
+                }
 
-            if (!isVisible(entry, role)) return null;
-
-            const locked = isLocked(entry, orgPlan);
-            if (locked) {
-              return (
-                <li key={entry.to}>
-                  <button
-                    onClick={() => {
-                      const plan = entry.feature ? requiredPlan(entry.feature) : null;
-                      if (plan) toast.info(`${entry.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
-                    }}
-                    className={cn(itemClass(false, false), 'w-full cursor-pointer opacity-50')}
-                  >
-                    <entry.icon className="h-5 w-5 shrink-0" />
-                    {sidebarOpen && (
-                      <>
+                // Expanded
+                return (
+                  <li key={entry.to}>
+                    {locked ? (
+                      <button
+                        onClick={() => {
+                          const plan = entry.feature ? requiredPlan(entry.feature) : null;
+                          if (plan) toast.info(`${entry.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                        }}
+                        className={cn(expandedItemClass(false), 'w-full cursor-pointer opacity-50')}
+                      >
+                        <entry.icon className="h-5 w-5 shrink-0" />
                         <span className="flex-1 text-left">{entry.label}</span>
                         <Lock className="h-3 w-3 shrink-0" />
-                      </>
+                      </button>
+                    ) : (
+                      <NavLink
+                        to={entry.to}
+                        className={({ isActive }) => expandedItemClass(isActive)}
+                      >
+                        <entry.icon className="h-5 w-5 shrink-0" />
+                        <span>{entry.label}</span>
+                      </NavLink>
                     )}
-                  </button>
-                </li>
-              );
-            }
-
-            return (
-              <li key={entry.to}>
-                <NavLink
-                  to={entry.to}
-                  className={({ isActive }) => itemClass(isActive, false)}
-                >
-                  <entry.icon className="h-5 w-5 shrink-0" />
-                  {sidebarOpen && <span>{entry.label}</span>}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-    </aside>
-    </>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </aside>
+      </>
+    </TooltipProvider>
   );
 }

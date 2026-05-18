@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Pencil, Upload, Trash2, FileText, ExternalLink, IndianRupee, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useEmployee, useUpdateEmployee } from '@/hooks/useEmployees';
+import { useOfficeLocations, useAssignEmployeeLocation } from '@/hooks/useOfficeLocations';
+import { useAuthStore } from '@/stores/auth.store';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
 import { useUploadFile } from '@/hooks/useUpload';
 import { useDocuments, useCreateDocument, useDeleteDocument, type DocumentType } from '@/hooks/useDocuments';
@@ -45,7 +47,7 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
-function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
+function InfoRow({ label, value }: { label: string; value?: string | number | null | undefined }) {
   return (
     <div className="flex justify-between py-1.5 text-sm border-b border-border/50 last:border-0">
       <span className="text-muted-foreground">{label}</span>
@@ -223,15 +225,102 @@ function SetSalaryDialog({
   );
 }
 
+function ChangeLocationDialog({
+  employeeId,
+  currentLocationId,
+  open,
+  onClose,
+}: {
+  employeeId: string;
+  currentLocationId?: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { data: locations = [], isLoading } = useOfficeLocations();
+  const assignMutation = useAssignEmployeeLocation();
+  const [selected, setSelected] = useState<string | null>(currentLocationId ?? null);
+
+  // Sync selection when dialog opens with a different employee
+  useEffect(() => {
+    if (open) setSelected(currentLocationId ?? null);
+  }, [open, currentLocationId]);
+
+  const handleSave = () => {
+    assignMutation.mutate(
+      { employeeId, locationId: selected },
+      { onSuccess: onClose },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Change Office Location</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="space-y-2 py-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1 py-1">
+            <button
+              onClick={() => setSelected(null)}
+              className={`w-full rounded-lg px-4 py-2.5 text-left text-sm transition-colors ${
+                selected === null
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-muted'
+              }`}
+            >
+              <span className="font-medium">No location</span>
+              <span className={`ml-2 text-xs ${selected === null ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                Remove assignment
+              </span>
+            </button>
+            {locations.map((loc) => (
+              <button
+                key={loc.id}
+                onClick={() => setSelected(loc.id)}
+                className={`w-full rounded-lg px-4 py-2.5 text-left text-sm transition-colors ${
+                  selected === loc.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted'
+                }`}
+              >
+                <span className="font-medium">{loc.name}</span>
+                {loc.address && (
+                  <span className={`ml-2 text-xs ${selected === loc.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                    {loc.address}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={assignMutation.isPending}>
+            {assignMutation.isPending ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: employee, isLoading } = useEmployee(id ?? '');
+  const currentUser = useAuthStore((s) => s.user);
   const [showEdit, setShowEdit] = useState(false);
   const [showDocUpload, setShowDocUpload] = useState(false);
   const [docType, setDocType] = useState<DocumentType>('ID_PROOF');
   const [docFile, setDocFile] = useState<File | null>(null);
   const [showSetSalary, setShowSetSalary] = useState(false);
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { mutate: updateEmployee } = useUpdateEmployee(id ?? '');
@@ -362,7 +451,7 @@ export default function EmployeeDetailPage() {
             name: docFile.name,
             url,
             size: docFile.size,
-            mimeType: docFile.type || undefined,
+            ...(docFile.type ? { mimeType: docFile.type } : {}),
           },
           {
             onSuccess: () => {
@@ -471,6 +560,34 @@ export default function EmployeeDetailPage() {
               <InfoRow label="Role" value={employee.role} />
               <InfoRow label="Date of Joining" value={formatDate(employee.dateOfJoining)} />
               <InfoRow label="Date of Confirmation" value={formatDate(employee.dateOfConfirmation)} />
+              <div className="flex items-center justify-between border-b border-border/50 py-1.5 text-sm last:border-0">
+                <span className="text-muted-foreground">Office Location</span>
+                <div className="flex items-center gap-2">
+                  <span className="max-w-[180px] truncate text-right font-medium">
+                    {(employee as { officeLocation?: { name: string } }).officeLocation?.name ?? '—'}
+                  </span>
+                  {(() => {
+                    const viewerRole = currentUser?.role;
+                    const targetRole = (employee as { role?: string }).role;
+                    const canChange =
+                      viewerRole === 'SUPER_ADMIN' ||
+                      (viewerRole === 'ORG_ADMIN' &&
+                        employee.id !== currentUser?.id &&
+                        (targetRole === 'HR' || targetRole === 'EMPLOYEE')) ||
+                      (viewerRole === 'HR' &&
+                        employee.id !== currentUser?.id &&
+                        targetRole === 'EMPLOYEE');
+                    return canChange ? (
+                      <button
+                        onClick={() => setShowLocationDialog(true)}
+                        className="text-primary hover:text-primary/80 text-xs underline underline-offset-2"
+                      >
+                        Change
+                      </button>
+                    ) : null;
+                  })()}
+                </div>
+              </div>
             </Section>
 
             <Section title="Current Address">
@@ -661,6 +778,13 @@ export default function EmployeeDetailPage() {
             employee={employee}
             open={showEdit}
             onClose={() => { setShowEdit(false); }}
+          />
+
+          <ChangeLocationDialog
+            employeeId={id ?? ''}
+            currentLocationId={(employee as { officeLocationId?: string }).officeLocationId}
+            open={showLocationDialog}
+            onClose={() => setShowLocationDialog(false)}
           />
 
           {/* Set Salary Dialog */}

@@ -36,6 +36,7 @@ const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'));
 const SalaryStructurePage = lazy(() => import('@/pages/salary/SalaryStructurePage'));
 const AnnouncementsPage = lazy(() => import('@/pages/announcements/AnnouncementsPage'));
+const OfficeLocationsPage = lazy(() => import('@/pages/office-locations/OfficeLocationsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
@@ -330,6 +331,16 @@ export const router = createBrowserRouter([
           <Lazy>
             <AnnouncementsPage />
           </Lazy>
+        ),
+      },
+      {
+        path: 'office-locations',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy>
+              <OfficeLocationsPage />
+            </Lazy>
+          </RoleGuard>
         ),
       },
     ],

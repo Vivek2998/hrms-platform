@@ -170,6 +170,32 @@ export function attendanceRoutes(app: FastifyInstance) {
     return reply.send(ok(updated));
   });
 
+  // GET /attendance/geofence-config  (mobile: current employee's assigned office location)
+  app.get('/attendance/geofence-config', auth, async (req, reply) => {
+    const employee = await app.prisma.employee.findFirst({
+      where: { id: req.user.sub, organizationId: req.user.orgId },
+      include: {
+        officeLocation: {
+          select: { id: true, name: true, latitude: true, longitude: true, radiusMeters: true, isActive: true },
+        },
+      },
+    });
+    if (!employee) throw fail('Employee not found', 404);
+    return reply.send(
+      ok({
+        officeLocation:
+          employee.officeLocation?.isActive ? {
+            id: employee.officeLocation.id,
+            name: employee.officeLocation.name,
+            latitude: employee.officeLocation.latitude,
+            longitude: employee.officeLocation.longitude,
+            radiusMeters: employee.officeLocation.radiusMeters,
+          }
+          : null,
+      }),
+    );
+  });
+
   // GET /attendance/summary/:employeeId  (monthly summary for dashboards)
   app.get('/attendance/summary/:employeeId', auth, async (req, reply) => {
     const { employeeId } = req.params as { employeeId: string };

@@ -39,6 +39,7 @@ import { announcementRoutes } from './modules/announcements/announcement.routes.
 import { reportRoutes } from './modules/reports/report.routes.js';
 import { letterRoutes } from './modules/letters/letter.routes.js';
 import { superAdminRoutes } from './modules/super-admin/super-admin.routes.js';
+import { officeLocationRoutes } from './modules/office-locations/office-location.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -97,6 +98,7 @@ export async function buildApp() {
   await app.register(reportRoutes, { prefix });
   await app.register(letterRoutes, { prefix });
   await app.register(superAdminRoutes, { prefix });
+  await app.register(officeLocationRoutes, { prefix });
 
   await app.ready();
   return app;

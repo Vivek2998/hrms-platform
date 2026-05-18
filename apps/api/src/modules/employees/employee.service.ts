@@ -52,6 +52,8 @@ const EMPLOYEE_SELECT = {
   department: { select: { id: true, name: true } },
   team: { select: { id: true, name: true } },
   manager: { select: { id: true, firstName: true, lastName: true } },
+  officeLocationId: true,
+  officeLocation: { select: { id: true, name: true } },
 } satisfies Prisma.EmployeeSelect;
 
 async function generateEmployeeCode(prisma: PrismaClient, organizationId: string): Promise<string> {

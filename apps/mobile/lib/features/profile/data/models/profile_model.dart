@@ -13,6 +13,7 @@ class EmployeeProfile {
   final String? bankName;
   final String? bankAccountNumber;
   final String? bankIfsc;
+  final String? officeLocationName;
 
   const EmployeeProfile({
     required this.id,
@@ -29,10 +30,12 @@ class EmployeeProfile {
     this.bankName,
     this.bankAccountNumber,
     this.bankIfsc,
+    this.officeLocationName,
   });
 
   factory EmployeeProfile.fromJson(Map<String, dynamic> j) {
     final dept = j['department'] as Map<String, dynamic>?;
+    final loc = j['officeLocation'] as Map<String, dynamic>?;
     return EmployeeProfile(
       id: j['id'] as String,
       firstName: j['firstName'] as String,
@@ -52,6 +55,7 @@ class EmployeeProfile {
       bankName: j['bankName'] as String?,
       bankAccountNumber: j['bankAccountNumber'] as String?,
       bankIfsc: j['bankIfsc'] as String?,
+      officeLocationName: loc?['name'] as String?,
     );
   }
 }
