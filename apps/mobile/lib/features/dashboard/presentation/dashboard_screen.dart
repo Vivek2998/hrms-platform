@@ -343,6 +343,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFFD1FAE5), '/documents'),
       _Action('Regularise', Icons.edit_calendar_rounded,
           const Color(0xFF0891B2), const Color(0xFFCFFAFE), '/regularisation'),
+      _Action('Performance', Icons.track_changes_rounded,
+          const Color(0xFF7C3AED), const Color(0xFFEDE9FE), '/performance'),
     ];
 
     return GridView.builder(

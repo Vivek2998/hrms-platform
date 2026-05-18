@@ -1201,8 +1201,10 @@ model PerformanceGoal {
   employeeId     String
   title          String
   description    String?
-  targetValue    Float?
+  targetValue    String?
   currentValue   Float?
+  progress       Int        @default(0)
+  dueDate        DateTime?  @db.Date
   status         GoalStatus @default(NOT_STARTED)
   weightage      Float      @default(1)
   createdAt      DateTime   @default(now())
@@ -1251,7 +1253,8 @@ model PeerFeedback {
   fromId         String
   toId           String
   rating         Float?
-  comments       String?
+  strengths      String?
+  improvements   String?
   createdAt      DateTime @default(now())
 
   organization Organization     @relation(fields: [organizationId], references: [id])

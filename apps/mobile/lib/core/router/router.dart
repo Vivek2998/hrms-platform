@@ -26,6 +26,7 @@ import '../../features/comp_off/presentation/comp_off_screen.dart';
 import '../../features/team/presentation/org_chart_screen.dart';
 import '../../features/leaves/presentation/apply_leave_behalf_screen.dart';
 import '../../features/attendance/presentation/biometric_preference_screen.dart';
+import '../../features/performance/presentation/performance_screen.dart';
 
 part 'router.g.dart';
 
@@ -112,6 +113,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/biometric-preference',
         builder: (_, __) => const BiometricPreferenceScreen(),
+      ),
+      GoRoute(
+        path: '/performance',
+        builder: (_, __) => const PerformanceScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

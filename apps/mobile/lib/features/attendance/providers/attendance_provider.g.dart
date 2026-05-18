@@ -176,7 +176,7 @@ class _AttendanceListProviderElement
   int get year => (origin as AttendanceListProvider).year;
 }
 
-String _$punchNotifierHash() => r'2df1a2fdbfe15d5302346732631fa0596505cceb';
+String _$punchNotifierHash() => r'b93aa42f35613051d9c968d4667eddd5db0abf3c';
 
 /// See also [PunchNotifier].
 @ProviderFor(PunchNotifier)
