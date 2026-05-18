@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ok } from '../../lib/response.js';
+import { ok, fail } from '../../lib/response.js';
 
 const createTicketSchema = z.object({
   subject: z.string().min(5).max(200),
@@ -63,7 +63,7 @@ export function helpDeskRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const isStaff = (STAFF_ROLES as readonly string[]).includes(role);
 
-    const ticket = await app.prisma.helpDeskTicket.findFirstOrThrow({
+    const ticket = await app.prisma.helpDeskTicket.findFirst({
       where: {
         id,
         organizationId: orgId,
@@ -77,6 +77,7 @@ export function helpDeskRoutes(app: FastifyInstance) {
         },
       },
     });
+    if (!ticket) throw fail('Ticket not found', 404);
     return reply.status(200).send(ok(ticket));
   });
 
@@ -110,9 +111,11 @@ export function helpDeskRoutes(app: FastifyInstance) {
       const isStaff = (STAFF_ROLES as readonly string[]).includes(role);
       const input = addCommentSchema.parse(req.body);
 
-      await app.prisma.helpDeskTicket.findFirstOrThrow({
+      const exists = await app.prisma.helpDeskTicket.findFirst({
         where: { id, organizationId: orgId, ...(isStaff ? {} : { employeeId: authorId }) },
+        select: { id: true },
       });
+      if (!exists) throw fail('Ticket not found', 404);
 
       const comment = await app.prisma.helpDeskTicketComment.create({
         data: {
