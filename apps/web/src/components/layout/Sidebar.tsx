@@ -38,6 +38,7 @@ import {
   MapPin,
   Wallet,
   Inbox,
+  Heart,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -104,6 +105,7 @@ const ENTRIES: SidebarEntry[] = [
     icon: Globe,
     children: [
       { label: 'Announcements', to: '/announcements', icon: Megaphone },
+      { label: 'Recognition Wall', to: '/kudos', icon: Heart },
       { label: 'Employee Directory', to: '/directory', icon: BookUser },
       { label: 'Organisation Chart', to: '/org-chart', icon: Network },
     ],

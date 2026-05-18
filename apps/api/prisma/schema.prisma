@@ -246,6 +246,7 @@ model Organization {
   offboardingTemplates    OffboardingTemplate[]
   offboardingAssignments  OffboardingAssignment[]
   expenseClaims           ExpenseClaim[]
+  kudos                   Kudos[]
 
   @@map("organizations")
 }
@@ -395,6 +396,8 @@ model Employee {
   taxDeclarations          TaxDeclaration[]
   expenseClaims            ExpenseClaim[]
   expenseReviews           ExpenseClaim[]   @relation("ExpenseReviewer")
+  kudosSent                Kudos[]          @relation("KudosSent")
+  kudosReceived            Kudos[]          @relation("KudosReceived")
   suggestions              SuggestionBox[]
   helpDeskTickets          HelpDeskTicket[]
   passwordResetTokens      PasswordResetToken[]
@@ -1482,4 +1485,39 @@ model ExpenseClaim {
   @@index([organizationId])
   @@index([organizationId, employeeId])
   @@map("expense_claims")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Peer Recognition / Kudos
+// ─────────────────────────────────────────────────────────────
+
+enum KudosCategory {
+  TEAMWORK
+  INNOVATION
+  LEADERSHIP
+  CUSTOMER_FOCUS
+  GOING_ABOVE_AND_BEYOND
+  PROBLEM_SOLVING
+  MENTORSHIP
+  OTHER
+}
+
+model Kudos {
+  id             String        @id @default(uuid())
+  organizationId String
+  fromEmployeeId String
+  toEmployeeId   String
+  category       KudosCategory @default(OTHER)
+  message        String
+  isPublic       Boolean       @default(true)
+  reactions      Json          @default("{}")
+  createdAt      DateTime      @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  fromEmployee   Employee     @relation("KudosSent", fields: [fromEmployeeId], references: [id])
+  toEmployee     Employee     @relation("KudosReceived", fields: [toEmployeeId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, toEmployeeId])
+  @@map("kudos")
 }

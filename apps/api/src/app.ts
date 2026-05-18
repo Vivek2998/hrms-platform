@@ -42,6 +42,7 @@ import { superAdminRoutes } from './modules/super-admin/super-admin.routes.js';
 import { officeLocationRoutes } from './modules/office-locations/office-location.routes.js';
 import { expenseRoutes } from './modules/expenses/expense.routes.js';
 import { approvalInboxRoutes } from './modules/approval-inbox/approval-inbox.routes.js';
+import { kudosRoutes } from './modules/kudos/kudos.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -103,6 +104,7 @@ export async function buildApp() {
   await app.register(officeLocationRoutes, { prefix });
   await app.register(expenseRoutes, { prefix });
   await app.register(approvalInboxRoutes, { prefix });
+  await app.register(kudosRoutes, { prefix });
 
   await app.ready();
   return app;

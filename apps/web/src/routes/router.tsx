@@ -44,6 +44,7 @@ const SuperAdminLoginPage = lazy(() => import('@/pages/super-admin/SuperAdminLog
 const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/SuperAdminDashboard'));
 const ExpensesPage = lazy(() => import('@/pages/expenses/ExpensesPage'));
 const ApprovalInboxPage = lazy(() => import('@/pages/approval-inbox/ApprovalInboxPage'));
+const KudosPage = lazy(() => import('@/pages/kudos/KudosPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -223,6 +224,14 @@ export const router = createBrowserRouter([
               <ApprovalInboxPage />
             </Lazy>
           </RoleGuard>
+        ),
+      },
+      {
+        path: 'kudos',
+        element: (
+          <Lazy>
+            <KudosPage />
+          </Lazy>
         ),
       },
       {

@@ -637,6 +637,43 @@ export type ExpenseClaim = {
 // Approval Inbox
 // ─────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────
+// Kudos / Peer Recognition
+// ─────────────────────────────────────────────────────────────
+
+export type KudosCategory =
+  | 'TEAMWORK'
+  | 'INNOVATION'
+  | 'LEADERSHIP'
+  | 'CUSTOMER_FOCUS'
+  | 'GOING_ABOVE_AND_BEYOND'
+  | 'PROBLEM_SOLVING'
+  | 'MENTORSHIP'
+  | 'OTHER';
+
+export type KudosEmployee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  designation?: string | null;
+  avatarUrl?: string | null;
+  employeeCode: string;
+};
+
+export type Kudos = {
+  id: string;
+  organizationId: string;
+  fromEmployeeId: string;
+  toEmployeeId: string;
+  category: KudosCategory;
+  message: string;
+  isPublic: boolean;
+  reactions: Record<string, string[]>;
+  createdAt: string;
+  fromEmployee: KudosEmployee;
+  toEmployee: KudosEmployee;
+};
+
 export type ApprovalItemType =
   | 'LEAVE'
   | 'EXPENSE'
