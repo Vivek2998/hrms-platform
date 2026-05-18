@@ -35,7 +35,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
 import { downloadCsv } from '@/lib/downloadCsv';
 import { toast } from 'sonner';
-import type { AttendanceRecord, AttendanceStatus } from '@hrms/shared-types';
+import type { AttendanceRecord, AttendanceStatus, PunchMethod } from '@hrms/shared-types';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -82,6 +82,22 @@ function fmtHours(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${String(h)}h ${String(m)}m`;
+}
+
+const PUNCH_METHOD_META: Record<PunchMethod, { label: string; className: string }> = {
+  FINGERPRINT: { label: '👆 Fingerprint', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+  FACE_ID:     { label: '🫥 Face ID',    className: 'bg-sky-100    text-sky-800    border-sky-200'    },
+  MANUAL:      { label: 'Manual',        className: 'bg-gray-100   text-gray-600   border-gray-200'   },
+};
+
+function PunchMethodBadge({ method }: { method?: PunchMethod | null }) {
+  if (!method) return <span className="text-muted-foreground text-xs">—</span>;
+  const { label, className } = PUNCH_METHOD_META[method];
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}>
+      {label}
+    </span>
+  );
 }
 
 // ─── Edit Dialog ────────────────────────────────────────────────────────────
@@ -459,6 +475,7 @@ export default function AttendancePage() {
                       <th className="px-4 py-3">Punch In</th>
                       <th className="px-4 py-3">Punch Out</th>
                       <th className="px-4 py-3">Hours</th>
+                      <th className="px-4 py-3">Method</th>
                       {!isEmployee && <th className="px-4 py-3" />}
                     </tr>
                   </thead>
@@ -482,6 +499,9 @@ export default function AttendancePage() {
                         <td className="px-4 py-3">{fmtTime(rec.punchIn)}</td>
                         <td className="px-4 py-3">{fmtTime(rec.punchOut)}</td>
                         <td className="px-4 py-3">{fmtHours(rec.workingMinutes ?? 0)}</td>
+                        <td className="px-4 py-3">
+                          <PunchMethodBadge method={rec.punchMethod} />
+                        </td>
                         {!isEmployee && (
                           <td className="px-4 py-3">
                             <Button

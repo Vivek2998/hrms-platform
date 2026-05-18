@@ -179,6 +179,19 @@ enum SubscriptionPlan {
   ENTERPRISE
 }
 
+enum PunchMethod {
+  FINGERPRINT
+  FACE_ID
+  MANUAL
+}
+
+enum BiometricPreference {
+  FINGERPRINT_FIRST
+  FACE_FIRST
+  BIOMETRIC_ANY
+  NO_BIOMETRIC
+}
+
 // ─────────────────────────────────────────────────────────────
 // ORGANIZATIONS (Tenants)
 // ─────────────────────────────────────────────────────────────
@@ -349,6 +362,8 @@ model Employee {
   emergencyContact    Json?
   // Office location (for geofence smart punch-in)
   officeLocationId    String?
+  // Biometric attendance preference
+  biometricPreference BiometricPreference @default(FINGERPRINT_FIRST)
   // Auth
   passwordHash        String
   passwordChangedAt   DateTime?
@@ -484,6 +499,7 @@ model AttendanceRecord {
   punchInLocation  Json?            // { lat, lng, accuracy, address }
   punchOutLocation Json?
   punchInPhoto     String?          // Cloudinary URL
+  punchMethod      PunchMethod?     // how employee authenticated for this punch
   workingMinutes   Int              @default(0)
   overtimeMinutes  Int              @default(0)
   lateMinutes      Int              @default(0)

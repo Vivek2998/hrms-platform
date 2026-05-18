@@ -84,12 +84,25 @@ export function employeeRoutes(app: FastifyInstance) {
         dateOfBirth: true, dateOfJoining: true, bloodGroup: true, maritalStatus: true, designation: true,
         presentAddress: true, permanentAddress: true, emergencyContact: true,
         bankAccountNumber: true, bankIfsc: true, bankName: true, bankBranch: true,
+        biometricPreference: true,
         department: { select: { id: true, name: true } },
         officeLocation: { select: { id: true, name: true } },
       },
     });
     if (!employee) throw fail('Employee not found', 404);
     return reply.send(ok(employee));
+  });
+
+  // PATCH /employees/me/biometric-preference  — employee sets their biometric punch preference
+  app.patch('/employees/me/biometric-preference', auth, async (req, reply) => {
+    const { preference } = z.object({
+      preference: z.enum(['FINGERPRINT_FIRST', 'FACE_FIRST', 'BIOMETRIC_ANY', 'NO_BIOMETRIC']),
+    }).parse(req.body);
+    await app.prisma.employee.update({
+      where: { id: req.user.sub },
+      data: { biometricPreference: preference },
+    });
+    return reply.send(ok({ preference }));
   });
 
   // PATCH /employees/me/profile  — employee updates their own personal/bank/address details

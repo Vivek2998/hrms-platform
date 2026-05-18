@@ -25,6 +25,7 @@ import '../../features/regularisation/presentation/regularisation_screen.dart';
 import '../../features/comp_off/presentation/comp_off_screen.dart';
 import '../../features/team/presentation/org_chart_screen.dart';
 import '../../features/leaves/presentation/apply_leave_behalf_screen.dart';
+import '../../features/attendance/presentation/biometric_preference_screen.dart';
 
 part 'router.g.dart';
 
@@ -107,6 +108,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/leaves/apply-behalf',
         builder: (_, __) => const ApplyLeaveBehalfScreen(),
+      ),
+      GoRoute(
+        path: '/biometric-preference',
+        builder: (_, __) => const BiometricPreferenceScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

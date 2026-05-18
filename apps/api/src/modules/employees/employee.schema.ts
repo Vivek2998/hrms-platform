@@ -105,7 +105,12 @@ export const updateEmployeeSchema = createEmployeeSchema
   .omit({ password: true })
   .partial()
   // Remove the default(30) so partial updates don't silently overwrite the existing value
-  .extend({ noticePeriodDays: z.number().int().min(0).optional() });
+  .extend({
+    noticePeriodDays: z.number().int().min(0).optional(),
+    biometricPreference: z
+      .enum(['FINGERPRINT_FIRST', 'FACE_FIRST', 'BIOMETRIC_ANY', 'NO_BIOMETRIC'])
+      .optional(),
+  });
 
 export const employeeListSchema = paginationSchema.extend({
   status: z.enum(['ACTIVE', 'INACTIVE', 'ON_NOTICE', 'TERMINATED', 'ABSCONDED']).optional(),

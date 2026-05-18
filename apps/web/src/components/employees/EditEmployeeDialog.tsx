@@ -79,6 +79,10 @@ const schema = z.object({
   bankIfsc: z.string().optional(),
   bankAccountNumber: z.string().optional(),
   bankBranch: z.string().optional(),
+  // Biometric / App settings
+  biometricPreference: z
+    .enum(['FINGERPRINT_FIRST', 'FACE_FIRST', 'BIOMETRIC_ANY', 'NO_BIOMETRIC'])
+    .optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -162,6 +166,7 @@ function buildDefaults(employee: Employee): FormValues {
     bankIfsc: employee.bankIfsc ?? '',
     bankAccountNumber: employee.bankAccountNumber ?? '',
     bankBranch: employee.bankBranch ?? '',
+    biometricPreference: (employee.biometricPreference ?? 'FINGERPRINT_FIRST') as FormValues['biometricPreference'],
   };
 }
 
@@ -171,6 +176,7 @@ const TABS = [
   { value: 'address', label: 'Address' },
   { value: 'education', label: 'Education' },
   { value: 'statutory', label: 'Statutory & Bank' },
+  { value: 'settings', label: 'Settings' },
 ] as const;
 
 export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDialogProps) {
@@ -260,6 +266,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
     if (values.bankIfsc) p.bankIfsc = values.bankIfsc;
     if (values.bankAccountNumber) p.bankAccountNumber = values.bankAccountNumber;
     if (values.bankBranch) p.bankBranch = values.bankBranch;
+    if (values.biometricPreference) p.biometricPreference = values.biometricPreference;
 
     updateEmployee(p, { onSuccess: onClose });
   };
@@ -576,6 +583,36 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                     </Field>
                     <Field label="Branch">
                       <Input placeholder="Branch name" {...form.register('bankBranch')} />
+                    </Field>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="settings" className="mt-0 space-y-6">
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Biometric Attendance</h3>
+                  <p className="mb-4 text-xs text-muted-foreground">
+                    Controls how this employee authenticates for mobile attendance punch. The employee can also change this from their mobile app settings.
+                  </p>
+                  <div className="max-w-sm">
+                    <Field label="Biometric Preference">
+                      <Controller
+                        control={form.control}
+                        name="biometricPreference"
+                        render={({ field }) => (
+                          <Select value={field.value ?? 'FINGERPRINT_FIRST'} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select preference" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="FINGERPRINT_FIRST">👆 Fingerprint first (default)</SelectItem>
+                              <SelectItem value="FACE_FIRST">🫥 Face ID first</SelectItem>
+                              <SelectItem value="BIOMETRIC_ANY">Any biometric (system decides)</SelectItem>
+                              <SelectItem value="NO_BIOMETRIC">No biometric — manual punch only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
                     </Field>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ interface PunchInInput {
   organizationId: string;
   location?: { lat: number; lng: number; accuracy?: number; address?: string };
   photoUrl?: string;
+  punchMethod?: 'FINGERPRINT' | 'FACE_ID' | 'MANUAL';
 }
 
 interface PunchOutInput {
@@ -74,6 +75,7 @@ export async function punchIn(input: PunchInInput, prisma: PrismaClient) {
       lateMinutes,
       punchInLocation: input.location ?? undefined,
       punchInPhoto: input.photoUrl,
+      punchMethod: input.punchMethod ?? 'MANUAL',
       shiftId: assignment?.shiftId,
     },
     create: {
@@ -85,6 +87,7 @@ export async function punchIn(input: PunchInInput, prisma: PrismaClient) {
       lateMinutes,
       punchInLocation: input.location ?? undefined,
       punchInPhoto: input.photoUrl,
+      punchMethod: input.punchMethod ?? 'MANUAL',
       shiftId: assignment?.shiftId,
     },
   });

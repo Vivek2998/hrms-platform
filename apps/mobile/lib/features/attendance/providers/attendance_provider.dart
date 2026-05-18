@@ -24,6 +24,7 @@ class PunchNotifier extends _$PunchNotifier {
     required double latitude,
     required double longitude,
     String? selfieUrl,
+    String? punchMethod,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
@@ -31,6 +32,7 @@ class PunchNotifier extends _$PunchNotifier {
             latitude: latitude,
             longitude: longitude,
             selfieUrl: selfieUrl,
+            punchMethod: punchMethod,
           ),
     );
     ref.invalidate(attendanceListProvider);
@@ -39,12 +41,14 @@ class PunchNotifier extends _$PunchNotifier {
   Future<void> punchOut({
     required double latitude,
     required double longitude,
+    String? punchMethod,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(attendanceRepositoryProvider).punchOut(
             latitude: latitude,
             longitude: longitude,
+            punchMethod: punchMethod,
           ),
     );
     ref.invalidate(attendanceListProvider);

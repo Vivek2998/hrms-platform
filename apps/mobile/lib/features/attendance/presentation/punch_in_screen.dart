@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../data/models/attendance_model.dart';
 import '../providers/attendance_provider.dart';
+import '../../../core/services/biometric_service.dart';
+import '../../../core/storage/secure_storage.dart';
 
 class PunchInScreen extends ConsumerStatefulWidget {
   const PunchInScreen({super.key});
@@ -20,10 +22,36 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
   String? _locationError;
   bool _fetchingLocation = false;
 
+  // Biometric state
+  bool _biometricAvailable = false;
+  bool _hasFingerprint = false;
+  bool _hasFaceId = false;
+  BiometricPreference _preference = BiometricPreference.fingerprintFirst;
+  bool _biometricInitialised = false;
+
   @override
   void initState() {
     super.initState();
     _fetchLocation();
+    _initBiometric();
+  }
+
+  Future<void> _initBiometric() async {
+    final service = ref.read(biometricServiceProvider);
+    final storage = ref.read(secureStorageProvider);
+    final available = await service.isAvailable();
+    final fp = available ? await service.hasFingerprint() : false;
+    final face = available ? await service.hasFaceId() : false;
+    final pref = await storage.getBiometricPreference();
+    if (mounted) {
+      setState(() {
+        _biometricAvailable = available;
+        _hasFingerprint = fp;
+        _hasFaceId = face;
+        _preference = pref;
+        _biometricInitialised = true;
+      });
+    }
   }
 
   Future<void> _fetchLocation() async {
@@ -73,7 +101,7 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
     }
   }
 
-  Future<void> _punch(bool isIn) async {
+  Future<void> _doPunch(bool isIn, {PunchMethod method = PunchMethod.manual}) async {
     if (_position == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Location not available')),
@@ -85,11 +113,13 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
       await notifier.punchIn(
         latitude: _position!.latitude,
         longitude: _position!.longitude,
+        punchMethod: method.apiValue,
       );
     } else {
       await notifier.punchOut(
         latitude: _position!.latitude,
         longitude: _position!.longitude,
+        punchMethod: method.apiValue,
       );
     }
     if (!mounted) return;
@@ -113,6 +143,42 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
     }
   }
 
+  Future<void> _biometricPunch(bool isIn) async {
+    final service = ref.read(biometricServiceProvider);
+    final method = await service.authenticateForPunch(_preference);
+    if (!mounted) return;
+    if (method != null) {
+      await _doPunch(isIn, method: method);
+    } else {
+      // Biometric failed or cancelled — offer manual fallback
+      _showBiometricFailedDialog(isIn);
+    }
+  }
+
+  void _showBiometricFailedDialog(bool isIn) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Biometric Failed'),
+        content: const Text(
+            'Biometric authentication was not successful. Do you want to punch manually instead?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _doPunch(isIn, method: PunchMethod.manual);
+            },
+            child: const Text('Use Manual Punch'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _fmt(DateTime? dt) =>
       dt != null ? DateFormat('hh:mm a').format(dt.toLocal()) : '--:--';
 
@@ -126,6 +192,28 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
       }
     }
     return null;
+  }
+
+  // ── Biometric icon for the preferred method ──────────────────────────────
+
+  Widget _buildBiometricIcon({required bool large}) {
+    final usesFace = _preference == BiometricPreference.faceFirst && _hasFaceId;
+    final size = large ? 32.0 : 20.0;
+    if (usesFace) {
+      return Icon(Icons.face_retouching_natural, size: size);
+    }
+    return Icon(Icons.fingerprint, size: size);
+  }
+
+  String _biometricLabel(bool isIn) {
+    if (!_biometricAvailable ||
+        _preference == BiometricPreference.noBiometric) {
+      return isIn ? 'Punch In' : 'Punch Out';
+    }
+    final isFingerprint =
+        !(_preference == BiometricPreference.faceFirst && _hasFaceId);
+    final methodLabel = isFingerprint ? 'Fingerprint' : 'Face ID';
+    return isIn ? 'Punch In with $methodLabel' : 'Punch Out with $methodLabel';
   }
 
   @override
@@ -147,8 +235,22 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
     final punchedOut = todayRecord?.punchOut != null;
     final isComplete = punchedIn && punchedOut;
 
+    final useBiometric = _biometricInitialised &&
+        _biometricAvailable &&
+        _preference != BiometricPreference.noBiometric &&
+        (_hasFingerprint || _hasFaceId);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Punch In / Out')),
+      appBar: AppBar(
+        title: const Text('Punch In / Out'),
+        actions: [
+          IconButton(
+            tooltip: 'Biometric settings',
+            icon: const Icon(Icons.fingerprint),
+            onPressed: () => context.push('/biometric-preference'),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -285,6 +387,35 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
                 ),
               ),
 
+            // ── Biometric method badge ──────────────────────────
+            if (!isComplete && _biometricInitialised && useBiometric)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildBiometricIcon(large: false),
+                    const SizedBox(width: 6),
+                    Text(
+                      _preference.displayLabel,
+                      style: TextStyle(
+                          fontSize: 12, color: scheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () => context.push('/biometric-preference'),
+                      child: Text(
+                        '(change)',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: scheme.primary,
+                            decoration: TextDecoration.underline),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             const Spacer(),
 
             // ── Action button(s) ─────────────────────────────────
@@ -313,46 +444,110 @@ class _PunchInScreenState extends ConsumerState<PunchInScreen> {
                 ),
               )
             else if (punchedIn) ...[
-              // Already clocked in — only show Punch Out
-              OutlinedButton.icon(
-                onPressed: isLoading || _position == null
-                    ? null
-                    : () => _punch(false),
-                icon: isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.logout),
-                label: const Text('Punch Out'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  foregroundColor: scheme.error,
-                  side: BorderSide(color: scheme.error),
+              // Clocked in — show Punch Out
+              if (useBiometric)
+                ElevatedButton.icon(
+                  onPressed: isLoading || _position == null
+                      ? null
+                      : () => _biometricPunch(false),
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : _buildBiometricIcon(large: false),
+                  label: Text(_biometricLabel(false)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    backgroundColor: scheme.error,
+                    foregroundColor: Colors.white,
+                  ),
+                )
+              else
+                OutlinedButton.icon(
+                  onPressed: isLoading || _position == null
+                      ? null
+                      : () => _doPunch(false),
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.logout),
+                  label: const Text('Punch Out'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    foregroundColor: scheme.error,
+                    side: BorderSide(color: scheme.error),
+                  ),
                 ),
-              ),
+              // Manual fallback when biometric is set but user wants to override
+              if (useBiometric)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: TextButton(
+                    onPressed: isLoading || _position == null
+                        ? null
+                        : () => _doPunch(false, method: PunchMethod.manual),
+                    child: const Text('Use Manual Punch instead'),
+                  ),
+                ),
             ] else ...[
-              // Not yet clocked in — only show Punch In
-              ElevatedButton.icon(
-                onPressed: isLoading || _position == null
-                    ? null
-                    : () => _punch(true),
-                icon: isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.login),
-                label: const Text('Punch In'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+              // Not yet clocked in — show Punch In
+              if (useBiometric)
+                ElevatedButton.icon(
+                  onPressed: isLoading || _position == null
+                      ? null
+                      : () => _biometricPunch(true),
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : _buildBiometricIcon(large: false),
+                  label: Text(_biometricLabel(true)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                )
+              else
+                ElevatedButton.icon(
+                  onPressed: isLoading || _position == null
+                      ? null
+                      : () => _doPunch(true),
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.login),
+                  label: const Text('Punch In'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
-              ),
+              // Manual fallback when biometric is set
+              if (useBiometric)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: TextButton(
+                    onPressed: isLoading || _position == null
+                        ? null
+                        : () => _doPunch(true, method: PunchMethod.manual),
+                    child: const Text('Use Manual Punch instead'),
+                  ),
+                ),
             ],
 
             const SizedBox(height: 16),

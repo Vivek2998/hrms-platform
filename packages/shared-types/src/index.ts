@@ -23,6 +23,9 @@ export type AttendanceStatus =
   | 'WEEKEND'
   | 'PENDING'; // Punch-in done, punch-out not yet
 
+export type PunchMethod = 'FINGERPRINT' | 'FACE_ID' | 'MANUAL';
+export type BiometricPreference = 'FINGERPRINT_FIRST' | 'FACE_FIRST' | 'BIOMETRIC_ANY' | 'NO_BIOMETRIC';
+
 export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export type LeaveCategory = 'PAID' | 'UNPAID' | 'COMPENSATORY';
@@ -310,6 +313,7 @@ export interface Employee {
   manager?: { id: string; firstName: string; lastName: string };
   officeLocationId?: string;
   officeLocation?: { id: string; name: string };
+  biometricPreference?: BiometricPreference;
   createdAt: string;
   updatedAt: string;
 }
@@ -371,6 +375,7 @@ export interface AttendanceRecord {
   punchInLocation?: GeoLocation;
   punchOutLocation?: GeoLocation;
   punchInPhoto?: string; // Cloudinary URL
+  punchMethod?: PunchMethod;
   workingMinutes?: number;
   overtimeMinutes?: number;
   lateMinutes?: number;

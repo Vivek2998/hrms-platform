@@ -11,6 +11,7 @@ const punchInSchema = z.object({
   longitude: z.number(),
   accuracy: z.number().optional(),
   selfieUrl: z.string().url().optional(),
+  punchMethod: z.enum(['FINGERPRINT', 'FACE_ID', 'MANUAL']).optional(),
 });
 
 const punchOutSchema = z.object({
@@ -121,6 +122,7 @@ export function attendanceRoutes(app: FastifyInstance) {
           ...(input.accuracy !== undefined && { accuracy: input.accuracy }),
         },
         ...(input.selfieUrl !== undefined && { photoUrl: input.selfieUrl }),
+        punchMethod: input.punchMethod,
       },
       app.prisma,
     );

@@ -58,11 +58,13 @@ class AttendanceRepository {
     required double latitude,
     required double longitude,
     String? selfieUrl,
+    String? punchMethod,
   }) async {
     final res = await _dio.post('/attendance/punch-in', data: {
       'latitude': latitude,
       'longitude': longitude,
       if (selfieUrl != null) 'selfieUrl': selfieUrl,
+      if (punchMethod != null) 'punchMethod': punchMethod,
     });
     return res.data['data'] as Map<String, dynamic>;
   }
@@ -70,10 +72,12 @@ class AttendanceRepository {
   Future<Map<String, dynamic>> punchOut({
     required double latitude,
     required double longitude,
+    String? punchMethod,
   }) async {
     final res = await _dio.post('/attendance/punch-out', data: {
       'latitude': latitude,
       'longitude': longitude,
+      if (punchMethod != null) 'punchMethod': punchMethod,
     });
     return res.data['data'] as Map<String, dynamic>;
   }

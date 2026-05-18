@@ -1,5 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../services/biometric_service.dart';
 
 part 'secure_storage.g.dart';
 
@@ -134,6 +135,21 @@ class SecureStorageService {
 
   Future<void> setSmartPunchEnabled(bool enabled) =>
       _storage.write(key: _smartPunchKey, value: enabled ? '1' : '0');
+
+  // ── biometric preference ───────────────────────────────────────────────────
+
+  static const _biometricPrefKey = 'biometric_preference';
+
+  Future<BiometricPreference> getBiometricPreference() async {
+    final v = await _storage
+        .read(key: _biometricPrefKey)
+        .timeout(_kReadTimeout, onTimeout: () => null);
+    if (v == null) return BiometricPreference.fingerprintFirst;
+    return BiometricPreference.fromApiValue(v);
+  }
+
+  Future<void> setBiometricPreference(BiometricPreference pref) =>
+      _storage.write(key: _biometricPrefKey, value: pref.apiValue);
 
   // ── clear ──────────────────────────────────────────────────────────────────
 
