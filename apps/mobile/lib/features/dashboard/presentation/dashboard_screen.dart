@@ -351,6 +351,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF047857), const Color(0xFFD1FAE5), '/shift-schedule'),
       _Action('Expenses', Icons.receipt_long_rounded,
           const Color(0xFFDB2777), const Color(0xFFFCE7F3), '/expenses'),
+      _Action('Approvals', Icons.inbox_rounded,
+          const Color(0xFF4F46E5), const Color(0xFFEEF2FF), '/approval-inbox'),
     ];
 
     return GridView.builder(

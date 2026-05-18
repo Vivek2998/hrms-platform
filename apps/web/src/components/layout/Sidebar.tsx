@@ -37,6 +37,7 @@ import {
   Lock,
   MapPin,
   Wallet,
+  Inbox,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -136,6 +137,7 @@ const ENTRIES: SidebarEntry[] = [
   { group: false, label: 'Departments', to: '/departments', icon: Building2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'departments' },
   { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'shifts' },
   { group: false, label: 'Office Locations', to: '/office-locations', icon: MapPin, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+  { group: false, label: 'Approval Inbox', to: '/approval-inbox', icon: Inbox, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },
 ];
 

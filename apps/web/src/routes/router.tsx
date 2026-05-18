@@ -43,6 +43,7 @@ const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const SuperAdminLoginPage = lazy(() => import('@/pages/super-admin/SuperAdminLoginPage'));
 const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/SuperAdminDashboard'));
 const ExpensesPage = lazy(() => import('@/pages/expenses/ExpensesPage'));
+const ApprovalInboxPage = lazy(() => import('@/pages/approval-inbox/ApprovalInboxPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -212,6 +213,16 @@ export const router = createBrowserRouter([
           <Lazy>
             <ExpensesPage />
           </Lazy>
+        ),
+      },
+      {
+        path: 'approval-inbox',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER']}>
+            <Lazy>
+              <ApprovalInboxPage />
+            </Lazy>
+          </RoleGuard>
         ),
       },
       {

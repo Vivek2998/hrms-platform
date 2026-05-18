@@ -30,6 +30,7 @@ import '../../features/performance/presentation/performance_screen.dart';
 import '../../features/tax_declaration/presentation/tax_declaration_screen.dart';
 import '../../features/shifts/presentation/shift_schedule_screen.dart';
 import '../../features/expenses/presentation/expenses_screen.dart';
+import '../../features/approval_inbox/presentation/approval_inbox_screen.dart';
 
 part 'router.g.dart';
 
@@ -132,6 +133,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/expenses',
         builder: (_, __) => const ExpensesScreen(),
+      ),
+      GoRoute(
+        path: '/approval-inbox',
+        builder: (_, __) => const ApprovalInboxScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

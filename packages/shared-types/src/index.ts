@@ -632,3 +632,26 @@ export type ExpenseClaim = {
   updatedAt: string;
   employee?: { id: string; firstName: string; lastName: string; employeeCode: string };
 };
+
+// ─────────────────────────────────────────────────────────────
+// Approval Inbox
+// ─────────────────────────────────────────────────────────────
+
+export type ApprovalItemType =
+  | 'LEAVE'
+  | 'EXPENSE'
+  | 'REGULARISATION'
+  | 'COMP_OFF'
+  | 'HELPDESK';
+
+export type ApprovalInboxItem = {
+  id: string;
+  type: ApprovalItemType;
+  title: string;
+  subtitle: string;
+  employeeName: string;
+  employeeId: string;
+  createdAt: string;
+  status: string;
+  metadata: Record<string, unknown>;
+};
