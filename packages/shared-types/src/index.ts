@@ -595,3 +595,40 @@ export type WsNotification = WsEvent<{
   message: string;
   actionUrl?: string;
 }>;
+
+// ─────────────────────────────────────────────────────────────
+// EXPENSE CLAIMS
+// ─────────────────────────────────────────────────────────────
+
+export type ExpenseStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'PAID';
+
+export type ExpenseCategory =
+  | 'TRAVEL'
+  | 'FOOD'
+  | 'ACCOMMODATION'
+  | 'COMMUNICATION'
+  | 'TRAINING'
+  | 'EQUIPMENT'
+  | 'MEDICAL'
+  | 'OTHER';
+
+export type ExpenseClaim = {
+  id: string;
+  organizationId: string;
+  employeeId: string;
+  title: string;
+  description?: string | null;
+  category: ExpenseCategory;
+  amount: number;
+  currency: string;
+  receiptUrl?: string | null;
+  expenseDate: string;
+  status: ExpenseStatus;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  employee?: { id: string; firstName: string; lastName: string; employeeCode: string };
+};

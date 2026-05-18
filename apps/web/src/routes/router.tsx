@@ -42,6 +42,7 @@ const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const SuperAdminLoginPage = lazy(() => import('@/pages/super-admin/SuperAdminLoginPage'));
 const SuperAdminDashboard = lazy(() => import('@/pages/super-admin/SuperAdminDashboard'));
+const ExpensesPage = lazy(() => import('@/pages/expenses/ExpensesPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -202,6 +203,14 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <TaxDeclarationPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'expenses',
+        element: (
+          <Lazy>
+            <ExpensesPage />
           </Lazy>
         ),
       },

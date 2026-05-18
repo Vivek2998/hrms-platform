@@ -29,6 +29,7 @@ import '../../features/attendance/presentation/biometric_preference_screen.dart'
 import '../../features/performance/presentation/performance_screen.dart';
 import '../../features/tax_declaration/presentation/tax_declaration_screen.dart';
 import '../../features/shifts/presentation/shift_schedule_screen.dart';
+import '../../features/expenses/presentation/expenses_screen.dart';
 
 part 'router.g.dart';
 
@@ -127,6 +128,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/shift-schedule',
         builder: (_, __) => const ShiftScheduleScreen(),
+      ),
+      GoRoute(
+        path: '/expenses',
+        builder: (_, __) => const ExpensesScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

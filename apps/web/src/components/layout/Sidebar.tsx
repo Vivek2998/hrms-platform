@@ -36,6 +36,7 @@ import {
   Megaphone,
   Lock,
   MapPin,
+  Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -92,6 +93,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Salary Structure', to: '/salary-structure', icon: BarChart2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee, feature: 'my-payslips' },
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
+      { label: 'Expense Claims', to: '/expenses', icon: Wallet, feature: 'expenses' },
     ],
   },
   {

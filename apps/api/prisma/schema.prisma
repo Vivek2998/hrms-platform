@@ -245,6 +245,7 @@ model Organization {
   jobPostings             JobPosting[]
   offboardingTemplates    OffboardingTemplate[]
   offboardingAssignments  OffboardingAssignment[]
+  expenseClaims           ExpenseClaim[]
 
   @@map("organizations")
 }
@@ -392,6 +393,8 @@ model Employee {
   regularisations          AttendanceRegularisation[]
   compOffs                 CompOff[]
   taxDeclarations          TaxDeclaration[]
+  expenseClaims            ExpenseClaim[]
+  expenseReviews           ExpenseClaim[]   @relation("ExpenseReviewer")
   suggestions              SuggestionBox[]
   helpDeskTickets          HelpDeskTicket[]
   passwordResetTokens      PasswordResetToken[]
@@ -1428,4 +1431,55 @@ model ExitInterview {
   assignment OffboardingAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
   @@map("exit_interviews")
+}
+
+// ─────────────────────────────────────────────────────────────
+// EXPENSE CLAIMS
+// ─────────────────────────────────────────────────────────────
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum ExpenseCategory {
+  TRAVEL
+  FOOD
+  ACCOMMODATION
+  COMMUNICATION
+  TRAINING
+  EQUIPMENT
+  MEDICAL
+  OTHER
+}
+
+model ExpenseClaim {
+  id             String          @id @default(uuid())
+  organizationId String
+  employeeId     String
+  title          String
+  description    String?
+  category       ExpenseCategory @default(OTHER)
+  amount         Float
+  currency       String          @default("INR")
+  receiptUrl     String?
+  expenseDate    DateTime        @db.Date
+  status         ExpenseStatus   @default(DRAFT)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+  paidAt         DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  reviewer     Employee?    @relation("ExpenseReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, employeeId])
+  @@map("expense_claims")
 }
