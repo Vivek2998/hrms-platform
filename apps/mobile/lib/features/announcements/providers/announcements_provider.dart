@@ -4,6 +4,6 @@ import '../data/repositories/announcements_repository.dart';
 
 part 'announcements_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<Announcement>> announcementsList(AnnouncementsListRef ref) =>
     ref.read(announcementsRepositoryProvider).getAnnouncements(limit: 5);

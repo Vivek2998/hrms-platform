@@ -6,7 +6,7 @@ part of 'team_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$teamDirectoryHash() => r'0c106ebb1cd885bcf067eb1d928540bf1b10697c';
+String _$teamDirectoryHash() => r'fb0641922531bd7aab59cf25b98731b2a53a7191';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -72,8 +72,7 @@ class TeamDirectoryFamily extends Family<AsyncValue<List<TeamMember>>> {
 }
 
 /// See also [teamDirectory].
-class TeamDirectoryProvider
-    extends AutoDisposeFutureProvider<List<TeamMember>> {
+class TeamDirectoryProvider extends FutureProvider<List<TeamMember>> {
   /// See also [teamDirectory].
   TeamDirectoryProvider({
     String? search,
@@ -125,7 +124,7 @@ class TeamDirectoryProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<TeamMember>> createElement() {
+  FutureProviderElement<List<TeamMember>> createElement() {
     return _TeamDirectoryProviderElement(this);
   }
 
@@ -143,14 +142,13 @@ class TeamDirectoryProvider
   }
 }
 
-mixin TeamDirectoryRef on AutoDisposeFutureProviderRef<List<TeamMember>> {
+mixin TeamDirectoryRef on FutureProviderRef<List<TeamMember>> {
   /// The parameter `search` of this provider.
   String? get search;
 }
 
 class _TeamDirectoryProviderElement
-    extends AutoDisposeFutureProviderElement<List<TeamMember>>
-    with TeamDirectoryRef {
+    extends FutureProviderElement<List<TeamMember>> with TeamDirectoryRef {
   _TeamDirectoryProviderElement(super.provider);
 
   @override

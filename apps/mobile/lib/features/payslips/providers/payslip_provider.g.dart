@@ -6,12 +6,11 @@ part of 'payslip_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$payslipListHash() => r'f706c9b8ce0384e05bae9000c6dcdf64edbd045a';
+String _$payslipListHash() => r'0434aa9d1e67277357e75118294cd81f4182cc6c';
 
 /// See also [payslipList].
 @ProviderFor(payslipList)
-final payslipListProvider =
-    AutoDisposeFutureProvider<List<CachedPayslip>>.internal(
+final payslipListProvider = FutureProvider<List<CachedPayslip>>.internal(
   payslipList,
   name: r'payslipListProvider',
   debugGetCreateSourceHash:
@@ -20,8 +19,8 @@ final payslipListProvider =
   allTransitiveDependencies: null,
 );
 
-typedef PayslipListRef = AutoDisposeFutureProviderRef<List<CachedPayslip>>;
-String _$payslipDetailHash() => r'add5c722ab05622ec060cfe53858cf9a9f917451';
+typedef PayslipListRef = FutureProviderRef<List<CachedPayslip>>;
+String _$payslipDetailHash() => r'151ea6cb89ae437e7312210d6f35e074c337e365';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -87,8 +86,7 @@ class PayslipDetailFamily extends Family<AsyncValue<Map<String, dynamic>>> {
 }
 
 /// See also [payslipDetail].
-class PayslipDetailProvider
-    extends AutoDisposeFutureProvider<Map<String, dynamic>> {
+class PayslipDetailProvider extends FutureProvider<Map<String, dynamic>> {
   /// See also [payslipDetail].
   PayslipDetailProvider(
     String payslipId,
@@ -140,7 +138,7 @@ class PayslipDetailProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<Map<String, dynamic>> createElement() {
+  FutureProviderElement<Map<String, dynamic>> createElement() {
     return _PayslipDetailProviderElement(this);
   }
 
@@ -158,14 +156,13 @@ class PayslipDetailProvider
   }
 }
 
-mixin PayslipDetailRef on AutoDisposeFutureProviderRef<Map<String, dynamic>> {
+mixin PayslipDetailRef on FutureProviderRef<Map<String, dynamic>> {
   /// The parameter `payslipId` of this provider.
   String get payslipId;
 }
 
 class _PayslipDetailProviderElement
-    extends AutoDisposeFutureProviderElement<Map<String, dynamic>>
-    with PayslipDetailRef {
+    extends FutureProviderElement<Map<String, dynamic>> with PayslipDetailRef {
   _PayslipDetailProviderElement(super.provider);
 
   @override

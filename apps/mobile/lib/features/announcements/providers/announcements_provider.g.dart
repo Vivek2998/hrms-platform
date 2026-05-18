@@ -6,12 +6,11 @@ part of 'announcements_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$announcementsListHash() => r'3c8e60015377347a58c0c0bbdbc91bf5dec6606b';
+String _$announcementsListHash() => r'42abd98ccdae3edaaabd0a638ea72389f90bc28a';
 
 /// See also [announcementsList].
 @ProviderFor(announcementsList)
-final announcementsListProvider =
-    AutoDisposeFutureProvider<List<Announcement>>.internal(
+final announcementsListProvider = FutureProvider<List<Announcement>>.internal(
   announcementsList,
   name: r'announcementsListProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -21,6 +20,6 @@ final announcementsListProvider =
   allTransitiveDependencies: null,
 );
 
-typedef AnnouncementsListRef = AutoDisposeFutureProviderRef<List<Announcement>>;
+typedef AnnouncementsListRef = FutureProviderRef<List<Announcement>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

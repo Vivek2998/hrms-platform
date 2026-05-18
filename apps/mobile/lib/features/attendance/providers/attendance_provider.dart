@@ -4,7 +4,7 @@ import '../data/repositories/attendance_repository.dart';
 
 part 'attendance_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<CachedAttendanceRecord>> attendanceList(
   AttendanceListRef ref, {
   int month = 0,

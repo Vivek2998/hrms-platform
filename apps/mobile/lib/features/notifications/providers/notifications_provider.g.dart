@@ -6,12 +6,12 @@ part of 'notifications_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$notificationsListHash() => r'46f3c14d68e7aecdea475367fa5c00ed431ae0b7';
+String _$notificationsListHash() => r'becea74126795ab26ccf12afef7cfb72b16248a1';
 
 /// See also [notificationsList].
 @ProviderFor(notificationsList)
 final notificationsListProvider =
-    AutoDisposeFutureProvider<List<AppNotification>>.internal(
+    FutureProvider<List<AppNotification>>.internal(
   notificationsList,
   name: r'notificationsListProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -21,13 +21,12 @@ final notificationsListProvider =
   allTransitiveDependencies: null,
 );
 
-typedef NotificationsListRef
-    = AutoDisposeFutureProviderRef<List<AppNotification>>;
-String _$unreadCountHash() => r'642dc335d5b07f3119cc6dc9fe3f89bdf1b6106c';
+typedef NotificationsListRef = FutureProviderRef<List<AppNotification>>;
+String _$unreadCountHash() => r'fd41f2df4e469d418ea923032204c59ebb63d1a7';
 
 /// See also [unreadCount].
 @ProviderFor(unreadCount)
-final unreadCountProvider = AutoDisposeFutureProvider<int>.internal(
+final unreadCountProvider = FutureProvider<int>.internal(
   unreadCount,
   name: r'unreadCountProvider',
   debugGetCreateSourceHash:
@@ -36,7 +35,7 @@ final unreadCountProvider = AutoDisposeFutureProvider<int>.internal(
   allTransitiveDependencies: null,
 );
 
-typedef UnreadCountRef = AutoDisposeFutureProviderRef<int>;
+typedef UnreadCountRef = FutureProviderRef<int>;
 String _$notificationsNotifierHash() =>
     r'3cb74bd9a5cfb61c4392a2cb0bc602e5fdb9ff6f';
 

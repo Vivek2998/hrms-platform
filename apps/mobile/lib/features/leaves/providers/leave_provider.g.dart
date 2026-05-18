@@ -6,12 +6,11 @@ part of 'leave_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$leaveTypesHash() => r'137f526430f6fc35d961ef1c482f71a0c56f5974';
+String _$leaveTypesHash() => r'1be946e16f6404f6ee227dd1fd35037988c1218d';
 
 /// See also [leaveTypes].
 @ProviderFor(leaveTypes)
-final leaveTypesProvider =
-    AutoDisposeFutureProvider<List<ApiLeaveType>>.internal(
+final leaveTypesProvider = FutureProvider<List<ApiLeaveType>>.internal(
   leaveTypes,
   name: r'leaveTypesProvider',
   debugGetCreateSourceHash:
@@ -20,13 +19,12 @@ final leaveTypesProvider =
   allTransitiveDependencies: null,
 );
 
-typedef LeaveTypesRef = AutoDisposeFutureProviderRef<List<ApiLeaveType>>;
-String _$leaveListHash() => r'b108ef480e6deff7448eba073288ab3c51e4aa72';
+typedef LeaveTypesRef = FutureProviderRef<List<ApiLeaveType>>;
+String _$leaveListHash() => r'bc7bdb1c94b36c98230fefcc1f293aa11e27e50f';
 
 /// See also [leaveList].
 @ProviderFor(leaveList)
-final leaveListProvider =
-    AutoDisposeFutureProvider<List<CachedLeaveRequest>>.internal(
+final leaveListProvider = FutureProvider<List<CachedLeaveRequest>>.internal(
   leaveList,
   name: r'leaveListProvider',
   debugGetCreateSourceHash:
@@ -35,13 +33,12 @@ final leaveListProvider =
   allTransitiveDependencies: null,
 );
 
-typedef LeaveListRef = AutoDisposeFutureProviderRef<List<CachedLeaveRequest>>;
-String _$leaveBalancesHash() => r'90a7db37c0c3448525344cae57d20a37c4d3455b';
+typedef LeaveListRef = FutureProviderRef<List<CachedLeaveRequest>>;
+String _$leaveBalancesHash() => r'864fe23feab3d5b849ef628f5edc85626f5601c2';
 
 /// See also [leaveBalances].
 @ProviderFor(leaveBalances)
-final leaveBalancesProvider =
-    AutoDisposeFutureProvider<List<LeaveBalance>>.internal(
+final leaveBalancesProvider = FutureProvider<List<LeaveBalance>>.internal(
   leaveBalances,
   name: r'leaveBalancesProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -51,13 +48,13 @@ final leaveBalancesProvider =
   allTransitiveDependencies: null,
 );
 
-typedef LeaveBalancesRef = AutoDisposeFutureProviderRef<List<LeaveBalance>>;
-String _$pendingLeavesHash() => r'2b9a7250620c0323072c3435dcb88b8a2e3a074b';
+typedef LeaveBalancesRef = FutureProviderRef<List<LeaveBalance>>;
+String _$pendingLeavesHash() => r'7d14e78d4ed3e3222eaee0f8ed57155e69262202';
 
 /// See also [pendingLeaves].
 @ProviderFor(pendingLeaves)
 final pendingLeavesProvider =
-    AutoDisposeFutureProvider<List<PendingLeaveRequest>>.internal(
+    FutureProvider<List<PendingLeaveRequest>>.internal(
   pendingLeaves,
   name: r'pendingLeavesProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -67,8 +64,7 @@ final pendingLeavesProvider =
   allTransitiveDependencies: null,
 );
 
-typedef PendingLeavesRef
-    = AutoDisposeFutureProviderRef<List<PendingLeaveRequest>>;
+typedef PendingLeavesRef = FutureProviderRef<List<PendingLeaveRequest>>;
 String _$leaveApprovalNotifierHash() =>
     r'523d7d10c6c8e38460e83ba19d3511c42d5cfd47';
 

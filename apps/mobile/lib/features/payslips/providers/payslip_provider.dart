@@ -4,12 +4,12 @@ import '../data/repositories/payslip_repository.dart';
 
 part 'payslip_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<CachedPayslip>> payslipList(PayslipListRef ref) {
   return ref.read(payslipRepositoryProvider).getMyPayslips();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<Map<String, dynamic>> payslipDetail(
   PayslipDetailRef ref,
   String payslipId,

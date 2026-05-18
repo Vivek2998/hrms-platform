@@ -6,7 +6,7 @@ part of 'attendance_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$attendanceListHash() => r'91d368faac1fc0ef5a508cd0184845d5aa9378d4';
+String _$attendanceListHash() => r'ba9433786f8f7038149786cf3695df665cb01890';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -77,7 +77,7 @@ class AttendanceListFamily
 
 /// See also [attendanceList].
 class AttendanceListProvider
-    extends AutoDisposeFutureProvider<List<CachedAttendanceRecord>> {
+    extends FutureProvider<List<CachedAttendanceRecord>> {
   /// See also [attendanceList].
   AttendanceListProvider({
     int month = 0,
@@ -136,8 +136,7 @@ class AttendanceListProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<CachedAttendanceRecord>>
-      createElement() {
+  FutureProviderElement<List<CachedAttendanceRecord>> createElement() {
     return _AttendanceListProviderElement(this);
   }
 
@@ -158,8 +157,7 @@ class AttendanceListProvider
   }
 }
 
-mixin AttendanceListRef
-    on AutoDisposeFutureProviderRef<List<CachedAttendanceRecord>> {
+mixin AttendanceListRef on FutureProviderRef<List<CachedAttendanceRecord>> {
   /// The parameter `month` of this provider.
   int get month;
 
@@ -168,7 +166,7 @@ mixin AttendanceListRef
 }
 
 class _AttendanceListProviderElement
-    extends AutoDisposeFutureProviderElement<List<CachedAttendanceRecord>>
+    extends FutureProviderElement<List<CachedAttendanceRecord>>
     with AttendanceListRef {
   _AttendanceListProviderElement(super.provider);
 

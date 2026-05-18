@@ -4,11 +4,11 @@ import '../data/repositories/notifications_repository.dart';
 
 part 'notifications_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<AppNotification>> notificationsList(NotificationsListRef ref) =>
     ref.read(notificationsRepositoryProvider).getNotifications();
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<int> unreadCount(UnreadCountRef ref) =>
     ref.read(notificationsRepositoryProvider).getUnreadCount();
 

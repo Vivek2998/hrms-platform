@@ -4,7 +4,7 @@ import '../data/repositories/team_repository.dart';
 
 part 'team_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<TeamMember>> teamDirectory(TeamDirectoryRef ref,
     {String? search}) =>
     ref.read(teamRepositoryProvider).getDirectory(search: search);

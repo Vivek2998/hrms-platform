@@ -4,22 +4,22 @@ import '../data/repositories/leave_repository.dart';
 
 part 'leave_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<ApiLeaveType>> leaveTypes(LeaveTypesRef ref) {
   return ref.read(leaveRepositoryProvider).getLeaveTypes();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<CachedLeaveRequest>> leaveList(LeaveListRef ref) {
   return ref.read(leaveRepositoryProvider).getMyLeaves();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<LeaveBalance>> leaveBalances(LeaveBalancesRef ref) {
   return ref.read(leaveRepositoryProvider).getMyBalances();
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<PendingLeaveRequest>> pendingLeaves(PendingLeavesRef ref) {
   return ref.read(leaveRepositoryProvider).getPendingLeaves();
 }
