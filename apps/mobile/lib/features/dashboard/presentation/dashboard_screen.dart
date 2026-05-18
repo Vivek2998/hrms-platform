@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -608,26 +609,59 @@ class _BirthdaySectionState extends ConsumerState<_BirthdaySection> {
   }
 }
 
-class _Sparkle extends StatefulWidget {
+// Stateless — receives a shared animation + a phase offset (radians).
+// All sparkles on one card share a single AnimationController.
+class _Sparkle extends StatelessWidget {
   final double size;
   final Color color;
-  final Duration period;
-  const _Sparkle({required this.size, required this.color, required this.period});
+  final Animation<double> animation;
+  final double phase; // radians, 0 – 2π
+
+  const _Sparkle({
+    required this.size,
+    required this.color,
+    required this.animation,
+    required this.phase,
+  });
 
   @override
-  State<_Sparkle> createState() => _SparkleState();
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (_, __) {
+        final opacity =
+            0.15 + math.sin(animation.value * math.pi * 2 + phase).abs() * 0.85;
+        return Text(
+          '✦',
+          style: TextStyle(color: color.withValues(alpha: opacity), fontSize: size),
+        );
+      },
+    );
+  }
 }
 
-class _SparkleState extends State<_Sparkle> with SingleTickerProviderStateMixin {
+// One AnimationController shared across all 6 sparkles via phase offsets.
+// Reduces AnimationController count from 6 → 1, eliminating BLASTBufferQueue overflow.
+class _BirthdayCard extends StatefulWidget {
+  final BirthdayEmployee employee;
+  final double width;
+  const _BirthdayCard({required this.employee, required this.width});
+
+  @override
+  State<_BirthdayCard> createState() => _BirthdayCardState();
+}
+
+class _BirthdayCardState extends State<_BirthdayCard>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
-  late final Animation<double> _anim;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: widget.period)
-      ..repeat(reverse: true);
-    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
   }
 
   @override
@@ -636,44 +670,30 @@ class _SparkleState extends State<_Sparkle> with SingleTickerProviderStateMixin 
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Opacity(
-        opacity: 0.15 + _anim.value * 0.85,
-        child: Text('✦', style: TextStyle(color: widget.color, fontSize: widget.size)),
-      ),
-    );
-  }
-}
-
-class _BirthdayCard extends StatelessWidget {
-  final BirthdayEmployee employee;
-  final double width;
-  const _BirthdayCard({required this.employee, required this.width});
-
-  List<Color> get _gradientColors => employee.isToday
+  List<Color> get _gradientColors => widget.employee.isToday
       ? const [Color(0xFF7C3AED), Color(0xFFDB2777)]
       : const [Color(0xFF4F46E5), Color(0xFF7C3AED)];
 
-  Color get _shadowColor => employee.isToday
+  Color get _shadowColor => widget.employee.isToday
       ? const Color(0xFF7C3AED)
       : const Color(0xFF4F46E5);
 
   String get _birthdayDateStr {
     final now = DateTime.now();
-    var date = DateTime(now.year, employee.dobMonth, employee.dobDay);
+    var date = DateTime(now.year, widget.employee.dobMonth, widget.employee.dobDay);
     if (date.isBefore(DateTime(now.year, now.month, now.day))) {
-      date = DateTime(now.year + 1, employee.dobMonth, employee.dobDay);
+      date = DateTime(now.year + 1, widget.employee.dobMonth, widget.employee.dobDay);
     }
     return DateFormat('d MMMM').format(date);
   }
 
   @override
   Widget build(BuildContext context) {
+    final employee = widget.employee;
+    // Six evenly-spaced phase offsets so sparkles twinkle independently
+    const step = math.pi / 3; // 60°
     return Container(
-      width: width,
+      width: widget.width,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: _gradientColors,
@@ -715,10 +735,13 @@ class _BirthdayCard extends StatelessWidget {
               ),
             ),
           ),
-          // 3 sparkles only — fewer AnimationControllers reduces BLASTBufferQueue pressure
-          Positioned(top: 14, right: 32, child: _Sparkle(size: 9, color: Colors.white, period: const Duration(milliseconds: 1800))),
-          Positioned(top: 48, right: 14, child: _Sparkle(size: 6, color: Colors.white, period: const Duration(milliseconds: 2400))),
-          Positioned(bottom: 22, right: 28, child: _Sparkle(size: 7, color: Colors.white, period: const Duration(milliseconds: 2100))),
+          // 6 sparkles, 1 shared controller — visually identical to before
+          Positioned(top: 14, right: 32, child: _Sparkle(size: 9, color: Colors.white, animation: _ctrl, phase: 0)),
+          Positioned(top: 42, right: 14, child: _Sparkle(size: 6, color: Colors.white, animation: _ctrl, phase: step)),
+          Positioned(bottom: 22, right: 26, child: _Sparkle(size: 7, color: Colors.white, animation: _ctrl, phase: step * 2)),
+          Positioned(top: 24, left: 118, child: _Sparkle(size: 6, color: Colors.white, animation: _ctrl, phase: step * 3)),
+          Positioned(bottom: 16, left: 82, child: _Sparkle(size: 8, color: Colors.white, animation: _ctrl, phase: step * 4)),
+          Positioned(top: 58, right: 44, child: _Sparkle(size: 5, color: Colors.white, animation: _ctrl, phase: step * 5)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             child: Row(
