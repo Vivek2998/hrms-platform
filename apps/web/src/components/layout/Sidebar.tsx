@@ -39,6 +39,7 @@ import {
   Wallet,
   Inbox,
   Heart,
+  FileSignature,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -96,6 +97,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee, feature: 'my-payslips' },
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
       { label: 'Expense Claims', to: '/expenses', icon: Wallet, feature: 'expenses' },
+      { label: 'E-Signatures', to: '/esignatures', icon: FileSignature },
     ],
   },
   {

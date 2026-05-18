@@ -32,6 +32,7 @@ import '../../features/shifts/presentation/shift_schedule_screen.dart';
 import '../../features/expenses/presentation/expenses_screen.dart';
 import '../../features/approval_inbox/presentation/approval_inbox_screen.dart';
 import '../../features/kudos/presentation/kudos_screen.dart';
+import '../../features/esignature/presentation/esignature_screen.dart';
 
 part 'router.g.dart';
 
@@ -142,6 +143,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/kudos',
         builder: (_, __) => const KudosScreen(),
+      ),
+      GoRoute(
+        path: '/esignatures',
+        builder: (_, __) => const ESignatureScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

@@ -355,6 +355,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF4F46E5), const Color(0xFFEEF2FF), '/approval-inbox'),
       _Action('Kudos', Icons.favorite_rounded,
           const Color(0xFFE11D48), const Color(0xFFFFF1F2), '/kudos'),
+      _Action('E-Sign', Icons.draw_rounded,
+          const Color(0xFF7C3AED), const Color(0xFFF5F3FF), '/esignatures'),
     ];
 
     return GridView.builder(

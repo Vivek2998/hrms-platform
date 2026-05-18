@@ -674,6 +674,42 @@ export type Kudos = {
   toEmployee: KudosEmployee;
 };
 
+// ─────────────────────────────────────────────────────────────
+// E-Signature
+// ─────────────────────────────────────────────────────────────
+
+export type ESignatureStatus = 'PENDING' | 'SIGNED' | 'DECLINED' | 'EXPIRED';
+
+export type ESignatureEmployee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  designation?: string | null;
+  avatarUrl?: string | null;
+  employeeCode: string;
+};
+
+export type ESignatureRequest = {
+  id: string;
+  organizationId: string;
+  documentId?: string | null;
+  documentName: string;
+  documentUrl: string;
+  requestedBy: string;
+  requestedTo: string;
+  status: ESignatureStatus;
+  message?: string | null;
+  signedAt?: string | null;
+  declinedAt?: string | null;
+  declineReason?: string | null;
+  signatureImageUrl?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  requester: ESignatureEmployee;
+  signer: ESignatureEmployee;
+};
+
 export type ApprovalItemType =
   | 'LEAVE'
   | 'EXPENSE'

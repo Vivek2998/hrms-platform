@@ -247,6 +247,7 @@ model Organization {
   offboardingAssignments  OffboardingAssignment[]
   expenseClaims           ExpenseClaim[]
   kudos                   Kudos[]
+  eSignatureRequests      ESignatureRequest[]
 
   @@map("organizations")
 }
@@ -398,6 +399,8 @@ model Employee {
   expenseReviews           ExpenseClaim[]   @relation("ExpenseReviewer")
   kudosSent                Kudos[]          @relation("KudosSent")
   kudosReceived            Kudos[]          @relation("KudosReceived")
+  eSignatureRequests       ESignatureRequest[] @relation("ESignatureRequester")
+  eSignaturesToSign        ESignatureRequest[] @relation("ESignatureSigner")
   suggestions              SuggestionBox[]
   helpDeskTickets          HelpDeskTicket[]
   passwordResetTokens      PasswordResetToken[]
@@ -1520,4 +1523,42 @@ model Kudos {
   @@index([organizationId])
   @@index([organizationId, toEmployeeId])
   @@map("kudos")
+}
+
+// ─────────────────────────────────────────────────────────────
+// E-Signature for Documents
+// ─────────────────────────────────────────────────────────────
+
+enum ESignatureStatus {
+  PENDING
+  SIGNED
+  DECLINED
+  EXPIRED
+}
+
+model ESignatureRequest {
+  id               String            @id @default(uuid())
+  organizationId   String
+  documentId       String?
+  documentName     String
+  documentUrl      String
+  requestedBy      String
+  requestedTo      String
+  status           ESignatureStatus  @default(PENDING)
+  message          String?
+  signedAt         DateTime?
+  declinedAt       DateTime?
+  declineReason    String?
+  signatureImageUrl String?
+  expiresAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  requester       Employee     @relation("ESignatureRequester", fields: [requestedBy], references: [id])
+  signer          Employee     @relation("ESignatureSigner", fields: [requestedTo], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, requestedTo])
+  @@map("esignature_requests")
 }
