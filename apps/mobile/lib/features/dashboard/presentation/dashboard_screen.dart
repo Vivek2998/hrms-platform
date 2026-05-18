@@ -357,6 +357,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFFE11D48), const Color(0xFFFFF1F2), '/kudos'),
       _Action('E-Sign', Icons.draw_rounded,
           const Color(0xFF7C3AED), const Color(0xFFF5F3FF), '/esignatures'),
+      _Action('Learning', Icons.school_rounded,
+          const Color(0xFF0D9488), const Color(0xFFCCFBF1), '/lms'),
     ];
 
     return GridView.builder(

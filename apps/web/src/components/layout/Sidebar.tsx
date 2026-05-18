@@ -119,6 +119,7 @@ const ENTRIES: SidebarEntry[] = [
     icon: Users,
     children: [
       { label: 'Onboarding', to: '/onboarding', icon: ClipboardList, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'], feature: 'onboarding' },
+      { label: 'Learning Hub', to: '/lms', icon: BookOpen },
       { label: 'Performance', to: '/performance', icon: Target, feature: 'performance' },
       { label: 'Offboarding', to: '/offboarding', icon: UserMinus, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'offboarding' },
       { label: 'Pulse Surveys', to: '/pulse-surveys', icon: BarChart2, feature: 'pulse-surveys' },

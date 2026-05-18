@@ -675,6 +675,46 @@ export type Kudos = {
 };
 
 // ─────────────────────────────────────────────────────────────
+// Learning / LMS
+// ─────────────────────────────────────────────────────────────
+
+export type CourseStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type EnrollmentStatus = 'ENROLLED' | 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
+export type CourseLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+
+export type LearningCourse = {
+  id: string;
+  organizationId: string;
+  title: string;
+  description?: string | null;
+  thumbnailUrl?: string | null;
+  category: string;
+  level: CourseLevel;
+  durationMinutes: number;
+  status: CourseStatus;
+  createdById: string;
+  tags: string[];
+  externalUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: { id: string; firstName: string; lastName: string; designation?: string | null; employeeCode: string };
+  _count: { enrollments: number };
+  myEnrollment?: { courseId: string; status: EnrollmentStatus; progressPct: number } | null;
+};
+
+export type CourseEnrollment = {
+  id: string;
+  organizationId: string;
+  courseId: string;
+  employeeId: string;
+  status: EnrollmentStatus;
+  progressPct: number;
+  completedAt?: string | null;
+  enrolledAt: string;
+  course: LearningCourse;
+};
+
+// ─────────────────────────────────────────────────────────────
 // E-Signature
 // ─────────────────────────────────────────────────────────────
 

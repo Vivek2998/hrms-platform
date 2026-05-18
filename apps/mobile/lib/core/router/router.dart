@@ -33,6 +33,7 @@ import '../../features/expenses/presentation/expenses_screen.dart';
 import '../../features/approval_inbox/presentation/approval_inbox_screen.dart';
 import '../../features/kudos/presentation/kudos_screen.dart';
 import '../../features/esignature/presentation/esignature_screen.dart';
+import '../../features/lms/presentation/lms_screen.dart';
 
 part 'router.g.dart';
 
@@ -147,6 +148,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/esignatures',
         builder: (_, __) => const ESignatureScreen(),
+      ),
+      GoRoute(
+        path: '/lms',
+        builder: (_, __) => const LmsScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),
