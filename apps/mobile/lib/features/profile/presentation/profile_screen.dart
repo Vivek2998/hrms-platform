@@ -6,6 +6,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../../attendance/providers/geofence_provider.dart';
+import '../../../core/geofence/geofence_manager.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -50,12 +52,6 @@ class ProfileScreen extends ConsumerWidget {
         return Scaffold(
           appBar: AppBar(
             title: const Text('My Profile'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh_outlined),
-                onPressed: () => ref.invalidate(myProfileProvider),
-              ),
-            ],
           ),
           body: SingleChildScrollView(
             child: Column(
@@ -181,6 +177,12 @@ class ProfileScreen extends ConsumerWidget {
                                   label: 'Department',
                                   value: p.departmentName!,
                                 ),
+                              if (p.officeLocationName != null)
+                                _InfoTile(
+                                  icon: Icons.location_on_outlined,
+                                  label: 'Office Location',
+                                  value: p.officeLocationName!,
+                                ),
                               if (p.dateOfJoining != null)
                                 _InfoTile(
                                   icon: Icons.calendar_today_outlined,
@@ -214,6 +216,7 @@ class ProfileScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                       child: Card(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SectionHeader('Personal Information'),
                             if (p.phone != null)
@@ -283,25 +286,64 @@ class ProfileScreen extends ConsumerWidget {
                   orElse: () => const SizedBox.shrink(),
                 ),
 
+                // ── Admin tools (managers only) ───────────────────────
+                if (['SUPER_ADMIN', 'ORG_ADMIN', 'HR']
+                    .contains(user.role))
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Card(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SectionHeader('Admin Tools'),
+                          ListTile(
+                            leading: const Icon(Icons.location_on_outlined),
+                            title: const Text('Employee Locations'),
+                            subtitle: const Text(
+                              'Assign office locations to employees',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () =>
+                                context.push('/admin/employee-locations'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // ── Smart Punch-In ────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: _SmartPunchCard(),
+                ),
+
                 // ── Actions ────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.lock_outline),
-                        title: const Text('Change Password'),
-                        trailing: const Icon(Icons.chevron_right),
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        leading: const Icon(Icons.lock_outline, size: 20),
+                        title: const Text('Change Password',
+                            style: TextStyle(fontSize: 14)),
+                        trailing: const Icon(Icons.chevron_right, size: 18),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         tileColor: scheme.surfaceContainerLow,
                         onTap: () => context.push('/change-password'),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       ListTile(
-                        leading: Icon(Icons.logout, color: scheme.error),
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        leading:
+                            Icon(Icons.logout, color: scheme.error, size: 20),
                         title: Text('Logout',
-                            style: TextStyle(color: scheme.error)),
+                            style: TextStyle(
+                                color: scheme.error, fontSize: 14)),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         tileColor: scheme.errorContainer.withValues(alpha: 0.3),
@@ -402,16 +444,20 @@ class _InfoTile extends StatelessWidget {
               Icon(icon, size: 18, color: scheme.onSurfaceVariant),
               const SizedBox(width: 12),
               Expanded(
+                flex: 2,
                 child: Text(label,
                     style: TextStyle(
                         color: scheme.onSurfaceVariant, fontSize: 13)),
               ),
-              Flexible(
+              Expanded(
+                flex: 3,
                 child: Text(
                   value,
                   style: const TextStyle(
                       fontWeight: FontWeight.w500, fontSize: 13),
                   textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -421,5 +467,113 @@ class _InfoTile extends StatelessWidget {
           Divider(height: 1, indent: 46, color: scheme.outlineVariant),
       ],
     );
+  }
+}
+
+class _SmartPunchCard extends ConsumerStatefulWidget {
+  const _SmartPunchCard();
+
+  @override
+  ConsumerState<_SmartPunchCard> createState() => _SmartPunchCardState();
+}
+
+class _SmartPunchCardState extends ConsumerState<_SmartPunchCard> {
+  bool _requestingPermission = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final toggleState = ref.watch(smartPunchNotifierProvider);
+    final configState = ref.watch(geofenceConfigProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    final isEnabled = toggleState.valueOrNull ?? false;
+    final isLoading = toggleState.isLoading || _requestingPermission;
+    final config = configState.valueOrNull;
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader('Smart Punch-In'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.my_location_rounded,
+                  size: 18,
+                  color: isEnabled ? scheme.primary : scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Auto Punch-In',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        configState.when(
+                          loading: () => 'Loading...',
+                          error: (_, __) => 'Could not load office info',
+                          data: (cfg) => cfg != null
+                              ? cfg.name
+                              : 'No location assigned',
+                        ),
+                        style: TextStyle(
+                            fontSize: 11, color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                Transform.scale(
+                  scale: 0.8,
+                  child: Switch(
+                    value: isEnabled,
+                    onChanged: isLoading ? null : (val) => _handleToggle(val),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+            child: Text(
+              isEnabled
+                  ? 'You\'ll get a punch-in reminder near ${config?.name ?? 'your office'}.'
+                  : 'Enable to get a punch-in reminder at your office.',
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleToggle(bool value) async {
+    if (value) {
+      setState(() => _requestingPermission = true);
+      final granted =
+          await GeofenceManager.instance.requestBackgroundPermission();
+      setState(() => _requestingPermission = false);
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Location permission is required for Smart Punch-In'),
+            ),
+          );
+        }
+        return;
+      }
+    }
+    await ref.read(smartPunchNotifierProvider.notifier).setEnabled(value);
   }
 }

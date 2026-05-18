@@ -23,9 +23,18 @@ class CachedUser {
 class AuthState {
   final CachedUser? user;
   final bool isAuthenticated;
+  final String? orgName;
+  final String? orgLogoUrl;
 
-  const AuthState({this.user, this.isAuthenticated = false});
+  const AuthState({
+    this.user,
+    this.isAuthenticated = false,
+    this.orgName,
+    this.orgLogoUrl,
+  });
   const AuthState.unauthenticated()
       : user = null,
-        isAuthenticated = false;
+        isAuthenticated = false,
+        orgName = null,
+        orgLogoUrl = null;
 }

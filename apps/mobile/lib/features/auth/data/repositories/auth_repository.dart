@@ -34,7 +34,7 @@ class AuthRepository {
   }) async {
     final res = await _dio.post(
       '/auth/login',
-      data: {'email': email, 'password': password},
+      data: {'email': email.trim().toLowerCase(), 'password': password},
     );
     final data = res.data['data'] as Map<String, dynamic>;
 
@@ -56,9 +56,18 @@ class AuthRepository {
       ..mustChangePassword = emp['mustChangePassword'] as bool? ?? false
       ..cachedAt = DateTime.now();
 
-    await _isar.writeTxn(() => _isar.cachedUsers.put(user));
+    await _isar.writeTxn(() async {
+      // Clear stale records first — prevents unique-index violation when
+      // session expires without a proper logout (Isar is not cleared in that path).
+      await _isar.cachedUsers.clear();
+      await _isar.cachedUsers.put(user);
+    });
     await _storage.saveEmployeeId(user.employeeId);
     await _storage.saveOrganizationId(user.organizationId);
+    await _storage.saveOrgBranding(
+      orgName: emp['orgName'] as String?,
+      orgLogoUrl: emp['orgLogoUrl'] as String?,
+    );
     return user;
   }
 
@@ -71,20 +80,38 @@ class AuthRepository {
       'newPassword': newPassword,
       'confirmPassword': newPassword,
     });
+    // Update Isar directly — avoids a secure-storage read that can stall on Windows.
+    await _isar.writeTxn(() async {
+      final users = await _isar.cachedUsers.where().findAll();
+      for (final u in users) {
+        if (u.mustChangePassword) {
+          u.mustChangePassword = false;
+          await _isar.cachedUsers.put(u);
+        }
+      }
+    });
   }
 
   Future<void> logout() async {
     try {
       await _dio.post('/auth/logout');
-    } finally {
-      await _storage.clearAll();
-      await _isar.writeTxn(() => _isar.cachedUsers.clear());
+    } catch (_) {
+      // Network or server error — ignore and clear local state anyway.
     }
+    await _storage.clearAll();
+    await _isar.writeTxn(() => _isar.cachedUsers.clear());
   }
 
   Future<CachedUser?> getCachedUser() async {
     final id = await _storage.getEmployeeId();
     if (id == null) return null;
     return _isar.cachedUsers.filter().employeeIdEqualTo(id).findFirst();
+  }
+
+  Future<({String? orgName, String? orgLogoUrl})> getOrgBranding() async {
+    return (
+      orgName: await _storage.getOrgName(),
+      orgLogoUrl: await _storage.getOrgLogoUrl(),
+    );
   }
 }

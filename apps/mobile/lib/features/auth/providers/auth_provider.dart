@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/models/auth_model.dart';
 import '../data/repositories/auth_repository.dart';
 import '../../../core/providers/session_provider.dart';
+import '../../../core/geofence/geofence_manager.dart';
 
 part 'auth_provider.g.dart';
 
@@ -14,22 +15,42 @@ class AuthNotifier extends _$AuthNotifier {
       state = const AsyncData(AuthState.unauthenticated());
     });
 
-    final user = await ref.read(authRepositoryProvider).getCachedUser();
+    final repo = ref.read(authRepositoryProvider);
+    final user = await repo.getCachedUser();
     if (user == null) return const AuthState.unauthenticated();
-    return AuthState(user: user, isAuthenticated: true);
+    final branding = await repo.getOrgBranding();
+    return AuthState(
+      user: user,
+      isAuthenticated: true,
+      orgName: branding.orgName,
+      orgLogoUrl: branding.orgLogoUrl,
+    );
   }
 
   Future<void> login({required String email, required String password}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final user = await ref
-          .read(authRepositoryProvider)
-          .login(email: email, password: password);
-      return AuthState(user: user, isAuthenticated: true);
+      final repo = ref.read(authRepositoryProvider);
+      final user = await repo.login(email: email, password: password);
+      final branding = await repo.getOrgBranding();
+      return AuthState(
+        user: user,
+        isAuthenticated: true,
+        orgName: branding.orgName,
+        orgLogoUrl: branding.orgLogoUrl,
+      );
     });
   }
 
+  void markPasswordChanged() {
+    final current = state.valueOrNull;
+    if (current?.user == null) return;
+    current!.user!.mustChangePassword = false;
+    state = AsyncData(AuthState(user: current.user, isAuthenticated: true));
+  }
+
   Future<void> logout() async {
+    await GeofenceManager.instance.stop();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(AuthState.unauthenticated());
   }

@@ -62,6 +62,7 @@ export function superAdminRoutes(app: FastifyInstance) {
         maxEmployees: true,
         isActive: true,
         createdAt: true,
+        logoUrl: true,
         _count: {
           select: { employees: { where: { deletedAt: null, status: 'ACTIVE' } } },
         },
@@ -77,6 +78,7 @@ export function superAdminRoutes(app: FastifyInstance) {
       maxEmployees: o.maxEmployees,
       isActive: o.isActive,
       createdAt: o.createdAt,
+      logoUrl: o.logoUrl ?? null,
       employeeCount: o._count.employees,
     }));
 
@@ -129,6 +131,7 @@ export function superAdminRoutes(app: FastifyInstance) {
       .object({
         plan: z.enum(['FREE', 'STARTER', 'GROWTH', 'ENTERPRISE']).optional(),
         isActive: z.boolean().optional(),
+        logoUrl: z.string().url().nullable().optional(),
       })
       .parse(req.body);
 
@@ -138,6 +141,7 @@ export function superAdminRoutes(app: FastifyInstance) {
       updateData.plan = input.plan;
       updateData.maxEmployees = PLAN_LIMITS[input.plan];
     }
+    if (input.logoUrl !== undefined) updateData.logoUrl = input.logoUrl;
 
     const org = await app.prisma.organization.update({
       where: { id },
