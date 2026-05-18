@@ -652,12 +652,13 @@ class _BirthdayCard extends StatefulWidget {
 }
 
 class _BirthdayCardState extends State<_BirthdayCard>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -665,7 +666,17 @@ class _BirthdayCardState extends State<_BirthdayCard>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _ctrl.repeat();
+    } else {
+      _ctrl.stop();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ctrl.dispose();
     super.dispose();
   }
@@ -833,7 +844,7 @@ class _BirthdayCardState extends State<_BirthdayCard>
                         Row(
                           children: [
                             Text(
-                              '🎉 Today!',
+                              'Today!',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
