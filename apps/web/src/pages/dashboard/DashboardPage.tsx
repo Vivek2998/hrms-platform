@@ -1,14 +1,24 @@
-import { Users, Clock, CalendarDays, DollarSign, Cake, UserPlus, Award, ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import {
+  Users, Clock, CalendarDays, DollarSign, Cake, UserPlus, Award,
+  ClipboardList, CalendarCheck, IndianRupee, CalendarPlus, ChevronRight,
+  ReceiptText, Building2,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth.store';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useLeaves } from '@/hooks/useLeaves';
 import { usePayrollRuns } from '@/hooks/usePayroll';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import type { UserRole } from '@hrms/shared-types';
 import type {
   BirthdayEntry,
   NewJoineeEntry,
@@ -17,36 +27,8 @@ import type {
   MyRegularisationEntry,
   MyCompOffEntry,
 } from '@/hooks/useDashboardWidgets';
-import { toast } from 'sonner';
 
-interface StatCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  loading?: boolean;
-}
-
-function StatCard({ title, value, subtitle, icon: Icon, loading }: StatCardProps) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-muted-foreground text-sm font-medium">{title}</CardTitle>
-        <Icon className="text-muted-foreground h-4 w-4" />
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-24" />
-        ) : (
-          <>
-            <div className="text-2xl font-bold">{value}</div>
-            <p className="text-muted-foreground text-xs">{subtitle}</p>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+// ── Helpers ──────────────────────────────────────────────────────
 
 function todayRange() {
   const now = new Date();
@@ -59,50 +41,232 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function Avatar({ name, url }: { name: string; url?: string | null | undefined }) {
-  if (url) {
-    return <img src={url} alt={name} className="h-9 w-9 rounded-full object-cover" />;
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function statusVariant(status: string): 'default' | 'secondary' | 'warning' | 'destructive' | 'success' {
+  if (status === 'APPROVED') return 'success';
+  if (status === 'REJECTED') return 'destructive';
+  if (status === 'PENDING') return 'warning';
+  return 'secondary';
+}
+
+// ── Thought of the Day ───────────────────────────────────────────
+
+const QUOTES = [
+  'Success is not the key to happiness. Happiness is the key to success.',
+  'The only way to do great work is to love what you do.',
+  'Believe you can and you\'re halfway there.',
+  'Great things never come from comfort zones.',
+  'Push yourself, because no one else is going to do it for you.',
+  'Dream it. Wish it. Do it.',
+  'The harder you work for something, the greater you\'ll feel when you achieve it.',
+  'Don\'t stop when you\'re tired. Stop when you\'re done.',
+  'Wake up with determination. Go to bed with satisfaction.',
+  'Do something today that your future self will thank you for.',
+  'It\'s going to be hard, but hard is not impossible.',
+  'Don\'t wait for opportunity. Create it.',
+  'The key to success is to focus on goals, not obstacles.',
+  'Small daily improvements lead to staggering long-term results.',
+  'Your attitude determines your direction.',
+  'Excellence is not a destination but a continuous journey.',
+  'Strive not to be a success, but rather to be of value.',
+  'The secret of getting ahead is getting started.',
+  'Talent is cheaper than table salt. What separates the talented individual from the successful one is a lot of hard work.',
+  'Be so good they can\'t ignore you.',
+];
+
+function ThoughtOfTheDay() {
+  const idx = new Date().getDate() % QUOTES.length;
+  return (
+    <div className="rounded-xl border bg-muted/30 px-4 py-3 text-center">
+      <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-widest">
+        Thought of the Day
+      </p>
+      <p className="text-foreground mt-1 text-sm italic">&ldquo;{QUOTES[idx]}&rdquo;</p>
+    </div>
+  );
+}
+
+// ── Hero Section ─────────────────────────────────────────────────
+
+function HeroCard() {
+  const user = useAuthStore((s) => s.user);
+  const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase();
+
+  return (
+    <div className="from-primary to-primary/80 relative overflow-hidden rounded-xl bg-gradient-to-br p-5 shadow-md">
+      <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
+      <div className="absolute -bottom-8 right-16 h-24 w-24 rounded-full bg-white/5" />
+      <div className="relative flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-primary-foreground/70 text-sm">
+            {format(new Date(), 'EEEE, d MMMM yyyy')}
+          </p>
+          <h1 className="text-primary-foreground mt-0.5 text-xl font-bold">
+            {getGreeting()}, {user?.firstName}!
+          </h1>
+          <p className="text-primary-foreground/70 mt-0.5 truncate text-sm">{user?.orgName}</p>
+        </div>
+        <Avatar className="h-14 w-14 shrink-0 border-2 border-white/30 shadow-md">
+          <AvatarImage src={user?.avatarUrl ?? undefined} />
+          <AvatarFallback className="bg-white/20 text-lg font-bold text-white">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+      </div>
+    </div>
+  );
+}
+
+// ── Quick Actions ────────────────────────────────────────────────
+
+interface QuickAction {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  to: string;
+  bg: string;
+  fg: string;
+}
+
+function getQuickActions(role: UserRole | undefined): QuickAction[] {
+  const isAdmin = role === 'SUPER_ADMIN' || role === 'ORG_ADMIN' || role === 'HR';
+  if (isAdmin) {
+    return [
+      { icon: Users, label: 'Employees', to: '/employees', bg: 'bg-blue-100 dark:bg-blue-950', fg: 'text-blue-600 dark:text-blue-400' },
+      { icon: CalendarDays, label: 'Approvals', to: '/leaves', bg: 'bg-amber-100 dark:bg-amber-950', fg: 'text-amber-600 dark:text-amber-400' },
+      { icon: ReceiptText, label: 'Payroll', to: '/payroll', bg: 'bg-green-100 dark:bg-green-950', fg: 'text-green-600 dark:text-green-400' },
+      { icon: Building2, label: 'Departments', to: '/departments', bg: 'bg-violet-100 dark:bg-violet-950', fg: 'text-violet-600 dark:text-violet-400' },
+    ];
   }
+  if (role === 'MANAGER') {
+    return [
+      { icon: CalendarCheck, label: 'Apply Leave', to: '/my-leaves', bg: 'bg-blue-100 dark:bg-blue-950', fg: 'text-blue-600 dark:text-blue-400' },
+      { icon: CalendarDays, label: 'Approvals', to: '/leaves', bg: 'bg-amber-100 dark:bg-amber-950', fg: 'text-amber-600 dark:text-amber-400' },
+      { icon: Clock, label: 'Attendance', to: '/attendance', bg: 'bg-green-100 dark:bg-green-950', fg: 'text-green-600 dark:text-green-400' },
+      { icon: IndianRupee, label: 'Payslips', to: '/my-payslips', bg: 'bg-violet-100 dark:bg-violet-950', fg: 'text-violet-600 dark:text-violet-400' },
+    ];
+  }
+  return [
+    { icon: CalendarCheck, label: 'Apply Leave', to: '/my-leaves', bg: 'bg-blue-100 dark:bg-blue-950', fg: 'text-blue-600 dark:text-blue-400' },
+    { icon: Clock, label: 'Attendance', to: '/attendance', bg: 'bg-green-100 dark:bg-green-950', fg: 'text-green-600 dark:text-green-400' },
+    { icon: IndianRupee, label: 'Payslips', to: '/my-payslips', bg: 'bg-amber-100 dark:bg-amber-950', fg: 'text-amber-600 dark:text-amber-400' },
+    { icon: CalendarPlus, label: 'Comp Off', to: '/comp-off', bg: 'bg-violet-100 dark:bg-violet-950', fg: 'text-violet-600 dark:text-violet-400' },
+  ];
+}
+
+function QuickActionsSection({ role }: { role: UserRole | undefined }) {
+  const navigate = useNavigate();
+  const actions = getQuickActions(role);
+  return (
+    <div>
+      <p className="text-muted-foreground mb-3 text-[11px] font-semibold uppercase tracking-wider">
+        Quick Actions
+      </p>
+      <div className="grid grid-cols-4 gap-3">
+        {actions.map((a) => (
+          <button
+            key={a.to}
+            onClick={() => void navigate(a.to)}
+            className="bg-card hover:bg-accent flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors active:scale-95"
+          >
+            <div className={cn('flex h-11 w-11 items-center justify-center rounded-full', a.bg)}>
+              <a.icon className={cn('h-5 w-5', a.fg)} />
+            </div>
+            <span className="text-center text-[11px] font-medium leading-tight">{a.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Stat Card ────────────────────────────────────────────────────
+
+interface StatCardProps {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  loading?: boolean;
+  accentClass: string;
+  iconBg: string;
+  iconFg: string;
+}
+
+function StatCard({ title, value, subtitle, icon: Icon, loading, accentClass, iconBg, iconFg }: StatCardProps) {
+  return (
+    <Card className={cn('border-l-4', accentClass)}>
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-full', iconBg)}>
+          <Icon className={cn('h-5 w-5', iconFg)} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-muted-foreground text-xs font-medium">{title}</p>
+          {loading ? (
+            <Skeleton className="mt-1 h-6 w-16" />
+          ) : (
+            <>
+              <p className="text-lg font-bold leading-tight">{value}</p>
+              <p className="text-muted-foreground truncate text-xs">{subtitle}</p>
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Person Avatar ────────────────────────────────────────────────
+
+function PersonAvatar({ name, url }: { name: string; url?: string | null | undefined }) {
+  if (url) return <img src={url} alt={name} className="h-9 w-9 shrink-0 rounded-full object-cover" />;
   const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <div className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold">
+    <div className="bg-primary/10 text-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
       {initials}
     </div>
   );
 }
 
+// ── Celebration Widgets ──────────────────────────────────────────
+
 function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loading: boolean }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-3">
-        <Cake className="text-pink-500 h-5 w-5" />
-        <CardTitle className="text-base">Birthdays Today</CardTitle>
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950">
+          <Cake className="h-4 w-4 text-pink-500" />
+        </div>
+        <CardTitle className="text-sm font-semibold">Birthdays Today</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-          </div>
+          <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : entries.length === 0 ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today.</p>
+          <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {entries.map((e) => (
-              <div key={e.id} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Avatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
-                  <div>
-                    <p className="text-sm font-medium">{e.firstName} {e.lastName}</p>
-                    {e.designation && <p className="text-muted-foreground text-xs">{e.designation}</p>}
+              <div key={e.id} className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <PersonAvatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{e.firstName} {e.lastName}</p>
+                    {e.designation && <p className="text-muted-foreground truncate text-xs">{e.designation}</p>}
                   </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 shrink-0 border-pink-300 text-pink-600 hover:bg-pink-50"
-                  onClick={() => { toast.success(`🎂 Wishes sent to ${e.firstName}!`); }}
+                  className="h-7 shrink-0 border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:hover:bg-pink-950"
+                  onClick={() => toast.success(`Wishes sent to ${e.firstName}!`)}
                 >
-                  Send Wishes
+                  Wish
                 </Button>
               </div>
             ))}
@@ -116,28 +280,27 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
 function NewJoineeWidget({ entries, loading }: { entries: NewJoineeEntry[]; loading: boolean }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-3">
-        <UserPlus className="text-blue-500 h-5 w-5" />
-        <CardTitle className="text-base">New Joinees</CardTitle>
-        <span className="text-muted-foreground ml-auto text-xs">Last 30 days</span>
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
+          <UserPlus className="h-4 w-4 text-blue-500" />
+        </div>
+        <CardTitle className="text-sm font-semibold">New Joinees</CardTitle>
+        <span className="text-muted-foreground ml-auto text-xs">30 days</span>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-          </div>
+          <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : entries.length === 0 ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">No new joinees this month.</p>
+          <p className="text-muted-foreground py-4 text-center text-sm">No new joinees</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {entries.map((e) => (
-              <div key={e.id} className="flex items-center gap-3">
-                <Avatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
-                <div>
-                  <p className="text-sm font-medium">{e.firstName} {e.lastName}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {e.designation ? `${e.designation} · ` : ''}
-                    Joined {fmtDate(e.dateOfJoining)}
+              <div key={e.id} className="flex items-center gap-2.5">
+                <PersonAvatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{e.firstName} {e.lastName}</p>
+                  <p className="text-muted-foreground truncate text-xs">
+                    {e.designation ? `${e.designation} · ` : ''}Joined {fmtDate(e.dateOfJoining)}
                   </p>
                 </div>
               </div>
@@ -152,29 +315,29 @@ function NewJoineeWidget({ entries, loading }: { entries: NewJoineeEntry[]; load
 function AnniversaryWidget({ entries, loading }: { entries: AnniversaryEntry[]; loading: boolean }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-3">
-        <Award className="text-amber-500 h-5 w-5" />
-        <CardTitle className="text-base">Work Anniversaries</CardTitle>
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950">
+          <Award className="h-4 w-4 text-amber-500" />
+        </div>
+        <CardTitle className="text-sm font-semibold">Work Anniversaries</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-          </div>
+          <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : entries.length === 0 ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">No anniversaries today.</p>
+          <p className="text-muted-foreground py-4 text-center text-sm">No anniversaries today</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {entries.map((e) => (
-              <div key={e.id} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Avatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
-                  <div>
-                    <p className="text-sm font-medium">{e.firstName} {e.lastName}</p>
-                    {e.designation && <p className="text-muted-foreground text-xs">{e.designation}</p>}
+              <div key={e.id} className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <PersonAvatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{e.firstName} {e.lastName}</p>
+                    {e.designation && <p className="text-muted-foreground truncate text-xs">{e.designation}</p>}
                   </div>
                 </div>
-                <Badge variant="secondary" className="shrink-0">
+                <Badge variant="secondary" className="shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
                   {e.years} yr{e.years !== 1 ? 's' : ''}
                 </Badge>
               </div>
@@ -186,18 +349,10 @@ function AnniversaryWidget({ entries, loading }: { entries: AnniversaryEntry[]; 
   );
 }
 
-function statusVariant(status: string): 'default' | 'secondary' | 'warning' | 'destructive' | 'success' {
-  if (status === 'APPROVED') return 'success';
-  if (status === 'REJECTED') return 'destructive';
-  if (status === 'PENDING') return 'warning';
-  return 'secondary';
-}
+// ── My Requests Widget ───────────────────────────────────────────
 
-function MyPendingRequestsWidget({
-  leaves,
-  regularisations,
-  compOffs,
-  loading,
+function MyRequestsWidget({
+  leaves, regularisations, compOffs, loading,
 }: {
   leaves: MyLeaveEntry[];
   regularisations: MyRegularisationEntry[];
@@ -205,54 +360,51 @@ function MyPendingRequestsWidget({
   loading: boolean;
 }) {
   const total = leaves.length + regularisations.length + compOffs.length;
-
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-3">
-        <ClipboardList className="text-violet-500 h-5 w-5" />
-        <CardTitle className="text-base">My Requests</CardTitle>
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-950">
+          <ClipboardList className="h-4 w-4 text-violet-500" />
+        </div>
+        <CardTitle className="text-sm font-semibold">My Requests</CardTitle>
         {!loading && total > 0 && (
           <Badge variant="warning" className="ml-auto">{total} pending</Badge>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-          </div>
+          <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
         ) : total === 0 ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">
-            No pending requests — all clear!
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-sm">No pending requests — you&apos;re all clear!</p>
         ) : (
           <div className="divide-y">
             {leaves.map((l) => (
               <div key={l.id} className="flex items-center justify-between py-2.5">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium">{l.leaveType.name}</p>
                   <p className="text-muted-foreground text-xs">
-                    {fmtDate(l.fromDate)} – {fmtDate(l.toDate)} · {l.totalDays} day{l.totalDays !== 1 ? 's' : ''}
+                    {fmtDate(l.fromDate)} – {fmtDate(l.toDate)} · {l.totalDays}d
                   </p>
                 </div>
-                <Badge variant={statusVariant(l.status)}>{l.status}</Badge>
+                <Badge variant={statusVariant(l.status)} className="ml-2 shrink-0">{l.status}</Badge>
               </div>
             ))}
             {regularisations.map((r) => (
               <div key={r.id} className="flex items-center justify-between py-2.5">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium">Regularisation</p>
                   <p className="text-muted-foreground text-xs">{fmtDate(r.date)}</p>
                 </div>
-                <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
+                <Badge variant={statusVariant(r.status)} className="ml-2 shrink-0">{r.status}</Badge>
               </div>
             ))}
             {compOffs.map((c) => (
               <div key={c.id} className="flex items-center justify-between py-2.5">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium">Comp Off</p>
                   <p className="text-muted-foreground text-xs">Worked {fmtDate(c.workedDate)}</p>
                 </div>
-                <Badge variant={statusVariant(c.status)}>{c.status}</Badge>
+                <Badge variant={statusVariant(c.status)} className="ml-2 shrink-0">{c.status}</Badge>
               </div>
             ))}
           </div>
@@ -262,7 +414,10 @@ function MyPendingRequestsWidget({
   );
 }
 
+// ── Main Page ────────────────────────────────────────────────────
+
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const role = user?.role;
   const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role);
@@ -276,31 +431,25 @@ export default function DashboardPage() {
 
   const latestRun = payrollData?.data[0];
 
-  const greeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{greeting()}, {user?.firstName ?? 'there'}!</h1>
-        <p className="text-muted-foreground">
-          Here&apos;s what&apos;s happening at your organisation today.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <HeroCard />
 
-      {/* Stat cards — HR/Admin only */}
+      <ThoughtOfTheDay />
+
+      <QuickActionsSection role={role} />
+
       {isHR && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Employees"
             value={empData?.meta.total.toString() ?? '—'}
             subtitle="active headcount"
             icon={Users}
             loading={empLoading}
+            accentClass="border-l-blue-500"
+            iconBg="bg-blue-100 dark:bg-blue-950"
+            iconFg="text-blue-600 dark:text-blue-400"
           />
           <StatCard
             title="Present Today"
@@ -308,6 +457,9 @@ export default function DashboardPage() {
             subtitle="punched in so far"
             icon={Clock}
             loading={attLoading}
+            accentClass="border-l-green-500"
+            iconBg="bg-green-100 dark:bg-green-950"
+            iconFg="text-green-600 dark:text-green-400"
           />
           <StatCard
             title="Pending Leaves"
@@ -315,31 +467,31 @@ export default function DashboardPage() {
             subtitle="awaiting approval"
             icon={CalendarDays}
             loading={leaveLoading}
+            accentClass="border-l-amber-500"
+            iconBg="bg-amber-100 dark:bg-amber-950"
+            iconFg="text-amber-600 dark:text-amber-400"
           />
           <StatCard
             title="Last Payroll"
             value={latestRun ? `₹${(latestRun.totalNetPay / 100_000).toFixed(1)}L` : '—'}
-            subtitle={
-              latestRun
-                ? `${String(latestRun.month)}/${String(latestRun.year)} · ${latestRun.status}`
-                : 'no runs yet'
-            }
+            subtitle={latestRun ? `${String(latestRun.month)}/${String(latestRun.year)} · ${latestRun.status}` : 'no runs yet'}
             icon={DollarSign}
             loading={payrollLoading}
+            accentClass="border-l-violet-500"
+            iconBg="bg-violet-100 dark:bg-violet-950"
+            iconFg="text-violet-600 dark:text-violet-400"
           />
         </div>
       )}
 
-      {/* Celebration widgets — all roles */}
       <div className="grid gap-4 md:grid-cols-3">
         <BirthdayWidget entries={widgets?.birthdays ?? []} loading={widgetsLoading} />
         <NewJoineeWidget entries={widgets?.newJoinees ?? []} loading={widgetsLoading} />
         <AnniversaryWidget entries={widgets?.workAnniversaries ?? []} loading={widgetsLoading} />
       </div>
 
-      {/* My Requests — employee/manager self-view */}
       {widgets?.myPendingRequests && (
-        <MyPendingRequestsWidget
+        <MyRequestsWidget
           leaves={widgets.myPendingRequests.leaves}
           regularisations={widgets.myPendingRequests.regularisations}
           compOffs={widgets.myPendingRequests.compOffs}
@@ -347,18 +499,28 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Pending Leave Requests — HR management view */}
       {isHR && (
         <Card>
-          <CardHeader>
-            <CardTitle>Pending Leave Requests</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950">
+                <CalendarDays className="h-4 w-4 text-rose-500" />
+              </div>
+              <CardTitle className="text-sm font-semibold">Pending Leave Requests</CardTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto gap-1 px-2 text-xs"
+              onClick={() => void navigate('/leaves')}
+            >
+              View all <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {leaveLoading ? (
               <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
+                {[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : leaveData?.data.length === 0 ? (
               <p className="text-muted-foreground py-6 text-center text-sm">
@@ -367,9 +529,9 @@ export default function DashboardPage() {
             ) : (
               <div className="divide-y">
                 {leaveData?.data.map((leave) => (
-                  <div key={leave.id} className="flex items-center gap-4 py-3">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
+                  <div key={leave.id} className="flex items-center gap-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
                         {leave.employee
                           ? `${leave.employee.firstName} ${leave.employee.lastName}`
                           : leave.employeeId}
@@ -377,11 +539,10 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground text-xs">
                         {leave.leaveType?.name ?? 'Leave'} ·{' '}
                         {new Date(leave.fromDate).toLocaleDateString('en-IN')} –{' '}
-                        {new Date(leave.toDate).toLocaleDateString('en-IN')} · {leave.totalDays} day
-                        {leave.totalDays !== 1 ? 's' : ''}
+                        {new Date(leave.toDate).toLocaleDateString('en-IN')} · {leave.totalDays}d
                       </p>
                     </div>
-                    <Badge variant="warning">PENDING</Badge>
+                    <Badge variant="warning" className="shrink-0">PENDING</Badge>
                   </div>
                 ))}
               </div>

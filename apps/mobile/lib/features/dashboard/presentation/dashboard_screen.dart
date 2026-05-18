@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../attendance/providers/attendance_provider.dart';
-import '../../leaves/providers/leave_provider.dart';
 import '../../notifications/providers/notifications_provider.dart';
 import '../../announcements/providers/announcements_provider.dart';
+import '../providers/dashboard_provider.dart';
+import '../data/dashboard_model.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shimmer_box.dart';
 
@@ -17,20 +18,42 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authNotifierProvider);
     final user = auth.valueOrNull?.user;
+    final orgName = auth.valueOrNull?.orgName;
+    final orgLogoUrl = auth.valueOrNull?.orgLogoUrl;
     final attendanceAsync = ref.watch(attendanceListProvider());
-    final balancesAsync = ref.watch(leaveBalancesProvider);
     final unreadAsync = ref.watch(unreadCountProvider);
     final announcementsAsync = ref.watch(announcementsListProvider);
     final today = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            onPressed: () => context.push('/helpdesk'),
+            backgroundColor: const Color(0xFFF97316),
+            foregroundColor: Colors.white,
+            elevation: 10,
+            child: const Icon(Icons.support_agent_rounded, size: 24),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Helpdesk',
+            style: TextStyle(
+              color: Color(0xFFF97316),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(attendanceListProvider);
-          ref.invalidate(leaveBalancesProvider);
           ref.invalidate(announcementsListProvider);
           ref.invalidate(unreadCountProvider);
+          ref.invalidate(todayBirthdaysProvider);
         },
         child: CustomScrollView(
           slivers: [
@@ -39,9 +62,10 @@ class DashboardScreen extends ConsumerWidget {
               child: _HeroHeader(
                 firstName: user?.firstName ?? '',
                 avatarUrl: user?.avatarUrl,
+                orgName: orgName,
+                orgLogoUrl: orgLogoUrl,
                 today: today,
                 unreadAsync: unreadAsync,
-                attendanceAsync: attendanceAsync,
               ),
             ),
 
@@ -78,10 +102,7 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _AttendanceStats(attendanceAsync: attendanceAsync),
 
-                  const SizedBox(height: 24),
-                  _SectionLabel('Leave Balances'),
-                  const SizedBox(height: 12),
-                  _LeaveBalancesSection(balancesAsync: balancesAsync),
+                  _BirthdaySection(),
 
                   // Latest announcements
                   announcementsAsync.maybeWhen(
@@ -120,16 +141,18 @@ class DashboardScreen extends ConsumerWidget {
 class _HeroHeader extends StatelessWidget {
   final String firstName;
   final String? avatarUrl;
+  final String? orgName;
+  final String? orgLogoUrl;
   final String today;
   final AsyncValue<int> unreadAsync;
-  final AsyncValue<dynamic> attendanceAsync;
 
   const _HeroHeader({
     required this.firstName,
     required this.avatarUrl,
+    required this.orgName,
+    required this.orgLogoUrl,
     required this.today,
     required this.unreadAsync,
-    required this.attendanceAsync,
   });
 
   @override
@@ -140,11 +163,12 @@ class _HeroHeader extends StatelessWidget {
         top: MediaQuery.paddingOf(context).top + 16,
         left: 20,
         right: 20,
-        bottom: 28,
+        bottom: 24,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Row 1: greeting + notification bell + avatar
           Row(
             children: [
               Expanded(
@@ -171,16 +195,48 @@ class _HeroHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              // Notification bell
               _NotificationBell(unreadAsync: unreadAsync),
               const SizedBox(width: 8),
-              // Avatar
               _Avatar(avatarUrl: avatarUrl, firstName: firstName),
             ],
           ),
-          const SizedBox(height: 20),
-          // Today's attendance summary
-          _TodayStatus(attendanceAsync: attendanceAsync),
+          const SizedBox(height: 16),
+          // Row 2: org branding
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withAlpha(30),
+                  border: Border.all(color: Colors.white.withAlpha(80), width: 1.5),
+                  image: orgLogoUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(orgLogoUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: orgLogoUrl == null
+                    ? const Icon(Icons.business_rounded, color: Colors.white, size: 16)
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  orgName ?? 'HRMS',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(230),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -243,7 +299,7 @@ class _Avatar extends StatelessWidget {
         border: Border.all(color: Colors.white.withAlpha(120), width: 2),
       ),
       child: CircleAvatar(
-        radius: 20,
+        radius: 24,
         backgroundColor: Colors.white.withAlpha(40),
         backgroundImage:
             avatarUrl != null ? NetworkImage(avatarUrl!) : null,
@@ -253,81 +309,9 @@ class _Avatar extends StatelessWidget {
                 style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16),
+                    fontSize: 18),
               )
             : null,
-      ),
-    );
-  }
-}
-
-class _TodayStatus extends StatelessWidget {
-  final AsyncValue<dynamic> attendanceAsync;
-  const _TodayStatus({required this.attendanceAsync});
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-
-    return attendanceAsync.maybeWhen(
-      data: (records) {
-        final todayRecord = (records as List).cast<dynamic>().firstWhere(
-              (r) {
-                final d = r.date as DateTime;
-                return d.year == now.year &&
-                    d.month == now.month &&
-                    d.day == now.day;
-              },
-              orElse: () => null,
-            );
-        final status =
-            todayRecord?.status as String? ?? 'NOT_MARKED';
-        final (label, icon, color) = switch (status) {
-          'PRESENT' => ('Present Today', Icons.check_circle, AppColors.success),
-          'LATE' => ('Late Today', Icons.schedule, AppColors.warning),
-          'ABSENT' => ('Absent Today', Icons.cancel, AppColors.error),
-          'HALF_DAY' => ('Half Day', Icons.timelapse, AppColors.warning),
-          'ON_LEAVE' => ('On Leave', Icons.beach_access, AppColors.info),
-          _ => ('Punch In Required', Icons.fingerprint, Colors.white70),
-        };
-        return _StatusChip(label: label, icon: icon, color: color);
-      },
-      loading: () => const SizedBox.shrink(),
-      orElse: () => const SizedBox.shrink(),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  const _StatusChip(
-      {required this.label, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(25),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withAlpha(60)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -350,24 +334,28 @@ class _QuickActionsGrid extends StatelessWidget {
           AppColors.primaryLight, '/attendance/punch'),
       _Action('Apply Leave', Icons.event_note_rounded, AppColors.success,
           AppColors.successLight, '/leaves/apply'),
-      _Action('Payslips', Icons.receipt_long_rounded, AppColors.warning,
-          AppColors.warningLight, '/payslips'),
       _Action('Team', Icons.people_rounded, AppColors.info, AppColors.infoLight,
           '/team'),
       _Action('Holidays', Icons.celebration_rounded, AppColors.holiday,
           AppColors.holidayBg, '/holidays'),
       _Action('My Docs', Icons.folder_rounded, const Color(0xFF059669),
           const Color(0xFFD1FAE5), '/documents'),
+      _Action('Regularise', Icons.edit_calendar_rounded,
+          const Color(0xFF0891B2), const Color(0xFFCFFAFE), '/regularisation'),
     ];
 
-    return GridView.count(
-      crossAxisCount: 3,
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.05,
-      children: actions.map((a) => _QuickActionTile(action: a)).toList(),
+      padding: EdgeInsets.zero,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        mainAxisExtent: 100,
+      ),
+      itemCount: actions.length,
+      itemBuilder: (_, i) => _QuickActionTile(action: actions[i]),
     );
   }
 }
@@ -389,35 +377,39 @@ class _QuickActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push(action.route),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: action.bgColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: action.color.withAlpha(35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Icon(action.icon, color: action.color, size: 22),
+                child: Icon(action.icon, color: action.color, size: 26),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               Text(
                 action.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -492,15 +484,16 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               '$value',
               style: TextStyle(
@@ -512,7 +505,11 @@ class _StatTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -524,96 +521,335 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-// ─── Leave Balances ──────────────────────────────────────────────────────────
+// ─── Birthday Section ────────────────────────────────────────────────────────
 
-class _LeaveBalancesSection extends StatelessWidget {
-  final AsyncValue<dynamic> balancesAsync;
-  const _LeaveBalancesSection({required this.balancesAsync});
+class _BirthdaySection extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_BirthdaySection> createState() => _BirthdaySectionState();
+}
+
+class _BirthdaySectionState extends ConsumerState<_BirthdaySection> {
+  final _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return balancesAsync.when(
-      data: (balances) {
-        final filtered = (balances as List)
-            .cast<dynamic>()
-            .where((b) => b.leaveTypeCode != 'LWP')
-            .toList();
+    final birthdaysAsync = ref.watch(todayBirthdaysProvider);
+    return birthdaysAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) {
+        debugPrint('Birthday fetch error: $e');
+        return const SizedBox.shrink();
+      },
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        final hasToday = list.any((e) => e.isToday);
+        final title = hasToday ? 'Birthdays Today 🎂' : 'Upcoming Birthdays 🎂';
         return Column(
-          children: filtered
-              .map((b) => _LeaveBalanceTile(balance: b))
-              .toList(),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            _SectionLabel(title),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) => SizedBox(
+                height: 150,
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: list.length,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemBuilder: (_, i) => _BirthdayCard(
+                    employee: list[i],
+                    width: constraints.maxWidth,
+                  ),
+                ),
+              ),
+            ),
+            if (list.length > 1) ...[
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(list.length, (i) {
+                  final active = i == _currentPage;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: active ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: active
+                          ? const Color(0xFF7C3AED)
+                          : const Color(0xFF7C3AED).withAlpha(60),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ],
         );
       },
-      loading: () => Column(
-        children: List.generate(3, (_) => const ShimmerCard(height: 70)),
-      ),
-      error: (_, __) => const Text('Could not load leave balances'),
     );
   }
 }
 
-class _LeaveBalanceTile extends StatelessWidget {
-  final dynamic balance;
-  const _LeaveBalanceTile({required this.balance});
+class _Sparkle extends StatefulWidget {
+  final double size;
+  final Color color;
+  final Duration period;
+  const _Sparkle({required this.size, required this.color, required this.period});
+
+  @override
+  State<_Sparkle> createState() => _SparkleState();
+}
+
+class _SparkleState extends State<_Sparkle> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: widget.period)
+      ..repeat(reverse: true);
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final used = balance.usedDays as double;
-    final total = balance.totalDays as double;
-    final remaining = balance.remainingDays as double;
-    final fraction =
-        total > 0 ? (used / total).clamp(0.0, 1.0) : 0.0;
-    final pct =
-        total > 0 ? ((used / total) * 100).round() : 0;
-
-    Color barColor = AppColors.success;
-    if (pct > 80) barColor = AppColors.error;
-    else if (pct > 60) barColor = AppColors.warning;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Opacity(
+        opacity: 0.15 + _anim.value * 0.85,
+        child: Text('✦', style: TextStyle(color: widget.color, fontSize: widget.size)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                balance.leaveTypeName as String,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${remaining.toStringAsFixed(0)} / ${total.toStringAsFixed(0)} days',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary),
-                ),
-              ),
-            ],
+    );
+  }
+}
+
+class _BirthdayCard extends StatelessWidget {
+  final BirthdayEmployee employee;
+  final double width;
+  const _BirthdayCard({required this.employee, required this.width});
+
+  List<Color> get _gradientColors => employee.isToday
+      ? const [Color(0xFF7C3AED), Color(0xFFDB2777)]
+      : const [Color(0xFF4F46E5), Color(0xFF7C3AED)];
+
+  Color get _shadowColor => employee.isToday
+      ? const Color(0xFF7C3AED)
+      : const Color(0xFF4F46E5);
+
+  String get _birthdayDateStr {
+    final date = DateTime.now().add(Duration(days: employee.daysUntil));
+    return DateFormat('d MMMM').format(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _shadowColor.withAlpha(70),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: fraction,
-              backgroundColor: const Color(0xFFE2E8F0),
-              color: barColor,
-              minHeight: 6,
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(15),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -15,
+            left: 60,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(10),
+              ),
+            ),
+          ),
+          // Animated sparkles — staggered periods so they twinkle independently
+          Positioned(top: 14, right: 32, child: _Sparkle(size: 9, color: Colors.white, period: const Duration(milliseconds: 1800))),
+          Positioned(top: 42, right: 14, child: _Sparkle(size: 6, color: Colors.white, period: const Duration(milliseconds: 2400))),
+          Positioned(bottom: 22, right: 26, child: _Sparkle(size: 7, color: Colors.white, period: const Duration(milliseconds: 1500))),
+          Positioned(top: 24, left: 118, child: _Sparkle(size: 6, color: Colors.white, period: const Duration(milliseconds: 2100))),
+          Positioned(bottom: 16, left: 82, child: _Sparkle(size: 8, color: Colors.white, period: const Duration(milliseconds: 2700))),
+          Positioned(top: 58, right: 44, child: _Sparkle(size: 5, color: Colors.white, period: const Duration(milliseconds: 1900))),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Avatar with cake badge
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(40),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: Colors.white.withAlpha(40),
+                        backgroundImage: employee.avatarUrl != null
+                            ? NetworkImage(employee.avatarUrl!)
+                            : null,
+                        child: employee.avatarUrl == null
+                            ? Text(
+                                employee.initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 22,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: -4,
+                      right: -4,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text('🎂', style: TextStyle(fontSize: 14)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 18),
+                // Info column
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        employee.fullName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (employee.designation != null) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          employee.designation!,
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(200),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      if (employee.isToday) ...[
+                        Text(
+                          '🎉 Today!',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    '🎉 Wished ${employee.firstName} a Happy Birthday!'),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Wish 🎉',
+                              style: TextStyle(
+                                color: Color(0xFF7C3AED),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Text(
+                          employee.daysUntil == 1 ? 'Tomorrow' : _birthdayDateStr,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

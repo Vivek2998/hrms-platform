@@ -12,15 +12,26 @@ export function dashboardRoutes(app: FastifyInstance) {
     const todayYear = today.getUTCFullYear();
     const thirtyDaysAgo = new Date(Date.UTC(todayYear, todayMonth, todayDay - 30));
 
-    // ── Birthdays (today's month + day) ────────────────────────
+    // ── Birthdays: today + next 6 days (7-day window) ──────────
     const empWithDob = await app.prisma.employee.findMany({
       where: { organizationId: orgId, deletedAt: null, status: 'ACTIVE', dateOfBirth: { not: null } },
       select: { id: true, firstName: true, lastName: true, designation: true, avatarUrl: true, dateOfBirth: true },
     });
-    const birthdays = empWithDob.filter((e) => {
-      const d = new Date(e.dateOfBirth!);
-      return d.getUTCMonth() === todayMonth && d.getUTCDate() === todayDay;
-    });
+    const today00 = new Date(Date.UTC(todayYear, todayMonth, todayDay));
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const birthdays = empWithDob
+      .map((e) => {
+        const dob = new Date(e.dateOfBirth!);
+        // Build this year's birthday; if it already passed, use next year
+        let nextBday = new Date(Date.UTC(todayYear, dob.getUTCMonth(), dob.getUTCDate()));
+        if (nextBday < today00) {
+          nextBday = new Date(Date.UTC(todayYear + 1, dob.getUTCMonth(), dob.getUTCDate()));
+        }
+        const daysUntil = Math.round((nextBday.getTime() - today00.getTime()) / msPerDay);
+        return { ...e, daysUntil };
+      })
+      .filter((e) => e.daysUntil <= 6)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
 
     // ── New joinees (last 30 days) ──────────────────────────────
     const newJoinees = await app.prisma.employee.findMany({
