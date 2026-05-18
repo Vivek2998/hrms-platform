@@ -25,6 +25,8 @@ class LeavesScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(leaveListProvider);
           ref.invalidate(leaveBalancesProvider);
+          ref.invalidate(leaveTypesProvider);
+          ref.invalidate(pendingLeavesProvider);
           ref.invalidate(compOffListProvider);
         },
         child: CustomScrollView(

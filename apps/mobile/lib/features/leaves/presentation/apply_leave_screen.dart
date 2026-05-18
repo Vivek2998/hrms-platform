@@ -193,8 +193,28 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
                         );
                       },
                       loading: () => _LeaveTypeSelectorSkeleton(),
-                      error: (_, __) =>
-                          const Text('Could not load leave types'),
+                      error: (_, __) => Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Could not load leave types',
+                                style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                            const SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              onPressed: () => ref.invalidate(leaveTypesProvider),
+                              icon: const Icon(Icons.refresh_rounded, size: 16),
+                              label: const Text('Retry'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(color: AppColors.primary),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
 
                     if (_isHalfDay) ...[

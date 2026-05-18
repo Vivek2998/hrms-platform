@@ -545,11 +545,20 @@ class _BirthdaySectionState extends ConsumerState<_BirthdaySection> {
       loading: () => const SizedBox.shrink(),
       error: (e, _) {
         debugPrint('Birthday fetch error: $e');
-        return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'Could not load birthday data. Pull down to refresh.',
+            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+          ),
+        );
       },
       data: (list) {
-        if (list.isEmpty) return const SizedBox.shrink();
-        final hasToday = list.any((e) => e.isToday);
+        // Re-filter client-side in case cache is stale (daysUntil is computed live)
+        final upcoming = list.where((e) => e.daysUntil >= 0 && e.daysUntil <= 6).toList()
+          ..sort((a, b) => a.daysUntil.compareTo(b.daysUntil));
+        if (upcoming.isEmpty) return const SizedBox.shrink();
+        final hasToday = upcoming.any((e) => e.isToday);
         final title = hasToday ? 'Birthdays Today 🎂' : 'Upcoming Birthdays 🎂';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,20 +571,20 @@ class _BirthdaySectionState extends ConsumerState<_BirthdaySection> {
                 height: 150,
                 child: PageView.builder(
                   controller: _pageController,
-                  itemCount: list.length,
+                  itemCount: upcoming.length,
                   onPageChanged: (i) => setState(() => _currentPage = i),
                   itemBuilder: (_, i) => _BirthdayCard(
-                    employee: list[i],
+                    employee: upcoming[i],
                     width: constraints.maxWidth,
                   ),
                 ),
               ),
             ),
-            if (list.length > 1) ...[
+            if (upcoming.length > 1) ...[
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(list.length, (i) {
+                children: List.generate(upcoming.length, (i) {
                   final active = i == _currentPage;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
@@ -653,7 +662,11 @@ class _BirthdayCard extends StatelessWidget {
       : const Color(0xFF4F46E5);
 
   String get _birthdayDateStr {
-    final date = DateTime.now().add(Duration(days: employee.daysUntil));
+    final now = DateTime.now();
+    var date = DateTime(now.year, employee.dobMonth, employee.dobDay);
+    if (date.isBefore(DateTime(now.year, now.month, now.day))) {
+      date = DateTime(now.year + 1, employee.dobMonth, employee.dobDay);
+    }
     return DateFormat('d MMMM').format(date);
   }
 
