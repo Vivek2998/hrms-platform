@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { downloadCsv } from '@/lib/downloadCsv';
 import { toast } from 'sonner';
+import type { AxiosError } from 'axios';
 import { Plus, Play, Eye, CheckCircle, Download } from 'lucide-react';
+import { PlanGatePrompt } from '@/components/ui/plan-gate-prompt';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -251,9 +253,13 @@ function PayslipListDialog({
 export default function PayrollPage() {
   const [showNew, setShowNew] = useState(false);
   const [viewingRun, setViewingRun] = useState<PayrollRun | null>(null);
-  const { data, isLoading } = usePayrollRuns({ limit: 20 });
+  const { data, isLoading, error } = usePayrollRuns({ limit: 20 });
   const processMutation = useProcessPayrollRun();
   const markPaidMutation = useMarkPayrollPaid();
+
+  if ((error as AxiosError | null)?.response?.status === 402) {
+    return <PlanGatePrompt feature="Payroll" requiredPlan="Starter" />;
+  }
 
   return (
     <div className="space-y-6">

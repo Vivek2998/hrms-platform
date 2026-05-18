@@ -40,7 +40,7 @@ const schema = z.object({
     }),
   dateOfBirth: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
-  bloodGroup: z.string().optional(),
+  bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']).optional(),
   maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']).optional(),
   workEmail: z.string().email('Invalid work email'),
   employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT']),
@@ -96,8 +96,8 @@ function Field({
   children,
 }: {
   label: string;
-  error?: string;
-  required?: boolean;
+  error?: string | undefined;
+  required?: boolean | undefined;
   children: React.ReactNode;
 }) {
   return (
@@ -125,7 +125,7 @@ function buildDefaults(employee: Employee): FormValues {
     phone: employee.phone ?? '',
     dateOfBirth: toDateInput(employee.dateOfBirth),
     gender: employee.gender as FormValues['gender'],
-    bloodGroup: employee.bloodGroup ?? '',
+    bloodGroup: employee.bloodGroup,
     maritalStatus: employee.maritalStatus as FormValues['maritalStatus'],
     workEmail: employee.workEmail ?? '',
     employmentType: (employee.employmentType ?? 'FULL_TIME') as FormValues['employmentType'],
@@ -195,80 +195,73 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
   const toIso = (date?: string) => (date ? new Date(date).toISOString() : undefined);
 
   const onSubmit = (values: FormValues) => {
-    const payload = {
+    const p: Partial<Employee> = {
       firstName: values.firstName,
       lastName: values.lastName,
       email: values.email,
       workEmail: values.workEmail,
-      phone: values.phone || undefined,
-      dateOfBirth: toIso(values.dateOfBirth),
-      gender: values.gender,
-      bloodGroup: values.bloodGroup || undefined,
-      maritalStatus: values.maritalStatus,
       employmentType: values.employmentType,
-      designation: values.designation || undefined,
-      departmentId: values.departmentId || undefined,
-      managerId: values.managerId || undefined,
-      dateOfJoining: toIso(values.dateOfJoining),
-      noticePeriodDays: values.noticePeriodDays ? parseInt(values.noticePeriodDays) : undefined,
-      presentAddress:
-        values.presentLine1 || values.presentCity
-          ? {
-              line1: values.presentLine1,
-              line2: values.presentLine2,
-              city: values.presentCity,
-              state: values.presentState,
-              pincode: values.presentPincode,
-              country: 'IN',
-            }
-          : undefined,
-      permanentAddress:
-        values.permLine1 || values.permCity
-          ? {
-              line1: values.permLine1,
-              line2: values.permLine2,
-              city: values.permCity,
-              state: values.permState,
-              pincode: values.permPincode,
-              country: 'IN',
-            }
-          : undefined,
-      emergencyContact:
-        values.emergencyName || values.emergencyPhone
-          ? {
-              name: values.emergencyName,
-              phone: values.emergencyPhone,
-              relationship: values.emergencyRelation,
-            }
-          : undefined,
-      educationDetails:
-        values.eduDegree || values.eduInstitution
-          ? {
-              degree: values.eduDegree,
-              institution: values.eduInstitution,
-              year: values.eduYear ? parseInt(values.eduYear) : undefined,
-            }
-          : undefined,
-      experienceDetails:
-        values.expTotalYears || values.expLastCompany
-          ? {
-              totalYears: values.expTotalYears ? parseFloat(values.expTotalYears) : undefined,
-              lastCompany: values.expLastCompany,
-              lastDesignation: values.expLastDesignation,
-            }
-          : undefined,
-      panNumber: values.panNumber || undefined,
-      aadhaarNumber: values.aadhaarNumber || undefined,
-      pfAccountNumber: values.pfAccountNumber || undefined,
-      esiNumber: values.esiNumber || undefined,
-      uanNumber: values.uanNumber || undefined,
-      bankName: values.bankName || undefined,
-      bankIfsc: values.bankIfsc || undefined,
-      bankAccountNumber: values.bankAccountNumber || undefined,
-      bankBranch: values.bankBranch || undefined,
     };
+    if (values.gender) p.gender = values.gender;
+    if (values.maritalStatus) p.maritalStatus = values.maritalStatus;
+    if (values.phone) p.phone = values.phone;
+    if (values.dateOfBirth) p.dateOfBirth = new Date(values.dateOfBirth).toISOString();
+    if (values.bloodGroup) p.bloodGroup = values.bloodGroup;
+    if (values.designation) p.designation = values.designation;
+    if (values.departmentId) p.departmentId = values.departmentId;
+    if (values.managerId) p.managerId = values.managerId;
+    if (values.dateOfJoining) p.dateOfJoining = new Date(values.dateOfJoining).toISOString();
+    if (values.noticePeriodDays) p.noticePeriodDays = parseInt(values.noticePeriodDays);
+    if (values.presentLine1 || values.presentCity) {
+      const addr: NonNullable<typeof p.presentAddress> = { country: 'IN' };
+      if (values.presentLine1) addr.line1 = values.presentLine1;
+      if (values.presentLine2) addr.line2 = values.presentLine2;
+      if (values.presentCity) addr.city = values.presentCity;
+      if (values.presentState) addr.state = values.presentState;
+      if (values.presentPincode) addr.pincode = values.presentPincode;
+      p.presentAddress = addr;
+    }
+    if (values.permLine1 || values.permCity) {
+      const addr: NonNullable<typeof p.permanentAddress> = { country: 'IN' };
+      if (values.permLine1) addr.line1 = values.permLine1;
+      if (values.permLine2) addr.line2 = values.permLine2;
+      if (values.permCity) addr.city = values.permCity;
+      if (values.permState) addr.state = values.permState;
+      if (values.permPincode) addr.pincode = values.permPincode;
+      p.permanentAddress = addr;
+    }
+    if (values.emergencyName || values.emergencyPhone) {
+      const contact: NonNullable<typeof p.emergencyContact> = {};
+      if (values.emergencyName) contact.name = values.emergencyName;
+      if (values.emergencyPhone) contact.phone = values.emergencyPhone;
+      if (values.emergencyRelation) contact.relationship = values.emergencyRelation;
+      p.emergencyContact = contact;
+    }
+    if (values.eduDegree || values.eduInstitution) {
+      const edu: NonNullable<typeof p.educationDetails> = {};
+      if (values.eduDegree) edu.degree = values.eduDegree;
+      if (values.eduInstitution) edu.institution = values.eduInstitution;
+      if (values.eduYear) edu.year = parseInt(values.eduYear);
+      p.educationDetails = edu;
+    }
+    if (values.expTotalYears || values.expLastCompany) {
+      const exp: NonNullable<typeof p.experienceDetails> = {};
+      if (values.expTotalYears) exp.totalYears = parseFloat(values.expTotalYears);
+      if (values.expLastCompany) exp.lastCompany = values.expLastCompany;
+      if (values.expLastDesignation) exp.lastDesignation = values.expLastDesignation;
+      p.experienceDetails = exp;
+    }
+    if (values.panNumber) p.panNumber = values.panNumber;
+    if (values.aadhaarNumber) p.aadhaarNumber = values.aadhaarNumber;
+    if (values.pfAccountNumber) p.pfAccountNumber = values.pfAccountNumber;
+    if (values.esiNumber) p.esiNumber = values.esiNumber;
+    if (values.uanNumber) p.uanNumber = values.uanNumber;
+    if (values.bankName) p.bankName = values.bankName;
+    if (values.bankIfsc) p.bankIfsc = values.bankIfsc;
+    if (values.bankAccountNumber) p.bankAccountNumber = values.bankAccountNumber;
+    if (values.bankBranch) p.bankBranch = values.bankBranch;
 
-    updateEmployee(payload, { onSuccess: onClose });
+    updateEmployee(p, { onSuccess: onClose });
   };
 
   return (

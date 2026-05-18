@@ -12,6 +12,10 @@ export interface MyProfile {
   dateOfBirth: string | null;
   bloodGroup: string | null;
   maritalStatus: string | null;
+  designation: string | null;
+  dateOfJoining: string | null;
+  department: { id: string; name: string } | null;
+  officeLocation: { id: string; name: string } | null;
   presentAddress: {
     line1?: string; line2?: string; city?: string;
     state?: string; pincode?: string; country?: string;

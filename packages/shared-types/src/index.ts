@@ -27,7 +27,7 @@ export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export type LeaveCategory = 'PAID' | 'UNPAID' | 'COMPENSATORY';
 
-export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'PROBATION';
+export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'CONSULTANT';
 
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_NOTICE' | 'TERMINATED' | 'ABSCONDED';
 
@@ -308,6 +308,8 @@ export interface Employee {
   noticePeriodDays?: number;
   department?: { id: string; name: string };
   manager?: { id: string; firstName: string; lastName: string };
+  officeLocationId?: string;
+  officeLocation?: { id: string; name: string };
   createdAt: string;
   updatedAt: string;
 }

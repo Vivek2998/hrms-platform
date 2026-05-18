@@ -100,10 +100,17 @@ function ComponentDialog({
   function handleClose() { form.reset(); onClose(); }
 
   function onSubmit(values: FormValues) {
+    const { defaultPercent, defaultAmount, displayOrder, ...required } = values;
+    const payload = {
+      ...required,
+      ...(defaultPercent !== undefined ? { defaultPercent } : {}),
+      ...(defaultAmount !== undefined ? { defaultAmount } : {}),
+      ...(displayOrder !== undefined ? { displayOrder } : {}),
+    };
     if (editing) {
-      update.mutate({ id: editing.id, ...values }, { onSuccess: handleClose });
+      update.mutate({ id: editing.id, ...payload }, { onSuccess: handleClose });
     } else {
-      create.mutate(values, { onSuccess: handleClose });
+      create.mutate(payload, { onSuccess: handleClose });
     }
   }
 

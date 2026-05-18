@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/table';
 
 type Plan = 'FREE' | 'STARTER' | 'GROWTH' | 'ENTERPRISE';
+type Tab = 'organizations' | 'assets';
 
 interface OrgRow {
   id: string;
@@ -43,6 +44,7 @@ interface OrgRow {
   isActive: boolean;
   createdAt: string;
   employeeCount: number;
+  logoUrl: string | null;
 }
 
 const PLAN_COLORS: Record<Plan, string> = {
@@ -80,10 +82,176 @@ function blankForm(): CreateOrgForm {
   };
 }
 
+// ── Assets editor dialog ───────────────────────────────────────────────────────
+
+interface AssetsDialogProps {
+  org: OrgRow | null;
+  onClose: () => void;
+}
+
+function AssetsDialog({ org, onClose }: AssetsDialogProps) {
+  const qc = useQueryClient();
+  const [logoUrl, setLogoUrl] = useState(org?.logoUrl ?? '');
+  const [error, setError] = useState('');
+
+  const save = useMutation({
+    mutationFn: () =>
+      superAdminApi.patch(`/super-admin/organizations/${org!.id}`, {
+        logoUrl: logoUrl.trim() || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['super-admin', 'organizations'] });
+      onClose();
+    },
+    onError: () => setError('Failed to save. Check the URL and try again.'),
+  });
+
+  if (!org) return null;
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Brand Assets — {org.name}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          {/* Logo preview */}
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo preview" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-2xl font-bold text-muted-foreground">
+                  {org.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs">Organization Logo URL</Label>
+              <Input
+                value={logoUrl}
+                onChange={(e) => { setLogoUrl(e.target.value); setError(''); }}
+                placeholder="https://cdn.example.com/logo.png"
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste a publicly accessible image URL (PNG, SVG, WebP recommended).
+              </p>
+            </div>
+          </div>
+
+          {/* Read-only info */}
+          <div className="rounded-lg border bg-muted/40 p-3 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Organization name</span>
+              <span className="font-medium">{org.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Slug</span>
+              <span className="font-mono text-xs">{org.slug}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Plan</span>
+              <PlanBadge plan={org.plan} />
+            </div>
+          </div>
+
+          {error && <p className="text-destructive text-sm">{error}</p>}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? 'Saving…' : 'Save Assets'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Assets tab ─────────────────────────────────────────────────────────────────
+
+function AssetsTab({ orgs }: { orgs: OrgRow[] }) {
+  const [editingOrg, setEditingOrg] = useState<OrgRow | null>(null);
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {orgs.map((org) => (
+          <Card key={org.id} className="flex flex-col">
+            <CardContent className="pt-5 flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                  {org.logoUrl ? (
+                    <img src={org.logoUrl} alt={org.name} className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="text-xl font-bold text-muted-foreground">
+                      {org.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{org.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono truncate">{org.slug}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Logo</span>
+                  {org.logoUrl ? (
+                    <Badge variant="default" className="text-xs">Set</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">Not set</Badge>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Plan</span>
+                  <PlanBadge plan={org.plan} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge variant={org.isActive ? 'default' : 'secondary'}>
+                    {org.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+            <div className="px-5 pb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setEditingOrg(org)}
+              >
+                Edit Assets
+              </Button>
+            </div>
+          </Card>
+        ))}
+
+        {orgs.length === 0 && (
+          <p className="col-span-full text-center text-muted-foreground py-10">
+            No organizations yet. Add one in the Organizations tab.
+          </p>
+        )}
+      </div>
+
+      {editingOrg && (
+        <AssetsDialog org={editingOrg} onClose={() => setEditingOrg(null)} />
+      )}
+    </>
+  );
+}
+
+// ── Main dashboard ─────────────────────────────────────────────────────────────
+
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
   const { admin, logout } = useSuperAdminAuthStore();
   const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState<Tab>('organizations');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<CreateOrgForm>(blankForm());
   const [formError, setFormError] = useState('');
@@ -133,7 +301,6 @@ export default function SuperAdminDashboard() {
 
   function set(field: keyof CreateOrgForm, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
-    // Auto-generate slug from name
     if (field === 'name') {
       setForm((f) => ({
         ...f,
@@ -197,83 +364,125 @@ export default function SuperAdminDashboard() {
           </Card>
         </div>
 
-        {/* Organizations Table */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base">Organizations</CardTitle>
-            <Button size="sm" onClick={() => setShowCreate(true)}>
-              + Add Organization
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <p className="text-center text-muted-foreground py-10">Loading…</p>
-            ) : orgs.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10">No organizations yet.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Organization</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Employees</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orgs.map((org) => (
-                    <TableRow key={org.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{org.name}</p>
-                          <p className="text-xs text-muted-foreground">{org.slug}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={org.plan}
-                          onValueChange={(v) => changePlan.mutate({ id: org.id, plan: v as Plan })}
-                        >
-                          <SelectTrigger className="h-7 w-32 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(['FREE', 'STARTER', 'GROWTH', 'ENTERPRISE'] as Plan[]).map((p) => (
-                              <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{org.employeeCount} / {org.maxEmployees}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={org.isActive ? 'default' : 'secondary'}>
-                          {org.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(org.createdAt).toLocaleDateString('en-IN')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7"
-                          onClick={() => toggleStatus.mutate({ id: org.id, isActive: !org.isActive })}
-                        >
-                          {org.isActive ? 'Deactivate' : 'Activate'}
-                        </Button>
-                      </TableCell>
+        {/* Tab bar */}
+        <div className="flex gap-1 border-b">
+          {([
+            { key: 'organizations', label: 'Organizations' },
+            { key: 'assets', label: 'Assets' },
+          ] as { key: Tab; label: string }[]).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === tab.key
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Organizations tab */}
+        {activeTab === 'organizations' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base">Organizations</CardTitle>
+              <Button size="sm" onClick={() => setShowCreate(true)}>
+                + Add Organization
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <p className="text-center text-muted-foreground py-10">Loading…</p>
+              ) : orgs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-10">No organizations yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Organization</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Employees</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {orgs.map((org) => (
+                      <TableRow key={org.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                              {org.logoUrl ? (
+                                <img src={org.logoUrl} alt={org.name} className="w-full h-full object-contain" />
+                              ) : (
+                                <span className="text-xs font-bold text-muted-foreground">
+                                  {org.name.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{org.name}</p>
+                              <p className="text-xs text-muted-foreground">{org.slug}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={org.plan}
+                            onValueChange={(v) => changePlan.mutate({ id: org.id, plan: v as Plan })}
+                          >
+                            <SelectTrigger className="h-7 w-32 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(['FREE', 'STARTER', 'GROWTH', 'ENTERPRISE'] as Plan[]).map((p) => (
+                                <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{org.employeeCount} / {org.maxEmployees}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={org.isActive ? 'default' : 'secondary'}>
+                            {org.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(org.createdAt).toLocaleDateString('en-IN')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => toggleStatus.mutate({ id: org.id, isActive: !org.isActive })}
+                          >
+                            {org.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Assets tab */}
+        {activeTab === 'assets' && (
+          isLoading ? (
+            <p className="text-center text-muted-foreground py-10">Loading…</p>
+          ) : (
+            <AssetsTab orgs={orgs} />
+          )
+        )}
       </main>
 
       {/* Create Organization Dialog */}

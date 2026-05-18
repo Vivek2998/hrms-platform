@@ -66,7 +66,7 @@ export interface CreateTemplateInput {
   }>;
 }
 
-export function useOnboardingTemplates() {
+export function useOnboardingTemplates({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ['onboarding', 'templates'],
     queryFn: async () => {
@@ -74,6 +74,7 @@ export function useOnboardingTemplates() {
       return res.data.data;
     },
     staleTime: 2 * 60 * 1000,
+    enabled,
   });
 }
 

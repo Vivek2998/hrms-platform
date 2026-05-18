@@ -33,8 +33,9 @@ interface ColSelectProps {
 }
 
 function ColSelect({ value, placeholder, options, onChange, className }: ColSelectProps) {
+  const rootProps = value ? { value } : {};
   return (
-    <SelectPrimitive.Root value={value || undefined} onValueChange={onChange}>
+    <SelectPrimitive.Root {...rootProps} onValueChange={onChange}>
       <SelectPrimitive.Trigger className={cn(triggerCls, className)}>
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon asChild>
@@ -65,12 +66,12 @@ function ColSelect({ value, placeholder, options, onChange, className }: ColSele
 // ─────────────────────────────────────────────
 
 interface DateSelectPickerProps {
-  value?: string;
+  value?: string | undefined;
   onChange: (value: string) => void;
   /** defaults to current year - 100 */
-  minYear?: number;
+  minYear?: number | undefined;
   /** defaults to current year; pass currentYear + 2 for future-date fields */
-  maxYear?: number;
+  maxYear?: number | undefined;
 }
 
 function parseParts(v?: string) {

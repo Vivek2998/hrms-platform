@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Camera, CreditCard, Home, Loader2, MapPin, Pencil, Phone, User, X } from 'lucide-react';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMyProfile, useUpdateMyProfile, type MyProfile } from '@/hooks/useProfile';
 import { useUploadFile } from '@/hooks/useUpload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,10 @@ interface FormState {
   ecName: string; ecPhone: string; ecRelationship: string;
   bankName: string; bankIfsc: string; bankAccount: string; bankBranch: string;
 }
+
+const maritalLabels: Record<string, string> = {
+  SINGLE: 'Single', MARRIED: 'Married', DIVORCED: 'Divorced', WIDOWED: 'Widowed',
+};
 
 function blankForm(): FormState {
   return {
@@ -59,12 +63,56 @@ function profileToForm(p: MyProfile): FormState {
   };
 }
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Read-only value display used when not in edit mode
+function ReadValue({ value, placeholder = 'Not provided' }: { value?: string; placeholder?: string }) {
+  return (
+    <p className="flex h-9 items-center text-sm font-medium text-slate-800">
+      {value?.trim() ? value : <span className="italic text-slate-400">{placeholder}</span>}
+    </p>
+  );
+}
+
 function F({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium text-slate-500">{label}</Label>
       {children}
     </div>
+  );
+}
+
+function SectionCard({
+  icon: Icon,
+  title,
+  description,
+  className,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className={cn('overflow-hidden border-slate-200 shadow-sm', className)}>
+      <CardHeader className="border-b border-slate-100 bg-slate-50/60 px-6 pb-4 pt-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800">
+            <Icon className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-sm font-semibold text-slate-800">{title}</CardTitle>
+            {description && <p className="mt-0.5 text-xs text-slate-400">{description}</p>}
+          </div>
+        </div>
+      </CardHeader>
+      {children}
+    </Card>
   );
 }
 
@@ -76,6 +124,7 @@ export default function SettingsPage() {
   const { mutate: uploadFile, isPending: isUploadingAvatar } = useUploadFile('avatars');
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(blankForm());
+  const [isEditing, setIsEditing] = useState(false);
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
@@ -104,222 +153,305 @@ export default function SettingsPage() {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function handleSave() {
-    save({
-      phone: form.phone || undefined,
-      dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : undefined,
-      bloodGroup: form.bloodGroup || undefined,
-      maritalStatus: (form.maritalStatus as MyProfile['maritalStatus']) || undefined,
-      presentAddress: {
-        line1: form.presentLine1, line2: form.presentLine2, city: form.presentCity,
-        state: form.presentState, pincode: form.presentPincode, country: 'IN',
-      },
-      permanentAddress: {
-        line1: form.permanentLine1, line2: form.permanentLine2, city: form.permanentCity,
-        state: form.permanentState, pincode: form.permanentPincode, country: 'IN',
-      },
-      emergencyContact: {
-        name: form.ecName, phone: form.ecPhone, relationship: form.ecRelationship,
-      },
-      bankName: form.bankName || undefined,
-      bankIfsc: form.bankIfsc || undefined,
-      bankAccountNumber: form.bankAccount || undefined,
-      bankBranch: form.bankBranch || undefined,
-    });
+  function handleCancel() {
+    if (profile) setForm(profileToForm(profile));
+    setIsEditing(false);
   }
 
+  function handleSave() {
+    save(
+      {
+        ...(form.phone ? { phone: form.phone } : {}),
+        ...(form.dateOfBirth ? { dateOfBirth: new Date(form.dateOfBirth).toISOString() } : {}),
+        ...(form.bloodGroup ? { bloodGroup: form.bloodGroup } : {}),
+        ...(form.maritalStatus ? { maritalStatus: form.maritalStatus as MyProfile['maritalStatus'] } : {}),
+        presentAddress: {
+          line1: form.presentLine1, line2: form.presentLine2, city: form.presentCity,
+          state: form.presentState, pincode: form.presentPincode, country: 'IN',
+        },
+        permanentAddress: {
+          line1: form.permanentLine1, line2: form.permanentLine2, city: form.permanentCity,
+          state: form.permanentState, pincode: form.permanentPincode, country: 'IN',
+        },
+        emergencyContact: {
+          name: form.ecName, phone: form.ecPhone, relationship: form.ecRelationship,
+        },
+        ...(form.bankName ? { bankName: form.bankName } : {}),
+        ...(form.bankIfsc ? { bankIfsc: form.bankIfsc } : {}),
+        ...(form.bankAccount ? { bankAccountNumber: form.bankAccount } : {}),
+        ...(form.bankBranch ? { bankBranch: form.bankBranch } : {}),
+      },
+      { onSuccess: () => setIsEditing(false) },
+    );
+  }
+
+  const heroStats: { label: string; value: string }[] = [
+    user?.employeeCode ? { label: 'Employee ID', value: user.employeeCode } : null,
+    profile?.department?.name ? { label: 'Department', value: profile.department.name } : null,
+    user?.role ? { label: 'Role', value: user.role.replace(/_/g, ' ').toLowerCase() } : null,
+    profile?.dateOfJoining ? { label: 'Joined', value: fmtDate(profile.dateOfJoining) } : null,
+    profile?.officeLocation?.name ? { label: 'Office Location', value: profile.officeLocation.name } : null,
+  ].filter((s): s is { label: string; value: string } => s != null);
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl space-y-6">
+
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and personal information</p>
+        <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
+        <p className="mt-1 text-sm text-slate-500">Manage your personal information and account settings</p>
       </div>
 
-      {/* Account overview — read-only */}
-      <Card className="max-w-2xl">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Account</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+      {/* ── Profile hero ── */}
+      <div className="relative overflow-hidden rounded-xl bg-linear-to-br from-slate-800 via-slate-800 to-slate-900 shadow-lg">
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <div className="relative z-10 p-6 sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
 
-          {/* ── Profile photo ── */}
-          <div className="flex items-center gap-4 pb-4 border-b border-border/50">
-            <div className="relative group">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={user?.avatarUrl ?? undefined} alt={user?.firstName} />
-                <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
-              </Avatar>
-              <button
-                type="button"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={isUploadingAvatar}
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
-                aria-label="Change profile photo"
-              >
-                {isUploadingAvatar
-                  ? <Loader2 className="h-5 w-5 animate-spin text-white" />
-                  : <Camera className="h-5 w-5 text-white" />}
-              </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
+            {/* Avatar + name block */}
+            <div className="flex min-w-0 flex-1 items-center gap-5">
+              <div className="group relative shrink-0">
+                <Avatar className="h-20 w-20 ring-4 ring-white/15 shadow-xl">
+                  <AvatarImage src={user?.avatarUrl ?? undefined} alt={user?.firstName} />
+                  <AvatarFallback className="bg-slate-700 text-2xl font-bold text-white">{initials}</AvatarFallback>
+                </Avatar>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
+                  aria-label="Change profile photo"
+                >
+                  {isUploadingAvatar
+                    ? <Loader2 className="h-5 w-5 animate-spin text-white" />
+                    : <Camera className="h-5 w-5 text-white" />}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-xl font-bold leading-tight text-white">
+                  {user?.firstName} {user?.lastName}
+                </h2>
+                {profile?.designation && (
+                  <p className="mt-1 text-sm text-slate-300">{profile.designation}</p>
+                )}
+                <p className="mt-0.5 truncate text-xs text-slate-400">{user?.workEmail}</p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">{user?.firstName} {user?.lastName}</p>
-              <p className="text-muted-foreground text-xs mt-0.5">{user?.workEmail}</p>
-            </div>
-          </div>
 
-          <div className="flex justify-between py-1 border-b border-border/50">
-            <span className="text-muted-foreground">Name</span>
-            <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-          </div>
-          <div className="flex justify-between py-1 border-b border-border/50">
-            <span className="text-muted-foreground">Work Email</span>
-            <span className="font-medium">{user?.workEmail}</span>
-          </div>
-          <div className="flex justify-between py-1 border-b border-border/50">
-            <span className="text-muted-foreground">Employee Code</span>
-            <span className="font-medium">{user?.employeeCode}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Role</span>
-            <Badge variant="secondary">{user?.role}</Badge>
-          </div>
-        </CardContent>
-      </Card>
+            {heroStats.length > 0 && (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-xl border border-white/10 bg-white/5 p-4 lg:w-72 lg:shrink-0">
+                {heroStats.map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-xs text-slate-400">{label}</p>
+                    <p className="mt-0.5 text-sm font-semibold capitalize text-white">{value.toLowerCase()}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Profile / Save Changes + info banner + Cancel — same row */}
+      {/* Always-rendered row — opacity swaps, never layout shifts */}
+      <div className="flex items-center justify-between gap-4">
+        <div className={cn(
+          'flex h-9 flex-1 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm text-blue-700 transition-opacity duration-150',
+          !isEditing && 'pointer-events-none opacity-0',
+        )}>
+          <Pencil className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+          <span>You are editing your profile. Click <strong>Save Changes</strong> when done.</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCancel}
+            disabled={isPending}
+            className={cn('h-9 gap-1.5 transition-opacity duration-150', !isEditing && 'pointer-events-none opacity-0')}
+          >
+            <X className="h-3.5 w-3.5" />
+            Cancel
+          </Button>
+          {!isEditing ? (
+            <Button
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="h-9 w-[130px] justify-center gap-2 bg-slate-800 text-white hover:bg-slate-700 shadow-sm"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit Profile
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isPending}
+              className="h-9 w-[130px] justify-center bg-slate-800 text-white hover:bg-slate-700 shadow-sm"
+            >
+              {isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</>
+              ) : 'Save Changes'}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Form sections ── */}
       {isLoading ? (
-        <div className="max-w-2xl space-y-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
         </div>
       ) : (
-        <div className="max-w-2xl space-y-6">
+        <>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
-          {/* Personal Details */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Personal Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <F label="Phone">
-                <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+91 98765 43210" />
-              </F>
-              <F label="Date of Birth">
-                <DateSelectPicker value={form.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} />
-              </F>
-              <F label="Blood Group">
-                <Select value={form.bloodGroup} onValueChange={(v) => set('bloodGroup', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((g) => (
-                      <SelectItem key={g} value={g}>{g}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </F>
-              <F label="Marital Status">
-                <Select value={form.maritalStatus} onValueChange={(v) => set('maritalStatus', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {[['SINGLE', 'Single'], ['MARRIED', 'Married'], ['DIVORCED', 'Divorced'], ['WIDOWED', 'Widowed']].map(([v, l]) => (
-                      <SelectItem key={v} value={v}>{l}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </F>
-            </CardContent>
-          </Card>
-
-          {/* Current Address */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Current Address</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {(['presentLine1', 'presentLine2', 'presentCity', 'presentState', 'presentPincode'] as const).map((key) => {
-                const labels: Record<typeof key, string> = {
-                  presentLine1: 'Address Line 1', presentLine2: 'Address Line 2',
-                  presentCity: 'City', presentState: 'State', presentPincode: 'Pincode',
-                };
-                return (
-                  <F key={key} label={labels[key]}>
-                    <Input value={form[key]} onChange={(e) => set(key, e.target.value)} />
+            {/* Left column */}
+            <div className="flex flex-col gap-4">
+              <SectionCard icon={User} title="Personal Details" description="Basic personal information">
+                <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                  <F label="Phone Number">
+                    {isEditing
+                      ? <Input className="h-9" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+91 98765 43210" />
+                      : <ReadValue value={form.phone} />}
                   </F>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Permanent Address */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Permanent Address</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {(['permanentLine1', 'permanentLine2', 'permanentCity', 'permanentState', 'permanentPincode'] as const).map((key) => {
-                const labels: Record<typeof key, string> = {
-                  permanentLine1: 'Address Line 1', permanentLine2: 'Address Line 2',
-                  permanentCity: 'City', permanentState: 'State', permanentPincode: 'Pincode',
-                };
-                return (
-                  <F key={key} label={labels[key]}>
-                    <Input value={form[key]} onChange={(e) => set(key, e.target.value)} />
+                  <F label="Date of Birth">
+                    {isEditing
+                      ? <DateSelectPicker value={form.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} />
+                      : <ReadValue value={form.dateOfBirth ? fmtDate(form.dateOfBirth) : ''} />}
                   </F>
-                );
-              })}
-            </CardContent>
-          </Card>
+                  <F label="Blood Group">
+                    {isEditing
+                      ? (
+                        <Select value={form.bloodGroup} onValueChange={(v) => set('bloodGroup', v)}>
+                          <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((g) => (
+                              <SelectItem key={g} value={g}>{g}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )
+                      : <ReadValue value={form.bloodGroup} />}
+                  </F>
+                  <F label="Marital Status">
+                    {isEditing
+                      ? (
+                        <Select value={form.maritalStatus} onValueChange={(v) => set('maritalStatus', v)}>
+                          <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            {(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'] as const).map((v) => (
+                              <SelectItem key={v} value={v}>{maritalLabels[v]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )
+                      : <ReadValue value={maritalLabels[form.maritalStatus] ?? form.maritalStatus} />}
+                  </F>
+                </CardContent>
+              </SectionCard>
 
-          {/* Emergency Contact */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Emergency Contact</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <F label="Contact Name">
-                <Input value={form.ecName} onChange={(e) => set('ecName', e.target.value)} placeholder="Full name" />
-              </F>
-              <F label="Phone">
-                <Input value={form.ecPhone} onChange={(e) => set('ecPhone', e.target.value)} placeholder="+91 98765 43210" />
-              </F>
-              <F label="Relationship">
-                <Input value={form.ecRelationship} onChange={(e) => set('ecRelationship', e.target.value)} placeholder="e.g. Spouse, Parent" />
-              </F>
-            </CardContent>
-          </Card>
+              <SectionCard icon={Phone} title="Emergency Contact" description="Someone we can reach in case of emergency">
+                <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                  <F label="Contact Name">
+                    {isEditing
+                      ? <Input className="h-9" value={form.ecName} onChange={(e) => set('ecName', e.target.value)} placeholder="Full name" />
+                      : <ReadValue value={form.ecName} />}
+                  </F>
+                  <F label="Phone Number">
+                    {isEditing
+                      ? <Input className="h-9" value={form.ecPhone} onChange={(e) => set('ecPhone', e.target.value)} placeholder="+91 98765 43210" />
+                      : <ReadValue value={form.ecPhone} />}
+                  </F>
+                  <F label="Relationship">
+                    {isEditing
+                      ? <Input className="h-9" value={form.ecRelationship} onChange={(e) => set('ecRelationship', e.target.value)} placeholder="e.g. Spouse, Parent" />
+                      : <ReadValue value={form.ecRelationship} />}
+                  </F>
+                </CardContent>
+              </SectionCard>
 
-          {/* Bank Details */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Bank Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <F label="Bank Name">
-                <Input value={form.bankName} onChange={(e) => set('bankName', e.target.value)} placeholder="e.g. HDFC Bank" />
-              </F>
-              <F label="IFSC Code">
-                <Input value={form.bankIfsc} onChange={(e) => set('bankIfsc', e.target.value.toUpperCase())} placeholder="HDFC0001234" />
-              </F>
-              <F label="Account Number">
-                <Input value={form.bankAccount} onChange={(e) => set('bankAccount', e.target.value)} placeholder="Account number" />
-              </F>
-              <F label="Branch">
-                <Input value={form.bankBranch} onChange={(e) => set('bankBranch', e.target.value)} placeholder="Branch name" />
-              </F>
-            </CardContent>
-          </Card>
+              <SectionCard icon={CreditCard} title="Bank Details" description="For salary and reimbursement credits" className="flex-1">
+                <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                  <F label="Bank Name">
+                    {isEditing
+                      ? <Input className="h-9" value={form.bankName} onChange={(e) => set('bankName', e.target.value)} placeholder="e.g. HDFC Bank" />
+                      : <ReadValue value={form.bankName} />}
+                  </F>
+                  <F label="IFSC Code">
+                    {isEditing
+                      ? <Input className="h-9" value={form.bankIfsc} onChange={(e) => set('bankIfsc', e.target.value.toUpperCase())} placeholder="HDFC0001234" />
+                      : <ReadValue value={form.bankIfsc} />}
+                  </F>
+                  <F label="Account Number">
+                    {isEditing
+                      ? <Input className="h-9" value={form.bankAccount} onChange={(e) => set('bankAccount', e.target.value)} placeholder="Account number" />
+                      : <ReadValue value={form.bankAccount} />}
+                  </F>
+                  <F label="Branch Name">
+                    {isEditing
+                      ? <Input className="h-9" value={form.bankBranch} onChange={(e) => set('bankBranch', e.target.value)} placeholder="Branch name" />
+                      : <ReadValue value={form.bankBranch} />}
+                  </F>
+                </CardContent>
+              </SectionCard>
+            </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={isPending}>
-              {isPending ? 'Saving…' : 'Save Changes'}
-            </Button>
+            {/* Right column */}
+            <div className="flex flex-col gap-4">
+              <SectionCard icon={MapPin} title="Current Address" description="Where you currently reside">
+                <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                  {(['presentLine1', 'presentLine2', 'presentCity', 'presentState', 'presentPincode'] as const).map((key) => {
+                    const labels: Record<typeof key, string> = {
+                      presentLine1: 'Address Line 1', presentLine2: 'Address Line 2',
+                      presentCity: 'City', presentState: 'State', presentPincode: 'Pincode',
+                    };
+                    return (
+                      <F key={key} label={labels[key]}>
+                        {isEditing
+                          ? <Input className="h-9" value={form[key]} onChange={(e) => set(key, e.target.value)} />
+                          : <ReadValue value={form[key]} />}
+                      </F>
+                    );
+                  })}
+                </CardContent>
+              </SectionCard>
+
+              <SectionCard icon={Home} title="Permanent Address" description="Your permanent / home address" className="flex-1">
+                <CardContent className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                  {(['permanentLine1', 'permanentLine2', 'permanentCity', 'permanentState', 'permanentPincode'] as const).map((key) => {
+                    const labels: Record<typeof key, string> = {
+                      permanentLine1: 'Address Line 1', permanentLine2: 'Address Line 2',
+                      permanentCity: 'City', permanentState: 'State', permanentPincode: 'Pincode',
+                    };
+                    return (
+                      <F key={key} label={labels[key]}>
+                        {isEditing
+                          ? <Input className="h-9" value={form[key]} onChange={(e) => set(key, e.target.value)} />
+                          : <ReadValue value={form[key]} />}
+                      </F>
+                    );
+                  })}
+                </CardContent>
+              </SectionCard>
+            </div>
           </div>
-        </div>
+
+        </>
       )}
     </div>
   );

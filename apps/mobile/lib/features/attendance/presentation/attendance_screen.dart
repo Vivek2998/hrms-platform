@@ -8,26 +8,51 @@ import '../data/models/attendance_model.dart';
 class AttendanceScreen extends ConsumerWidget {
   const AttendanceScreen({super.key});
 
+  CachedAttendanceRecord? _findToday(List<CachedAttendanceRecord> records) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final r in records) {
+      final d = r.date.toLocal();
+      if (d.year == today.year && d.month == today.month && d.day == today.day) {
+        return r;
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final attendanceAsync =
         ref.watch(attendanceListProvider(month: now.month, year: now.year));
 
+    final todayRecord = attendanceAsync.hasValue
+        ? _findToday(attendanceAsync.value!)
+        : null;
+    final punchedIn = todayRecord?.punchIn != null;
+    final punchedOut = todayRecord?.punchOut != null;
+
+    String fabLabel;
+    IconData fabIcon;
+    if (punchedIn && punchedOut) {
+      fabLabel = 'Done for Today';
+      fabIcon = Icons.check_circle_outline;
+    } else if (punchedIn) {
+      fabLabel = 'Punch Out';
+      fabIcon = Icons.logout;
+    } else {
+      fabLabel = 'Punch In';
+      fabIcon = Icons.fingerprint;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Attendance'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(attendanceListProvider),
-          ),
-        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/attendance/punch'),
-        icon: const Icon(Icons.fingerprint),
-        label: const Text('Punch In/Out'),
+        icon: Icon(fabIcon),
+        label: Text(fabLabel),
       ),
       body: attendanceAsync.when(
         data: (records) {

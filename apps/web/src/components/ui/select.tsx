@@ -2,7 +2,17 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const Select = SelectPrimitive.Root;
+// Wrap Root so `value?: string | undefined` is accepted (exactOptionalPropertyTypes compatibility)
+function Select({
+  value,
+  ...props
+}: Omit<React.ComponentProps<typeof SelectPrimitive.Root>, 'value'> & {
+  value?: string | undefined;
+}) {
+  const rootProps = value !== undefined ? { ...props, value } : props;
+  return <SelectPrimitive.Root {...rootProps} />;
+}
+
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 

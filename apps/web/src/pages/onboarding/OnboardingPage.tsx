@@ -201,7 +201,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
 
 function AssignDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { mutate, isPending } = useCreateOnboardingAssignment();
-  const { data: templates } = useOnboardingTemplates();
+  const { data: templates } = useOnboardingTemplates({ enabled: open });
   const { data: employeesData } = useEmployees({ limit: 100 });
   const [templateId, setTemplateId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
@@ -362,7 +362,7 @@ export default function OnboardingPage() {
   const [showAssign, setShowAssign] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const { data: assignments, isLoading: loadingAssignments } = useOnboardingAssignments();
-  const { data: templates, isLoading: loadingTemplates } = useOnboardingTemplates();
+  const { data: templates, isLoading: loadingTemplates } = useOnboardingTemplates({ enabled: isHR });
   const { mutate: deleteTemplate } = useDeleteOnboardingTemplate();
 
   return (

@@ -62,13 +62,14 @@ function DeptDialog({
       code: editing?.code ?? '',
       description: editing?.description ?? '',
     },
-    values: editing
-      ? { name: editing.name, code: editing.code, description: editing.description ?? '' }
-      : undefined,
+    ...(editing ? {
+      values: { name: editing.name, code: editing.code, description: editing.description ?? '' },
+    } : {}),
   });
 
   const onSubmit = (data: DeptForm) => {
-    const payload = { ...data, code: data.code.toUpperCase() };
+    const { description, ...required } = data;
+    const payload = { ...required, code: required.code.toUpperCase(), ...(description ? { description } : {}) };
     if (editing) {
       updateMutation.mutate(payload, { onSuccess: onClose });
     } else {
@@ -127,7 +128,7 @@ export default function DepartmentsPage() {
   const [editing, setEditing] = useState<Department | undefined>();
   const [deleting, setDeleting] = useState<Department | undefined>();
 
-  const { data: departments = [], isLoading } = useDepartments({ search: search || undefined });
+  const { data: departments = [], isLoading } = useDepartments(search ? { search } : {});
   const deleteMutation = useDeleteDepartment();
 
   const confirmDelete = () => {

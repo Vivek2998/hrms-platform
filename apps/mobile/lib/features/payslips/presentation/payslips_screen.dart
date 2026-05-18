@@ -20,12 +20,6 @@ class PayslipsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Payslips'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(payslipListProvider),
-          ),
-        ],
       ),
       body: payslipsAsync.when(
         data: (payslips) {

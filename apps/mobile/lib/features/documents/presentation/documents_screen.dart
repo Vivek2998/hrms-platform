@@ -17,12 +17,6 @@ class DocumentsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Documents'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(myDocumentsProvider),
-          ),
-        ],
       ),
       body: docsAsync.when(
         data: (docs) {

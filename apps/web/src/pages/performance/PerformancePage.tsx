@@ -112,7 +112,7 @@ function AddGoalDialog({ cycleId, open, onClose }: { cycleId: string; open: bool
 
   async function onSubmit(data: { title: string; description: string; targetValue: string; dueDate: string }) {
     try {
-      await mutateAsync({ cycleId, title: data.title, description: data.description || undefined, targetValue: data.targetValue || undefined, dueDate: data.dueDate || undefined });
+      await mutateAsync({ cycleId, title: data.title, ...(data.description ? { description: data.description } : {}), ...(data.targetValue ? { targetValue: data.targetValue } : {}), ...(data.dueDate ? { dueDate: data.dueDate } : {}) });
       toast.success('Goal added');
       reset();
       onClose();
@@ -271,7 +271,7 @@ function ReviewTab({ cycleId }: { cycleId: string | null }) {
                   <Textarea placeholder="Comments..." rows={3} value={selfComments} onChange={(e) => { setSelfComments(e.target.value); }} />
                   <Button size="sm" disabled={selfRating === 0 || selfPending} onClick={async () => {
                     try {
-                      await submitSelf({ reviewId: review.id, cycleId: cycleId!, selfRating, selfComments: selfComments || undefined });
+                      await submitSelf({ reviewId: review.id, cycleId: cycleId!, selfRating, ...(selfComments ? { selfComments } : {}) });
                       toast.success('Self assessment submitted');
                     } catch { toast.error('Failed to submit'); }
                   }}>
@@ -296,7 +296,7 @@ function ReviewTab({ cycleId }: { cycleId: string | null }) {
                   <Textarea placeholder="Manager comments..." rows={3} value={managerComments} onChange={(e) => { setManagerComments(e.target.value); }} />
                   <Button size="sm" disabled={managerRating === 0 || managerPending} onClick={async () => {
                     try {
-                      await submitManager({ reviewId: review.id, cycleId: cycleId!, managerRating, managerComments: managerComments || undefined });
+                      await submitManager({ reviewId: review.id, cycleId: cycleId!, managerRating, ...(managerComments ? { managerComments } : {}) });
                       toast.success('Manager review submitted');
                     } catch { toast.error('Failed to submit'); }
                   }}>
@@ -344,7 +344,7 @@ function PeerFeedbackTab({ cycleId }: { cycleId: string | null }) {
           <div className="space-y-1"><Label>Areas for Improvement</Label><Textarea placeholder="Where can they improve?" rows={2} value={improvements} onChange={(e) => { setImprovements(e.target.value); }} /></div>
           <Button size="sm" disabled={!toId || isPending} onClick={async () => {
             try {
-              await submit({ cycleId: cycleId!, toId, rating: rating || undefined, strengths: strengths || undefined, improvements: improvements || undefined });
+              await submit({ cycleId: cycleId!, toId, ...(rating ? { rating } : {}), ...(strengths ? { strengths } : {}), ...(improvements ? { improvements } : {}) });
               toast.success('Feedback submitted');
               setToId(''); setRating(0); setStrengths(''); setImprovements('');
             } catch { toast.error('Failed to submit feedback'); }

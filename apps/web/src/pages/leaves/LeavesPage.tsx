@@ -200,6 +200,7 @@ function EditBalanceDialog({
   if (!target) return null;
 
   function handleSave() {
+    if (!target) return;
     const val = parseFloat(allocated);
     if (isNaN(val) || val < 0) return;
     upsertMutation.mutate(

@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Plus, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, CalendarIcon, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -111,19 +114,113 @@ function ReviewDialog({ target, onClose }: { target: ReviewTarget | null; onClos
   );
 }
 
+function _DatePickerField({
+  label,
+  value,
+  disabled,
+  minDate,
+  maxDate,
+  onChange,
+  info,
+}: {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  minDate?: Date;
+  maxDate?: Date;
+  onChange: (value: string) => void;
+  info?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = value ? new Date(value + 'T00:00:00') : undefined;
+
+  return (
+    <div className="space-y-1">
+      <Label>{label}</Label>
+      <Popover open={open && !disabled} onOpenChange={(o) => { if (!disabled) setOpen(o); }}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className={cn(
+              'flex items-center gap-2 w-full rounded-md border px-3 py-2 text-sm text-left transition-colors',
+              disabled
+                ? 'opacity-50 cursor-default bg-muted/30'
+                : 'cursor-pointer hover:bg-muted/20 bg-background',
+              open && !disabled && 'ring-1 ring-ring',
+            )}
+          >
+            <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className={cn('flex-1', selected ? 'text-foreground' : 'text-muted-foreground')}>
+              {selected ? fmtDate(value) : 'Select date'}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(date) => {
+              if (date) { onChange(format(date, 'yyyy-MM-dd')); setOpen(false); }
+            }}
+            disabled={(date) => {
+              const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+              if (minDate) {
+                const min = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+                if (d < min) return true;
+              }
+              if (maxDate) {
+                const max = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
+                if (d > max) return true;
+              }
+              return false;
+            }}
+            defaultMonth={selected ?? minDate}
+            autoFocus
+          />
+        </PopoverContent>
+      </Popover>
+      {info && (
+        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Info className="h-3 w-3 shrink-0" />
+          {info}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ApplyDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const createMutation = useCreateCompOff();
   const [form, setForm] = useState({ workedDate: '', requestedDate: '', reason: '' });
   const today = new Date().toISOString().split('T')[0];
 
+  const minCompOffDate = new Date(today + 'T00:00:00');
+  const minWorkedDate = form.requestedDate
+    ? new Date(new Date(form.requestedDate + 'T00:00:00').getTime() - 90 * 24 * 60 * 60 * 1000)
+    : undefined;
+  const maxWorkedDate = form.requestedDate
+    ? new Date(form.requestedDate + 'T00:00:00')
+    : undefined;
+
+  function handleCompOffDateChange(value: string) {
+    setForm((f) => {
+      const minStr = value
+        ? new Date(new Date(value + 'T00:00:00').getTime() - 90 * 24 * 60 * 60 * 1000)
+            .toISOString().split('T')[0]
+        : '';
+      const newWorked =
+        f.workedDate && value && minStr
+          ? f.workedDate >= minStr && f.workedDate <= value ? f.workedDate : ''
+          : '';
+      return { ...f, requestedDate: value, workedDate: newWorked };
+    });
+  }
+
   function handleSubmit() {
-    if (!form.workedDate || !form.reason.trim()) return;
+    if (!form.requestedDate || !form.workedDate || !form.reason.trim()) return;
     createMutation.mutate(
-      {
-        workedDate: form.workedDate,
-        ...(form.requestedDate ? { requestedDate: form.requestedDate } : {}),
-        reason: form.reason.trim(),
-      },
+      { workedDate: form.workedDate, requestedDate: form.requestedDate, reason: form.reason.trim() },
       { onSuccess: () => { setForm({ workedDate: '', requestedDate: '', reason: '' }); onClose(); } },
     );
   }
@@ -138,24 +235,24 @@ function ApplyDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
           <p className="text-muted-foreground text-sm">
             Claim a compensatory off for a day you worked during a weekend or holiday.
           </p>
-          <div className="space-y-1">
-            <Label>Date Worked</Label>
-            <Input
-              type="date"
-              value={form.workedDate}
-              max={today}
-              onChange={(e) => { setForm((f) => ({ ...f, workedDate: e.target.value })); }}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Preferred Day Off <span className="text-muted-foreground">(optional)</span></Label>
-            <Input
-              type="date"
-              value={form.requestedDate}
-              min={today}
-              onChange={(e) => { setForm((f) => ({ ...f, requestedDate: e.target.value })); }}
-            />
-          </div>
+
+          <_DatePickerField
+            label="Comp-Off Date"
+            value={form.requestedDate}
+            minDate={minCompOffDate}
+            onChange={handleCompOffDateChange}
+          />
+
+          <_DatePickerField
+            label="Date Worked"
+            value={form.workedDate}
+            disabled={!form.requestedDate}
+            minDate={minWorkedDate}
+            maxDate={maxWorkedDate}
+            onChange={(v) => setForm((f) => ({ ...f, workedDate: v }))}
+            info={!form.requestedDate ? 'Select comp-off date first' : undefined}
+          />
+
           <div className="space-y-1">
             <Label>Reason / Work Done</Label>
             <Textarea
@@ -173,7 +270,7 @@ function ApplyDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             onClick={handleSubmit}
-            disabled={createMutation.isPending || !form.workedDate || !form.reason.trim()}
+            disabled={createMutation.isPending || !form.requestedDate || !form.workedDate || !form.reason.trim()}
           >
             {createMutation.isPending ? 'Submitting…' : 'Submit Request'}
           </Button>

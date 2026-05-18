@@ -215,7 +215,9 @@ function ShiftDialog({
 }
 
 function fmt12(time: string) {
-  const [h, m] = time.split(':').map(Number);
+  const parts = time.split(':').map(Number);
+  const h = parts[0] ?? 0;
+  const m = parts[1] ?? 0;
   const period = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;

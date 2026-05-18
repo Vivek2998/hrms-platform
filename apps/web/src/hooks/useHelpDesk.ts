@@ -52,14 +52,15 @@ export function useHelpDeskTickets(status?: TicketStatus) {
   });
 }
 
-export function useHelpDeskTicket(id: string) {
+export function useHelpDeskTicket(id: string | null) {
   return useQuery({
     queryKey: ['helpdesk-ticket', id],
     queryFn: async () => {
-      const res = await apiClient.get<ApiResponse<HelpDeskTicket>>(`/helpdesk/tickets/${id}`);
+      const res = await apiClient.get<ApiResponse<HelpDeskTicket>>(`/helpdesk/tickets/${id!}`);
       return res.data.data;
     },
     staleTime: 30 * 1000,
+    enabled: !!id,
   });
 }
 

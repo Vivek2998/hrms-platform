@@ -182,7 +182,7 @@ function TicketDetailDialog({
 }) {
   const [comment, setComment] = useState('');
   const [isInternal, setIsInternal] = useState(false);
-  const { data: ticket } = useHelpDeskTicket(ticketId ?? '');
+  const { data: ticket } = useHelpDeskTicket(ticketId);
   const { mutate: addComment, isPending: addingComment } = useAddComment();
   const { mutate: updateStatus, isPending: updatingStatus } = useUpdateTicketStatus();
 

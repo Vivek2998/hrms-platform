@@ -53,8 +53,8 @@ function CreateJobDialog({ open, onClose }: { open: boolean; onClose: () => void
         description: data.description,
         requirements: data.requirements || undefined,
         openings: Number(data.openings),
-        minSalary: data.minSalary ? Number(data.minSalary) : undefined,
-        maxSalary: data.maxSalary ? Number(data.maxSalary) : undefined,
+        minSalary: data.minSalary ? Number(data.minSalary) : null,
+        maxSalary: data.maxSalary ? Number(data.maxSalary) : null,
         closingDate: data.closingDate || undefined,
       });
       toast.success('Job posted');
