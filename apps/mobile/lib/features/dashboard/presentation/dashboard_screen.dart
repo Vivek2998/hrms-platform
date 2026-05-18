@@ -715,13 +715,10 @@ class _BirthdayCard extends StatelessWidget {
               ),
             ),
           ),
-          // Animated sparkles — staggered periods so they twinkle independently
+          // 3 sparkles only — fewer AnimationControllers reduces BLASTBufferQueue pressure
           Positioned(top: 14, right: 32, child: _Sparkle(size: 9, color: Colors.white, period: const Duration(milliseconds: 1800))),
-          Positioned(top: 42, right: 14, child: _Sparkle(size: 6, color: Colors.white, period: const Duration(milliseconds: 2400))),
-          Positioned(bottom: 22, right: 26, child: _Sparkle(size: 7, color: Colors.white, period: const Duration(milliseconds: 1500))),
-          Positioned(top: 24, left: 118, child: _Sparkle(size: 6, color: Colors.white, period: const Duration(milliseconds: 2100))),
-          Positioned(bottom: 16, left: 82, child: _Sparkle(size: 8, color: Colors.white, period: const Duration(milliseconds: 2700))),
-          Positioned(top: 58, right: 44, child: _Sparkle(size: 5, color: Colors.white, period: const Duration(milliseconds: 1900))),
+          Positioned(top: 48, right: 14, child: _Sparkle(size: 6, color: Colors.white, period: const Duration(milliseconds: 2400))),
+          Positioned(bottom: 22, right: 28, child: _Sparkle(size: 7, color: Colors.white, period: const Duration(milliseconds: 2100))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             child: Row(
@@ -836,17 +833,24 @@ class _BirthdayCard extends StatelessWidget {
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 5),
+                                    horizontal: 18, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withAlpha(30),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: const Text(
                                   'Wish 🎉',
                                   style: TextStyle(
                                     color: Color(0xFF7C3AED),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
