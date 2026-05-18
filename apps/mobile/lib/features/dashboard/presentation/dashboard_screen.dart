@@ -345,6 +345,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF0891B2), const Color(0xFFCFFAFE), '/regularisation'),
       _Action('Performance', Icons.track_changes_rounded,
           const Color(0xFF7C3AED), const Color(0xFFEDE9FE), '/performance'),
+      _Action('IT Declaration', Icons.receipt_long_outlined,
+          const Color(0xFF0369A1), const Color(0xFFE0F2FE), '/tax-declaration'),
     ];
 
     return GridView.builder(
