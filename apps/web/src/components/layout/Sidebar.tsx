@@ -43,6 +43,7 @@ import {
   Package,
   Plane,
   CreditCard,
+  DoorOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -104,6 +105,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Asset Management', to: '/assets', icon: Package, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'Travel Requests', to: '/travel', icon: Plane },
       { label: 'Loans & Advances', to: '/loans', icon: CreditCard },
+      { label: 'Meeting Rooms', to: '/rooms', icon: DoorOpen },
     ],
   },
   {

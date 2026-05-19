@@ -311,6 +311,8 @@ model Organization {
   assetAssignments        AssetAssignment[]
   travelRequests          TravelRequest[]
   loanRequests            LoanRequest[]
+  meetingRooms            MeetingRoom[]
+  roomBookings            RoomBooking[]
 
   @@map("organizations")
 }
@@ -484,6 +486,7 @@ model Employee {
   travelApprovals          TravelRequest[]  @relation("TravelApprover")
   loanRequests             LoanRequest[]
   loanApprovals            LoanRequest[]    @relation("LoanApprover")
+  roomBookings             RoomBooking[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1815,4 +1818,55 @@ model LoanRequest {
   @@index([organizationId, employeeId])
   @@index([organizationId, status])
   @@map("loan_requests")
+}
+
+// ─────────────────────────────────────────────────────────────
+// MEETING ROOM BOOKING
+// ─────────────────────────────────────────────────────────────
+
+enum RoomBookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model MeetingRoom {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  location       String?
+  capacity       Int      @default(1)
+  amenities      String[] @default([])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  bookings     RoomBooking[]
+
+  @@index([organizationId])
+  @@map("meeting_rooms")
+}
+
+model RoomBooking {
+  id             String            @id @default(uuid())
+  organizationId String
+  roomId         String
+  bookedById     String
+  title          String
+  startTime      DateTime
+  endTime        DateTime
+  attendees      Int               @default(1)
+  notes          String?
+  status         RoomBookingStatus @default(CONFIRMED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  room         MeetingRoom  @relation(fields: [roomId], references: [id])
+  bookedBy     Employee     @relation(fields: [bookedById], references: [id])
+
+  @@index([organizationId, roomId])
+  @@index([organizationId, bookedById])
+  @@index([organizationId, startTime])
+  @@map("room_bookings")
 }

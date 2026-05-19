@@ -40,6 +40,7 @@ import '../../features/recruitment/presentation/recruitment_screen.dart';
 import '../../features/assets/presentation/assets_screen.dart';
 import '../../features/travel/presentation/travel_screen.dart';
 import '../../features/loans/presentation/loans_screen.dart';
+import '../../features/rooms/presentation/rooms_screen.dart';
 
 part 'router.g.dart';
 
@@ -182,6 +183,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/loans',
         builder: (_, __) => const LoansScreen(),
+      ),
+      GoRoute(
+        path: '/rooms',
+        builder: (_, __) => const RoomsScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

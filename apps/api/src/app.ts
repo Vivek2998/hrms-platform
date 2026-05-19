@@ -48,6 +48,7 @@ import { lmsRoutes } from './modules/lms/lms.routes.js';
 import { assetRoutes } from './modules/assets/assets.routes.js';
 import { travelRoutes } from './modules/travel/travel.routes.js';
 import { loanRoutes } from './modules/loans/loan.routes.js';
+import { roomRoutes } from './modules/rooms/room.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -115,6 +116,7 @@ export async function buildApp() {
   await app.register(assetRoutes, { prefix });
   await app.register(travelRoutes, { prefix });
   await app.register(loanRoutes, { prefix });
+  await app.register(roomRoutes, { prefix });
 
   await app.ready();
   return app;
