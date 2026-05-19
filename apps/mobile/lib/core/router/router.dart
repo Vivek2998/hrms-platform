@@ -36,6 +36,7 @@ import '../../features/esignature/presentation/esignature_screen.dart';
 import '../../features/lms/presentation/lms_screen.dart';
 import '../../features/analytics/presentation/analytics_screen.dart';
 import '../../features/pulse_surveys/presentation/pulse_surveys_screen.dart';
+import '../../features/recruitment/presentation/recruitment_screen.dart';
 
 part 'router.g.dart';
 
@@ -162,6 +163,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/pulse-surveys',
         builder: (_, __) => const PulseSurveysScreen(),
+      ),
+      GoRoute(
+        path: '/recruitment',
+        builder: (_, __) => const RecruitmentScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

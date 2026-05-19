@@ -363,6 +363,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF2563EB), const Color(0xFFDBEAFE), '/analytics'),
       _Action('Surveys', Icons.poll_rounded,
           const Color(0xFF7C3AED), const Color(0xFFEDE9FE), '/pulse-surveys'),
+      _Action('Careers', Icons.work_rounded,
+          const Color(0xFF0369A1), const Color(0xFFE0F2FE), '/recruitment'),
     ];
 
     return GridView.builder(
