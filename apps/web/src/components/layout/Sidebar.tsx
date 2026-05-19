@@ -221,7 +221,7 @@ export function Sidebar() {
     if (sidebarOpen) setFlyoutGroup(null);
   }, [sidebarOpen]);
 
-  // Auto-open the group whose child matches the current path
+  // Auto-open the group whose child matches the current path; close all when no group matches
   useEffect(() => {
     if (!sidebarOpen) return;
     for (const entry of ENTRIES) {
@@ -234,11 +234,24 @@ export function Sidebar() {
         return;
       }
     }
+    // Navigated to a flat route — close all accordions so the flat item can show active
+    setOpenGroups(new Set());
   }, [location.pathname, sidebarOpen]);
 
   function toggleGroup(key: string) {
     setOpenGroups((prev) => new Set(prev.has(key) ? [] : [key]));
   }
+
+  // True when an open accordion's children don't include the current URL.
+  // Used to suppress the flat-item active highlight in that case.
+  const hasOpenGroupWithoutActiveChild = [...openGroups].some((key) => {
+    const group = ENTRIES.find((e) => e.group && (e as NavGroup).key === key) as ({ group: true } & NavGroup) | undefined;
+    if (!group) return false;
+    const visibleChildren = group.children.filter((c) => isVisible(c, role));
+    return !visibleChildren.some(
+      (c) => location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
+    );
+  });
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -374,7 +387,12 @@ export function Sidebar() {
                     <li key={entry.key}>
                       <button
                         onClick={() => toggleGroup(entry.key)}
-                        className="group/nav text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                        className={cn(
+                          'group/nav flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                          isOpen && !isChildActive
+                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                        )}
                       >
                         <entry.icon className="h-5 w-5 shrink-0" />
                         <span className="flex-1 text-left">{entry.label}</span>
@@ -453,7 +471,7 @@ export function Sidebar() {
                           ) : (
                             <NavLink
                               to={entry.to}
-                              className={({ isActive }) => collapsedIconClass(isActive)}
+                              className={({ isActive }) => collapsedIconClass(isActive && !hasOpenGroupWithoutActiveChild)}
                               aria-label={entry.label}
                             >
                               <entry.icon className="h-5 w-5 shrink-0" />
@@ -487,7 +505,7 @@ export function Sidebar() {
                     ) : (
                       <NavLink
                         to={entry.to}
-                        className={({ isActive }) => expandedItemClass(isActive)}
+                        className={({ isActive }) => expandedItemClass(isActive && !hasOpenGroupWithoutActiveChild)}
                       >
                         <entry.icon className="h-5 w-5 shrink-0" />
                         <span>{entry.label}</span>
