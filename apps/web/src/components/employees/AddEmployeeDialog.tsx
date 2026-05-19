@@ -202,30 +202,33 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent aria-describedby={undefined} className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
+      <DialogContent aria-describedby={undefined} className="flex max-h-[90vh] max-w-2xl flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Add New Employee</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Mobile: select dropdown */}
-            <Select value={activeTab} onValueChange={setActiveTab}>
-              <SelectTrigger className="mb-4 sm:hidden">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden w-full">
+            <div className="shrink-0">
+              {/* Mobile: select dropdown */}
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="mb-4 sm:hidden">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TABS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* Desktop: tab bar */}
+              <TabsList className="mb-4 hidden w-full sm:grid sm:grid-cols-5">
                 {TABS.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>
                 ))}
-              </SelectContent>
-            </Select>
-            {/* Desktop: tab bar */}
-            <TabsList className="mb-4 hidden w-full sm:grid sm:grid-cols-5">
-              {TABS.map((t) => (
-                <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>
-              ))}
-            </TabsList>
+              </TabsList>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
 
             {/* ── Tab 1: Personal ── */}
             <TabsContent value="personal" className="space-y-4">
@@ -487,9 +490,10 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 character (@$!%*?&). The employee will be prompted to change this on first login.
               </p>
             </TabsContent>
+            </div>
           </Tabs>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter className="mt-4 shrink-0 border-t pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
