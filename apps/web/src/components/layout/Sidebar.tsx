@@ -40,6 +40,7 @@ import {
   Inbox,
   Heart,
   FileSignature,
+  Package,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -98,6 +99,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
       { label: 'Expense Claims', to: '/expenses', icon: Wallet, feature: 'expenses' },
       { label: 'E-Signatures', to: '/esignatures', icon: FileSignature },
+      { label: 'Asset Management', to: '/assets', icon: Package, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
     ],
   },
   {

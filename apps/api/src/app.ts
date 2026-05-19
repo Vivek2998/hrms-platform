@@ -45,6 +45,7 @@ import { approvalInboxRoutes } from './modules/approval-inbox/approval-inbox.rou
 import { kudosRoutes } from './modules/kudos/kudos.routes.js';
 import { eSignatureRoutes } from './modules/esignature/esignature.routes.js';
 import { lmsRoutes } from './modules/lms/lms.routes.js';
+import { assetRoutes } from './modules/assets/assets.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -109,6 +110,7 @@ export async function buildApp() {
   await app.register(kudosRoutes, { prefix });
   await app.register(eSignatureRoutes, { prefix });
   await app.register(lmsRoutes, { prefix });
+  await app.register(assetRoutes, { prefix });
 
   await app.ready();
   return app;

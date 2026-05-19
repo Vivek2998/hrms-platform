@@ -192,6 +192,30 @@ enum BiometricPreference {
   NO_BIOMETRIC
 }
 
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  UNDER_REPAIR
+  RETIRED
+  LOST
+}
+
+enum AssetCategory {
+  LAPTOP
+  DESKTOP
+  PHONE
+  TABLET
+  MONITOR
+  KEYBOARD
+  MOUSE
+  HEADSET
+  CHAIR
+  DESK
+  ID_CARD
+  ACCESS_CARD
+  OTHER
+}
+
 // ─────────────────────────────────────────────────────────────
 // ORGANIZATIONS (Tenants)
 // ─────────────────────────────────────────────────────────────
@@ -250,6 +274,8 @@ model Organization {
   eSignatureRequests      ESignatureRequest[]
   learningCourses         LearningCourse[]
   courseEnrollments       CourseEnrollment[]
+  assets                  Asset[]
+  assetAssignments        AssetAssignment[]
 
   @@map("organizations")
 }
@@ -416,6 +442,7 @@ model Employee {
   feedbacksGiven           PeerFeedback[]         @relation("FeedbackGiver")
   feedbacksReceived        PeerFeedback[]         @relation("FeedbackReceiver")
   offboardingAssignments   OffboardingAssignment[]
+  assetAssignments         AssetAssignment[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1632,4 +1659,52 @@ model CourseEnrollment {
   @@unique([courseId, employeeId])
   @@index([organizationId, employeeId])
   @@map("course_enrollments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ASSET MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+model Asset {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  category       AssetCategory @default(OTHER)
+  serialNumber   String?
+  brand          String?
+  model          String?
+  purchaseDate   DateTime?
+  purchasePrice  Decimal?      @db.Decimal(12, 2)
+  warrantyExpiry DateTime?
+  status         AssetStatus   @default(AVAILABLE)
+  notes          String?
+  imageUrl       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  assignments  AssetAssignment[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@map("assets")
+}
+
+model AssetAssignment {
+  id             String    @id @default(uuid())
+  organizationId String
+  assetId        String
+  employeeId     String
+  assignedAt     DateTime  @default(now())
+  returnedAt     DateTime?
+  condition      String?
+  notes          String?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  asset        Asset        @relation(fields: [assetId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, assetId])
+  @@index([organizationId, employeeId])
+  @@map("asset_assignments")
 }
