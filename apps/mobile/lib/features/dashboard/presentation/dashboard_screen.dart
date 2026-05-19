@@ -361,6 +361,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF0D9488), const Color(0xFFCCFBF1), '/lms'),
       _Action('Analytics', Icons.bar_chart_rounded,
           const Color(0xFF2563EB), const Color(0xFFDBEAFE), '/analytics'),
+      _Action('Surveys', Icons.poll_rounded,
+          const Color(0xFF7C3AED), const Color(0xFFEDE9FE), '/pulse-surveys'),
     ];
 
     return GridView.builder(
