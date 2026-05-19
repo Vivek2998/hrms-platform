@@ -79,6 +79,22 @@ export default function ReportsPage() {
   const [leaveYear, setLeaveYear] = useState(CURRENT_YEAR);
   const [leaveLoading, setLeaveLoading] = useState(false);
 
+  const [pfMonth, setPfMonth] = useState(now.getMonth() + 1);
+  const [pfYear, setPfYear] = useState(CURRENT_YEAR);
+  const [pfLoading, setPfLoading] = useState(false);
+
+  const [esiMonth, setEsiMonth] = useState(now.getMonth() + 1);
+  const [esiYear, setEsiYear] = useState(CURRENT_YEAR);
+  const [esiLoading, setEsiLoading] = useState(false);
+
+  const [ptMonth, setPtMonth] = useState(now.getMonth() + 1);
+  const [ptYear, setPtYear] = useState(CURRENT_YEAR);
+  const [ptLoading, setPtLoading] = useState(false);
+
+  const [tdsMonth, setTdsMonth] = useState(now.getMonth() + 1);
+  const [tdsYear, setTdsYear] = useState(CURRENT_YEAR);
+  const [tdsLoading, setTdsLoading] = useState(false);
+
   async function downloadAttendance() {
     setAttLoading(true);
     try {
@@ -124,11 +140,43 @@ export default function ReportsPage() {
     }
   }
 
+  async function downloadPf() {
+    setPfLoading(true);
+    try {
+      await downloadCsv('/reports/pf', { month: pfMonth, year: pfYear }, `pf_${pfYear}_${pad(pfMonth)}.csv`);
+    } catch { toast.error('Failed to generate PF report'); }
+    finally { setPfLoading(false); }
+  }
+
+  async function downloadEsi() {
+    setEsiLoading(true);
+    try {
+      await downloadCsv('/reports/esi', { month: esiMonth, year: esiYear }, `esi_${esiYear}_${pad(esiMonth)}.csv`);
+    } catch { toast.error('Failed to generate ESI report'); }
+    finally { setEsiLoading(false); }
+  }
+
+  async function downloadPt() {
+    setPtLoading(true);
+    try {
+      await downloadCsv('/reports/pt', { month: ptMonth, year: ptYear }, `pt_${ptYear}_${pad(ptMonth)}.csv`);
+    } catch { toast.error('Failed to generate PT report'); }
+    finally { setPtLoading(false); }
+  }
+
+  async function downloadTds() {
+    setTdsLoading(true);
+    try {
+      await downloadCsv('/reports/tds', { month: tdsMonth, year: tdsYear }, `tds_${tdsYear}_${pad(tdsMonth)}.csv`);
+    } catch { toast.error('Failed to generate TDS report'); }
+    finally { setTdsLoading(false); }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Reports</h1>
-        <p className="text-muted-foreground text-sm">Download CSV exports for attendance, payroll, and leave data.</p>
+        <p className="text-muted-foreground text-sm">Download CSV exports for attendance, payroll, statutory compliance, and leave data.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -227,6 +275,112 @@ export default function ReportsPage() {
             </Select>
           </div>
         </ReportCard>
+      </div>
+
+      {/* ── Statutory Compliance Reports ─────────────────────────────────────── */}
+      <div>
+        <h2 className="mb-3 text-base font-semibold">Statutory Compliance</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* PF Report */}
+          <ReportCard
+            title="PF Statement"
+            description="Employee & employer Provident Fund contributions with UAN and PAN."
+            onDownload={downloadPf}
+            loading={pfLoading}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Month</Label>
+                <Select value={String(pfMonth)} onValueChange={(v) => setPfMonth(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Year</Label>
+                <Select value={String(pfYear)} onValueChange={(v) => setPfYear(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{YEARS.map((y) => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ReportCard>
+
+          {/* ESI Report */}
+          <ReportCard
+            title="ESI Statement"
+            description="Employee & employer ESI contributions with ESI numbers."
+            onDownload={downloadEsi}
+            loading={esiLoading}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Month</Label>
+                <Select value={String(esiMonth)} onValueChange={(v) => setEsiMonth(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Year</Label>
+                <Select value={String(esiYear)} onValueChange={(v) => setEsiYear(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{YEARS.map((y) => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ReportCard>
+
+          {/* PT Report */}
+          <ReportCard
+            title="Professional Tax"
+            description="Professional Tax deducted per employee by state slab."
+            onDownload={downloadPt}
+            loading={ptLoading}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Month</Label>
+                <Select value={String(ptMonth)} onValueChange={(v) => setPtMonth(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Year</Label>
+                <Select value={String(ptYear)} onValueChange={(v) => setPtYear(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{YEARS.map((y) => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ReportCard>
+
+          {/* TDS Report */}
+          <ReportCard
+            title="TDS Report"
+            description="Income Tax (TDS) deducted per employee with PAN for Form 24Q filing."
+            onDownload={downloadTds}
+            loading={tdsLoading}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Month</Label>
+                <Select value={String(tdsMonth)} onValueChange={(v) => setTdsMonth(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)} className="text-xs">{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Year</Label>
+                <Select value={String(tdsYear)} onValueChange={(v) => setTdsYear(Number(v))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{YEARS.map((y) => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ReportCard>
+        </div>
       </div>
     </div>
   );

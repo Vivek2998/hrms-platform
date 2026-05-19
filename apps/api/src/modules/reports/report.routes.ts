@@ -129,6 +129,198 @@ export function reportRoutes(app: FastifyInstance) {
       .send(csv);
   });
 
+  // ── Helpers for statutory JSON extraction ─────────────────────────────────
+  function extractStatutory(statutory: any[], codes: string[]): number {
+    if (!Array.isArray(statutory)) return 0;
+    const upper = codes.map((c) => c.toUpperCase());
+    const item = statutory.find((s: any) => upper.includes(String(s.code ?? '').toUpperCase()));
+    return item ? Number(item.amount ?? 0) : 0;
+  }
+
+  const PF_CODES  = ['PF', 'EPF', 'PROVIDENT_FUND', 'PF_EMPLOYEE'];
+  const ESI_CODES = ['ESI', 'ESIC', 'ESI_EMPLOYEE'];
+  const PT_CODES  = ['PT', 'PROFESSIONAL_TAX', 'PROF_TAX'];
+  const TDS_CODES = ['TDS', 'INCOME_TAX', 'TDS_INCOME_TAX', 'IT'];
+
+  const monthYearSchema = z.object({
+    month: z.coerce.number().int().min(1).max(12),
+    year: z.coerce.number().int().min(2020),
+  });
+
+  // GET /reports/pf?month=&year=
+  app.get('/reports/pf', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { month, year } = monthYearSchema.parse(req.query);
+
+    const payslips = await app.prisma.payslip.findMany({
+      where: { organizationId: req.user.orgId, month, year },
+      include: {
+        employee: {
+          select: {
+            employeeCode: true, firstName: true, lastName: true,
+            panNumber: true, uanNumber: true,
+            department: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { employee: { employeeCode: 'asc' } },
+    });
+
+    const headers = toRow([
+      'Employee Code', 'Employee Name', 'Department', 'PAN', 'UAN',
+      'Gross Wages', 'PF Wages', 'Employee PF (12%)', 'Employer PF (12%)', 'Total PF',
+    ]);
+    const rows = payslips.map((p) => {
+      const empPf = extractStatutory(p.statutory as any[], PF_CODES);
+      const empPf12 = empPf || (p.grossEarnings * 0.12);
+      return toRow([
+        p.employee.employeeCode,
+        `${p.employee.firstName} ${p.employee.lastName}`,
+        p.employee.department?.name,
+        p.employee.panNumber,
+        p.employee.uanNumber,
+        p.grossEarnings.toFixed(2),
+        Math.min(p.grossEarnings, 15000).toFixed(2),
+        empPf12.toFixed(2),
+        p.pfEmployer.toFixed(2),
+        (empPf12 + p.pfEmployer).toFixed(2),
+      ]);
+    });
+
+    const csv = [headers, ...rows].join('\n');
+    return reply
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="pf_${year}_${String(month).padStart(2,'0')}.csv"`)
+      .send(csv);
+  });
+
+  // GET /reports/esi?month=&year=
+  app.get('/reports/esi', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { month, year } = monthYearSchema.parse(req.query);
+
+    const payslips = await app.prisma.payslip.findMany({
+      where: { organizationId: req.user.orgId, month, year },
+      include: {
+        employee: {
+          select: {
+            employeeCode: true, firstName: true, lastName: true,
+            esiNumber: true,
+            department: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { employee: { employeeCode: 'asc' } },
+    });
+
+    const headers = toRow([
+      'Employee Code', 'Employee Name', 'Department', 'ESI Number',
+      'Gross Wages', 'Employee ESI (0.75%)', 'Employer ESI (3.25%)', 'Total ESI',
+    ]);
+    const rows = payslips.map((p) => {
+      const empEsi = extractStatutory(p.statutory as any[], ESI_CODES);
+      return toRow([
+        p.employee.employeeCode,
+        `${p.employee.firstName} ${p.employee.lastName}`,
+        p.employee.department?.name,
+        p.employee.esiNumber,
+        p.grossEarnings.toFixed(2),
+        empEsi.toFixed(2),
+        p.esiEmployer.toFixed(2),
+        (empEsi + p.esiEmployer).toFixed(2),
+      ]);
+    });
+
+    const csv = [headers, ...rows].join('\n');
+    return reply
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="esi_${year}_${String(month).padStart(2,'0')}.csv"`)
+      .send(csv);
+  });
+
+  // GET /reports/pt?month=&year=
+  app.get('/reports/pt', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { month, year } = monthYearSchema.parse(req.query);
+
+    const payslips = await app.prisma.payslip.findMany({
+      where: { organizationId: req.user.orgId, month, year },
+      include: {
+        employee: {
+          select: {
+            employeeCode: true, firstName: true, lastName: true,
+            department: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { employee: { employeeCode: 'asc' } },
+    });
+
+    const headers = toRow([
+      'Employee Code', 'Employee Name', 'Department',
+      'Gross Salary', 'Professional Tax',
+    ]);
+    const rows = payslips.map((p) => {
+      const pt = extractStatutory(p.statutory as any[], PT_CODES);
+      return toRow([
+        p.employee.employeeCode,
+        `${p.employee.firstName} ${p.employee.lastName}`,
+        p.employee.department?.name,
+        p.grossEarnings.toFixed(2),
+        pt.toFixed(2),
+      ]);
+    });
+
+    const csv = [headers, ...rows].join('\n');
+    return reply
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="pt_${year}_${String(month).padStart(2,'0')}.csv"`)
+      .send(csv);
+  });
+
+  // GET /reports/tds?month=&year=
+  app.get('/reports/tds', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { month, year } = monthYearSchema.parse(req.query);
+
+    const payslips = await app.prisma.payslip.findMany({
+      where: { organizationId: req.user.orgId, month, year },
+      include: {
+        employee: {
+          select: {
+            employeeCode: true, firstName: true, lastName: true,
+            panNumber: true,
+            department: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { employee: { employeeCode: 'asc' } },
+    });
+
+    const headers = toRow([
+      'Employee Code', 'Employee Name', 'Department', 'PAN',
+      'Gross Earnings', 'Net Pay', 'TDS Deducted',
+    ]);
+    const rows = payslips.map((p) => {
+      const tds = extractStatutory(p.statutory as any[], TDS_CODES);
+      return toRow([
+        p.employee.employeeCode,
+        `${p.employee.firstName} ${p.employee.lastName}`,
+        p.employee.department?.name,
+        p.employee.panNumber,
+        p.grossEarnings.toFixed(2),
+        p.netPay.toFixed(2),
+        tds.toFixed(2),
+      ]);
+    });
+
+    const csv = [headers, ...rows].join('\n');
+    return reply
+      .header('Content-Type', 'text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="tds_${year}_${String(month).padStart(2,'0')}.csv"`)
+      .send(csv);
+  });
+
   // GET /reports/leaves?year=
   app.get('/reports/leaves', auth, async (req, reply) => {
     if (!MGR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
