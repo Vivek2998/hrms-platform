@@ -34,6 +34,7 @@ import '../../features/approval_inbox/presentation/approval_inbox_screen.dart';
 import '../../features/kudos/presentation/kudos_screen.dart';
 import '../../features/esignature/presentation/esignature_screen.dart';
 import '../../features/lms/presentation/lms_screen.dart';
+import '../../features/analytics/presentation/analytics_screen.dart';
 
 part 'router.g.dart';
 
@@ -152,6 +153,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/lms',
         builder: (_, __) => const LmsScreen(),
+      ),
+      GoRoute(
+        path: '/analytics',
+        builder: (_, __) => const AnalyticsScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

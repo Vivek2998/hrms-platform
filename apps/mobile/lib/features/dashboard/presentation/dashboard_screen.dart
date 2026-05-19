@@ -359,6 +359,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF7C3AED), const Color(0xFFF5F3FF), '/esignatures'),
       _Action('Learning', Icons.school_rounded,
           const Color(0xFF0D9488), const Color(0xFFCCFBF1), '/lms'),
+      _Action('Analytics', Icons.bar_chart_rounded,
+          const Color(0xFF2563EB), const Color(0xFFDBEAFE), '/analytics'),
     ];
 
     return GridView.builder(
@@ -367,9 +369,9 @@ class _QuickActionsGrid extends StatelessWidget {
       padding: EdgeInsets.zero,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        mainAxisExtent: 100,
+        crossAxisSpacing: 4,
+        mainAxisSpacing: 4,
+        mainAxisExtent: 88,
       ),
       itemCount: actions.length,
       itemBuilder: (_, i) => _QuickActionTile(action: actions[i]),
@@ -400,7 +402,7 @@ class _QuickActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push(action.route),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
