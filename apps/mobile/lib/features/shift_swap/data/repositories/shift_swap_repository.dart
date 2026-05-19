@@ -20,7 +20,7 @@ class ShiftSwapRepository {
     String? reason,
   }) async {
     final res = await _dio.post('/shift-swaps', data: {
-      'targetEmployeeId': targetEmployeeId,
+      'targetId': targetEmployeeId,
       'requesterDate': requesterDate,
       'targetDate': targetDate,
       if (reason != null) 'reason': reason,

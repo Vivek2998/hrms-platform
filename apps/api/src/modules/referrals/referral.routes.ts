@@ -25,7 +25,9 @@ export async function referralRoutes(app: FastifyInstance) {
 
   // GET /referrals
   app.get('/referrals', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     const isHr = hrRoles.includes(role);
 
     const referrals = await app.prisma.employeeReferral.findMany({
@@ -44,7 +46,8 @@ export async function referralRoutes(app: FastifyInstance) {
 
   // POST /referrals — any employee can refer
   app.post('/referrals', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const body = createSchema.parse(req.body);
 
     const referral = await app.prisma.employeeReferral.create({
@@ -58,7 +61,8 @@ export async function referralRoutes(app: FastifyInstance) {
 
   // PATCH /referrals/:id/status — HR updates status
   app.patch('/referrals/:id/status', auth, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
+    const organizationId = req.user.orgId;
+    const { role } = req.user;
     if (!hrRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -82,7 +86,8 @@ export async function referralRoutes(app: FastifyInstance) {
 
   // DELETE /referrals/:id — referrer can delete own SUBMITTED referral
   app.delete('/referrals/:id', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { id } = req.params as any;
 
     const existing = await app.prisma.employeeReferral.findFirst({ where: { id, organizationId } });

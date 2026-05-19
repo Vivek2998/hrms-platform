@@ -23,7 +23,9 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // GET /fnf — HR sees all; employee sees own
   app.get('/fnf', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     const isHr = hrRoles.includes(role);
 
     const settlements = await app.prisma.fnFSettlement.findMany({
@@ -44,7 +46,9 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // GET /fnf/:employeeId — get settlement for a specific employee
   app.get('/fnf/:employeeId', auth, async (req, reply) => {
-    const { organizationId, role, employeeId: currentUser } = req.user as any;
+    const organizationId = req.user.orgId;
+    const currentUser = req.user.sub;
+    const { role } = req.user;
     const { employeeId } = req.params as any;
 
     if (!hrRoles.includes(role) && currentUser !== employeeId) throw fail('Forbidden', 403);
@@ -68,7 +72,8 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // POST /fnf — HR creates settlement (auto-calculates netPayable)
   app.post('/fnf', auth, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
+    const organizationId = req.user.orgId;
+    const { role } = req.user;
     if (!hrRoles.includes(role)) throw fail('Forbidden', 403);
 
     const body = createSchema.parse(req.body);
@@ -110,7 +115,8 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // PATCH /fnf/:id — HR edits draft settlement
   app.patch('/fnf/:id', auth, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
+    const organizationId = req.user.orgId;
+    const { role } = req.user;
     if (!hrRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -137,7 +143,8 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // PATCH /fnf/:id/submit — HR submits for approval
   app.patch('/fnf/:id/submit', auth, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
+    const organizationId = req.user.orgId;
+    const { role } = req.user;
     if (!hrRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -151,7 +158,9 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // PATCH /fnf/:id/approve
   app.patch('/fnf/:id/approve', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     if (!hrRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -168,7 +177,8 @@ export async function fnfRoutes(app: FastifyInstance) {
 
   // PATCH /fnf/:id/paid — mark as paid
   app.patch('/fnf/:id/paid', auth, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
+    const organizationId = req.user.orgId;
+    const { role } = req.user;
     if (!hrRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;

@@ -126,7 +126,7 @@ export default function ShiftSwapPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                     <Badge variant={statusVariant(swap.status) as any}>{statusLabel(swap.status)}</Badge>
-                    {swap.status === 'PENDING_ACCEPTANCE' && swap.target?.id === user?.employeeId && (
+                    {swap.status === 'PENDING_ACCEPTANCE' && swap.target?.id === user?.id && (
                       <>
                         <Button size="sm" variant="outline" className="text-green-600 border-green-300"
                           disabled={acceptMutation.isPending}
@@ -152,7 +152,7 @@ export default function ShiftSwapPage() {
                         </Button>
                       </>
                     )}
-                    {swap.status === 'PENDING_ACCEPTANCE' && swap.requester?.id === user?.employeeId && (
+                    {swap.status === 'PENDING_ACCEPTANCE' && swap.requester?.id === user?.id && (
                       <Button size="sm" variant="outline"
                         disabled={cancelMutation.isPending}
                         onClick={() => cancelMutation.mutate(swap.id)}>
@@ -219,7 +219,7 @@ function CreateSwapDialog({ open, onClose }: { open: boolean; onClose: () => voi
             <Select value={targetId} onValueChange={setTargetId}>
               <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select colleague" /></SelectTrigger>
               <SelectContent>
-                {employees.filter((e: any) => e.id !== user?.employeeId).map((e: any) => (
+                {employees.filter((e: any) => e.id !== user?.id).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.firstName} {e.lastName} ({e.employeeCode})
                   </SelectItem>

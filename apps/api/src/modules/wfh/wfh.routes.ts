@@ -16,7 +16,9 @@ export async function wfhRoutes(app: FastifyInstance) {
 
   // GET /wfh — employee sees own; approvers see all
   app.get('/wfh', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     const isApprover = approverRoles.includes(role);
 
     const requests = await app.prisma.wFHRequest.findMany({
@@ -35,7 +37,8 @@ export async function wfhRoutes(app: FastifyInstance) {
 
   // POST /wfh
   app.post('/wfh', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { date, reason } = createSchema.parse(req.body);
 
     const existing = await app.prisma.wFHRequest.findFirst({
@@ -54,7 +57,9 @@ export async function wfhRoutes(app: FastifyInstance) {
 
   // PATCH /wfh/:id/approve
   app.patch('/wfh/:id/approve', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     if (!approverRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -67,7 +72,6 @@ export async function wfhRoutes(app: FastifyInstance) {
         where: { id },
         data: { status: 'APPROVED', approvedById: employeeId, approvedAt: new Date() },
       }),
-      // Mark attendance as WFH for that date
       app.prisma.attendanceRecord.upsert({
         where: {
           organizationId_employeeId_date: {
@@ -91,7 +95,8 @@ export async function wfhRoutes(app: FastifyInstance) {
 
   // PATCH /wfh/:id/reject
   app.patch('/wfh/:id/reject', auth, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
+    const organizationId = req.user.orgId;
+    const { role } = req.user;
     if (!approverRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -110,7 +115,8 @@ export async function wfhRoutes(app: FastifyInstance) {
 
   // DELETE /wfh/:id — cancel own PENDING request
   app.delete('/wfh/:id', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { id } = req.params as any;
 
     const existing = await app.prisma.wFHRequest.findFirst({ where: { id, organizationId } });

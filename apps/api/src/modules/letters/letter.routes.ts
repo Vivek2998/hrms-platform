@@ -26,7 +26,8 @@ export function letterRoutes(app: FastifyInstance) {
 
   // GET /letters/me/experience — employee downloads own experience letter
   app.get('/letters/me/experience', auth, async (req, reply) => {
-    const { orgId, employeeId } = req.user as any;
+    const orgId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { employee, org } = await getLetterData(app, employeeId, orgId);
     if (!employee) throw fail('Employee not found', 404);
 
@@ -53,7 +54,8 @@ export function letterRoutes(app: FastifyInstance) {
 
   // GET /letters/me/salary-certificate — employee downloads own salary certificate
   app.get('/letters/me/salary-certificate', auth, async (req, reply) => {
-    const { orgId, employeeId } = req.user as any;
+    const orgId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { employee, org } = await getLetterData(app, employeeId, orgId);
     if (!employee) throw fail('Employee not found', 404);
 

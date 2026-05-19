@@ -18,7 +18,9 @@ export async function shiftSwapRoutes(app: FastifyInstance) {
 
   // GET /shift-swaps
   app.get('/shift-swaps', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     const isApprover = approverRoles.includes(role);
 
     const swaps = await app.prisma.shiftSwapRequest.findMany({
@@ -40,7 +42,8 @@ export async function shiftSwapRoutes(app: FastifyInstance) {
 
   // POST /shift-swaps — requester creates swap request
   app.post('/shift-swaps', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const body = createSchema.parse(req.body);
 
     if (body.targetId === employeeId) throw fail('Cannot swap with yourself', 400);
@@ -64,7 +67,8 @@ export async function shiftSwapRoutes(app: FastifyInstance) {
 
   // PATCH /shift-swaps/:id/accept — target employee accepts
   app.patch('/shift-swaps/:id/accept', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { id } = req.params as any;
 
     const existing = await app.prisma.shiftSwapRequest.findFirst({ where: { id, organizationId } });
@@ -81,7 +85,9 @@ export async function shiftSwapRoutes(app: FastifyInstance) {
 
   // PATCH /shift-swaps/:id/approve — manager/HR approves
   app.patch('/shift-swaps/:id/approve', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     if (!approverRoles.includes(role)) throw fail('Forbidden', 403);
 
     const { id } = req.params as any;
@@ -98,7 +104,9 @@ export async function shiftSwapRoutes(app: FastifyInstance) {
 
   // PATCH /shift-swaps/:id/reject — manager/HR or target employee rejects
   app.patch('/shift-swaps/:id/reject', auth, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
+    const { role } = req.user;
     const { id } = req.params as any;
     const { reason } = rejectSchema.parse(req.body ?? {});
 
@@ -120,7 +128,8 @@ export async function shiftSwapRoutes(app: FastifyInstance) {
 
   // DELETE /shift-swaps/:id — requester cancels PENDING_ACCEPTANCE request
   app.delete('/shift-swaps/:id', auth, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
+    const organizationId = req.user.orgId;
+    const employeeId = req.user.sub;
     const { id } = req.params as any;
 
     const existing = await app.prisma.shiftSwapRequest.findFirst({ where: { id, organizationId } });
