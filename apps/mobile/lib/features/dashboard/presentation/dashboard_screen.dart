@@ -373,6 +373,14 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF7C3AED), const Color(0xFFF5F3FF), '/loans'),
       _Action('Rooms', Icons.meeting_room_rounded,
           const Color(0xFF059669), const Color(0xFFD1FAE5), '/rooms'),
+      _Action('Work@Home', Icons.home_work_rounded,
+          const Color(0xFF0891B2), const Color(0xFFCFFAFE), '/wfh'),
+      _Action('Shift Swap', Icons.swap_horiz_rounded,
+          const Color(0xFF7C3AED), const Color(0xFFEDE9FE), '/shift-swap'),
+      _Action('Referrals', Icons.person_add_rounded,
+          const Color(0xFFD97706), const Color(0xFFFEF3C7), '/referrals'),
+      _Action('My Letters', Icons.description_rounded,
+          const Color(0xFF0369A1), const Color(0xFFE0F2FE), '/my-letters'),
     ];
 
     return GridView.builder(
@@ -403,7 +411,7 @@ class _Action {
 
 class _QuickActionTile extends StatelessWidget {
   final _Action action;
-  const _QuickActionTile({super.key, required this.action});
+  const _QuickActionTile({required this.action});
 
   @override
   Widget build(BuildContext context) {

@@ -22,20 +22,20 @@ const emergencyContactSchema = z
   .optional();
 
 const educationDetailsSchema = z
-  .object({
+  .array(z.object({
     degree: z.string().optional(),
     institution: z.string().optional(),
     year: z.number().int().optional(),
     grade: z.string().optional(),
-  })
+  }))
   .optional();
 
 const experienceDetailsSchema = z
-  .object({
+  .array(z.object({
     totalYears: z.number().optional(),
     lastCompany: z.string().optional(),
     lastDesignation: z.string().optional(),
-  })
+  }))
   .optional();
 
 export const createEmployeeSchema = z.object({

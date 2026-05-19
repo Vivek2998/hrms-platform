@@ -51,6 +51,11 @@ const AssetsPage = lazy(() => import('@/pages/assets/AssetsPage'));
 const TravelPage = lazy(() => import('@/pages/travel/TravelPage'));
 const LoansPage = lazy(() => import('@/pages/loans/LoansPage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
+const MyLettersPage = lazy(() => import('@/pages/my-letters/MyLettersPage'));
+const WFHPage = lazy(() => import('@/pages/wfh/WFHPage'));
+const ShiftSwapPage = lazy(() => import('@/pages/shift-swap/ShiftSwapPage'));
+const ReferralPage = lazy(() => import('@/pages/referrals/ReferralPage'));
+const FnFPage = lazy(() => import('@/pages/fnf/FnFPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -289,6 +294,22 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'wfh',
+        element: (<Lazy><WFHPage /></Lazy>),
+      },
+      {
+        path: 'shift-swap',
+        element: (<Lazy><ShiftSwapPage /></Lazy>),
+      },
+      {
+        path: 'referrals',
+        element: (<Lazy><ReferralPage /></Lazy>),
+      },
+      {
+        path: 'fnf',
+        element: (<Lazy><FnFPage /></Lazy>),
+      },
+      {
         path: 'directory',
         element: (
           <Lazy>
@@ -343,6 +364,10 @@ export const router = createBrowserRouter([
             <MyPayslipsPage />
           </Lazy>
         ),
+      },
+      {
+        path: 'my-letters',
+        element: (<Lazy><MyLettersPage /></Lazy>),
       },
       {
         path: 'pulse-surveys',

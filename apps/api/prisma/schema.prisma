@@ -249,6 +249,35 @@ enum AssetCategory {
   OTHER
 }
 
+enum WFHStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ShiftSwapStatus {
+  PENDING_ACCEPTANCE
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ReferralStatus {
+  SUBMITTED
+  SCREENING
+  HIRED
+  REJECTED
+}
+
+enum FnFStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PAID
+}
+
 // ─────────────────────────────────────────────────────────────
 // ORGANIZATIONS (Tenants)
 // ─────────────────────────────────────────────────────────────
@@ -313,6 +342,10 @@ model Organization {
   loanRequests            LoanRequest[]
   meetingRooms            MeetingRoom[]
   roomBookings            RoomBooking[]
+  wfhRequests             WFHRequest[]
+  shiftSwapRequests       ShiftSwapRequest[]
+  employeeReferrals       EmployeeReferral[]
+  fnfSettlements          FnFSettlement[]
 
   @@map("organizations")
 }
@@ -487,6 +520,14 @@ model Employee {
   loanRequests             LoanRequest[]
   loanApprovals            LoanRequest[]    @relation("LoanApprover")
   roomBookings             RoomBooking[]
+  wfhRequests              WFHRequest[]
+  wfhApprovals             WFHRequest[]         @relation("WFHApprover")
+  shiftSwapRequests        ShiftSwapRequest[]   @relation("SwapRequester")
+  shiftSwapTargets         ShiftSwapRequest[]   @relation("SwapTarget")
+  shiftSwapApprovals       ShiftSwapRequest[]   @relation("SwapApprover")
+  referralsMade            EmployeeReferral[]
+  fnfSettlements           FnFSettlement[]
+  fnfApprovals             FnFSettlement[]      @relation("FnFApprover")
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1373,6 +1414,7 @@ model JobPosting {
 
   organization Organization     @relation(fields: [organizationId], references: [id])
   applications JobApplication[]
+  referrals    EmployeeReferral[]
 
   @@index([organizationId])
   @@map("job_postings")
@@ -1869,4 +1911,127 @@ model RoomBooking {
   @@index([organizationId, bookedById])
   @@index([organizationId, startTime])
   @@map("room_bookings")
+}
+
+// ─────────────────────────────────────────────────────────────
+// WFH REQUESTS
+// ─────────────────────────────────────────────────────────────
+
+model WFHRequest {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  date           DateTime  @db.Date
+  reason         String?
+  status         WFHStatus @default(PENDING)
+  approvedById   String?
+  approvedAt     DateTime?
+  rejectedReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  approvedBy   Employee?    @relation("WFHApprover", fields: [approvedById], references: [id])
+
+  @@unique([organizationId, employeeId, date])
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("wfh_requests")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHIFT SWAP REQUESTS
+// ─────────────────────────────────────────────────────────────
+
+model ShiftSwapRequest {
+  id              String          @id @default(uuid())
+  organizationId  String
+  requesterId     String
+  targetId        String
+  requesterDate   DateTime        @db.Date
+  targetDate      DateTime        @db.Date
+  reason          String?
+  status          ShiftSwapStatus @default(PENDING_ACCEPTANCE)
+  targetAcceptedAt DateTime?
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectedReason  String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  requester    Employee     @relation("SwapRequester", fields: [requesterId], references: [id])
+  target       Employee     @relation("SwapTarget", fields: [targetId], references: [id])
+  approvedBy   Employee?    @relation("SwapApprover", fields: [approvedById], references: [id])
+
+  @@index([organizationId, requesterId])
+  @@index([organizationId, targetId])
+  @@index([organizationId, status])
+  @@map("shift_swap_requests")
+}
+
+// ─────────────────────────────────────────────────────────────
+// EMPLOYEE REFERRALS
+// ─────────────────────────────────────────────────────────────
+
+model EmployeeReferral {
+  id              String         @id @default(uuid())
+  organizationId  String
+  referrerId      String
+  jobId           String?
+  candidateName   String
+  candidateEmail  String
+  candidatePhone  String?
+  position        String
+  message         String?
+  status          ReferralStatus @default(SUBMITTED)
+  bonusAmount     Float?
+  bonusPaid       Boolean        @default(false)
+  hiredAt         DateTime?
+  rejectedReason  String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  referrer     Employee      @relation(fields: [referrerId], references: [id])
+  job          JobPosting?   @relation(fields: [jobId], references: [id])
+
+  @@index([organizationId, referrerId])
+  @@index([organizationId, status])
+  @@map("employee_referrals")
+}
+
+// ─────────────────────────────────────────────────────────────
+// FULL & FINAL SETTLEMENT
+// ─────────────────────────────────────────────────────────────
+
+model FnFSettlement {
+  id                String    @id @default(uuid())
+  organizationId    String
+  employeeId        String    @unique
+  lastWorkingDate   DateTime
+  basicDays         Float     @default(0)
+  basicAmount       Float     @default(0)
+  pendingLeavesDays Float     @default(0)
+  leaveEncashment   Float     @default(0)
+  gratuityYears     Float     @default(0)
+  gratuityAmount    Float     @default(0)
+  bonusAmount       Float     @default(0)
+  otherDeductions   Float     @default(0)
+  netPayable        Float     @default(0)
+  notes             String?
+  status            FnFStatus @default(DRAFT)
+  approvedById      String?
+  approvedAt        DateTime?
+  paidAt            DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  approvedBy   Employee?    @relation("FnFApprover", fields: [approvedById], references: [id])
+
+  @@index([organizationId])
+  @@map("fnf_settlements")
 }

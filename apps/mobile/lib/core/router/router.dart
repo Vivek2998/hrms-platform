@@ -41,6 +41,11 @@ import '../../features/assets/presentation/assets_screen.dart';
 import '../../features/travel/presentation/travel_screen.dart';
 import '../../features/loans/presentation/loans_screen.dart';
 import '../../features/rooms/presentation/rooms_screen.dart';
+import '../../features/wfh/presentation/wfh_screen.dart';
+import '../../features/shift_swap/presentation/shift_swap_screen.dart';
+import '../../features/referrals/presentation/referrals_screen.dart';
+import '../../features/fnf/presentation/fnf_screen.dart';
+import '../../features/my_letters/presentation/my_letters_screen.dart';
 
 part 'router.g.dart';
 
@@ -187,6 +192,26 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/rooms',
         builder: (_, __) => const RoomsScreen(),
+      ),
+      GoRoute(
+        path: '/wfh',
+        builder: (_, __) => const WFHScreen(),
+      ),
+      GoRoute(
+        path: '/shift-swap',
+        builder: (_, __) => const ShiftSwapScreen(),
+      ),
+      GoRoute(
+        path: '/referrals',
+        builder: (_, __) => const ReferralsScreen(),
+      ),
+      GoRoute(
+        path: '/fnf',
+        builder: (_, __) => const FnFScreen(),
+      ),
+      GoRoute(
+        path: '/my-letters',
+        builder: (_, __) => const MyLettersScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

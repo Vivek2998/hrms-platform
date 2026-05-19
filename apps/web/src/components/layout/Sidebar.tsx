@@ -44,6 +44,10 @@ import {
   Plane,
   CreditCard,
   DoorOpen,
+  Home,
+  ArrowLeftRight,
+  Users2,
+  Calculator,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -99,6 +103,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Payroll Runs', to: '/payroll', icon: ReceiptText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'payroll' },
       { label: 'Salary Structure', to: '/salary-structure', icon: BarChart2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee, feature: 'my-payslips' },
+      { label: 'My Letters', to: '/my-letters', icon: FileText },
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
       { label: 'Expense Claims', to: '/expenses', icon: Wallet, feature: 'expenses' },
       { label: 'E-Signatures', to: '/esignatures', icon: FileSignature },
@@ -106,6 +111,10 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Travel Requests', to: '/travel', icon: Plane },
       { label: 'Loans & Advances', to: '/loans', icon: CreditCard },
       { label: 'Meeting Rooms', to: '/rooms', icon: DoorOpen },
+      { label: 'Work From Home', to: '/wfh', icon: Home },
+      { label: 'Shift Swap', to: '/shift-swap', icon: ArrowLeftRight },
+      { label: 'Referrals', to: '/referrals', icon: Users2 },
+      { label: 'FnF Settlement', to: '/fnf', icon: Calculator },
     ],
   },
   {
