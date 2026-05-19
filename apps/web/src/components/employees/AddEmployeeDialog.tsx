@@ -202,7 +202,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent aria-describedby={undefined} className="flex max-h-[90vh] max-w-2xl flex-col">
+      <DialogContent aria-describedby={undefined} className="flex h-[640px] max-h-[90vh] max-w-2xl flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle>Add New Employee</DialogTitle>
         </DialogHeader>
