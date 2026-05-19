@@ -207,6 +207,24 @@ enum TravelMode {
   OTHER
 }
 
+enum LoanType {
+  PERSONAL_LOAN
+  SALARY_ADVANCE
+  VEHICLE_LOAN
+  HOME_LOAN
+  EDUCATION_LOAN
+  OTHER
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISBURSED
+  CLOSED
+  CANCELLED
+}
+
 enum AssetStatus {
   AVAILABLE
   ASSIGNED
@@ -292,6 +310,7 @@ model Organization {
   assets                  Asset[]
   assetAssignments        AssetAssignment[]
   travelRequests          TravelRequest[]
+  loanRequests            LoanRequest[]
 
   @@map("organizations")
 }
@@ -461,6 +480,8 @@ model Employee {
   assetAssignments         AssetAssignment[]
   travelRequests           TravelRequest[]
   travelApprovals          TravelRequest[]  @relation("TravelApprover")
+  loanRequests             LoanRequest[]
+  loanApprovals            LoanRequest[]    @relation("LoanApprover")
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1760,4 +1781,36 @@ model TravelRequest {
   @@index([organizationId, employeeId])
   @@index([organizationId, status])
   @@map("travel_requests")
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOAN & SALARY ADVANCE
+// ─────────────────────────────────────────────────────────────
+
+model LoanRequest {
+  id              String      @id @default(uuid())
+  organizationId  String
+  employeeId      String
+  loanType        LoanType
+  amount          Decimal     @db.Decimal(14, 2)
+  tenure          Int?
+  emi             Decimal?    @db.Decimal(14, 2)
+  purpose         String
+  status          LoanStatus  @default(PENDING)
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectedReason  String?
+  disbursedAt     DateTime?
+  repaidAmount    Decimal     @default(0) @db.Decimal(14, 2)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  approvedBy   Employee?    @relation("LoanApprover", fields: [approvedById], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("loan_requests")
 }

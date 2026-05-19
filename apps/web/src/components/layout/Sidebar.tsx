@@ -42,6 +42,7 @@ import {
   FileSignature,
   Package,
   Plane,
+  CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -102,6 +103,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'E-Signatures', to: '/esignatures', icon: FileSignature },
       { label: 'Asset Management', to: '/assets', icon: Package, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'Travel Requests', to: '/travel', icon: Plane },
+      { label: 'Loans & Advances', to: '/loans', icon: CreditCard },
     ],
   },
   {

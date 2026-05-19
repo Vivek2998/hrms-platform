@@ -369,6 +369,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF059669), const Color(0xFFD1FAE5), '/assets'),
       _Action('Travel', Icons.flight_takeoff_rounded,
           const Color(0xFF0284C7), const Color(0xFFE0F2FE), '/travel'),
+      _Action('Loans', Icons.credit_card_rounded,
+          const Color(0xFF7C3AED), const Color(0xFFF5F3FF), '/loans'),
     ];
 
     return GridView.builder(

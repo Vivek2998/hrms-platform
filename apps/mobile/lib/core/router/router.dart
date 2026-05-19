@@ -39,6 +39,7 @@ import '../../features/pulse_surveys/presentation/pulse_surveys_screen.dart';
 import '../../features/recruitment/presentation/recruitment_screen.dart';
 import '../../features/assets/presentation/assets_screen.dart';
 import '../../features/travel/presentation/travel_screen.dart';
+import '../../features/loans/presentation/loans_screen.dart';
 
 part 'router.g.dart';
 
@@ -177,6 +178,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/travel',
         builder: (_, __) => const TravelScreen(),
+      ),
+      GoRoute(
+        path: '/loans',
+        builder: (_, __) => const LoansScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),

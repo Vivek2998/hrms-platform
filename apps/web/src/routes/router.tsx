@@ -49,6 +49,7 @@ const ESignaturePage = lazy(() => import('@/pages/esignature/ESignaturePage'));
 const LmsPage = lazy(() => import('@/pages/lms/LmsPage'));
 const AssetsPage = lazy(() => import('@/pages/assets/AssetsPage'));
 const TravelPage = lazy(() => import('@/pages/travel/TravelPage'));
+const LoansPage = lazy(() => import('@/pages/loans/LoansPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -267,6 +268,14 @@ export const router = createBrowserRouter([
         element: (
           <Lazy>
             <TravelPage />
+          </Lazy>
+        ),
+      },
+      {
+        path: 'loans',
+        element: (
+          <Lazy>
+            <LoansPage />
           </Lazy>
         ),
       },
