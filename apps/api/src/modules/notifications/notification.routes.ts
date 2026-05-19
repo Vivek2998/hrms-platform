@@ -69,4 +69,23 @@ export function notificationRoutes(app: FastifyInstance) {
     });
     return reply.send(ok({ message: 'All notifications marked as read' }));
   });
+
+  // PATCH /notifications/fcm-token  (register/update FCM push token)
+  app.patch('/notifications/fcm-token', auth, async (req, reply) => {
+    const { token } = z.object({ token: z.string().min(1) }).parse(req.body);
+    await app.prisma.employee.update({
+      where: { id: req.user.sub },
+      data: { fcmToken: token },
+    });
+    return reply.send(ok({ message: 'FCM token registered' }));
+  });
+
+  // DELETE /notifications/fcm-token  (remove FCM token on logout)
+  app.delete('/notifications/fcm-token', auth, async (req, reply) => {
+    await app.prisma.employee.update({
+      where: { id: req.user.sub },
+      data: { fcmToken: null },
+    });
+    return reply.send(ok({ message: 'FCM token removed' }));
+  });
 }

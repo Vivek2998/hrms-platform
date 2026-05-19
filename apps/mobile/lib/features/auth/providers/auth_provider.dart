@@ -3,6 +3,8 @@ import '../data/models/auth_model.dart';
 import '../data/repositories/auth_repository.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/geofence/geofence_manager.dart';
+import '../../../core/dio/dio_client.dart';
+import '../../../core/notifications/fcm_service.dart';
 
 part 'auth_provider.g.dart';
 
@@ -33,6 +35,8 @@ class AuthNotifier extends _$AuthNotifier {
       final repo = ref.read(authRepositoryProvider);
       final user = await repo.login(email: email, password: password);
       final branding = await repo.getOrgBranding();
+      // Register FCM token after successful login
+      FcmService.registerToken(ref.read(dioClientProvider));
       return AuthState(
         user: user,
         isAuthenticated: true,
@@ -51,6 +55,8 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<void> logout() async {
     await GeofenceManager.instance.stop();
+    // Remove FCM token from backend before clearing session
+    await FcmService.removeToken(ref.read(dioClientProvider));
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(AuthState.unauthenticated());
   }

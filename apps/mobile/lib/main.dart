@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/isar/isar_service.dart';
 import 'core/notifications/local_notification_service.dart';
+import 'core/notifications/fcm_service.dart';
 import 'core/geofence/geofence_manager.dart';
 import 'app.dart';
 
@@ -19,6 +20,7 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp();
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await FcmService.init();
   } catch (e) {
     debugPrint('[Firebase] init skipped: $e');
   }

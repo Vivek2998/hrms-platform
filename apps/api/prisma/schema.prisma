@@ -430,6 +430,8 @@ model Employee {
   officeLocationId    String?
   // Biometric attendance preference
   biometricPreference BiometricPreference @default(FINGERPRINT_FIRST)
+  // FCM push notification token
+  fcmToken            String?
   // Auth
   passwordHash        String
   passwordChangedAt   DateTime?
