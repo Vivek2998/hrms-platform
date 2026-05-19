@@ -46,6 +46,7 @@ import { kudosRoutes } from './modules/kudos/kudos.routes.js';
 import { eSignatureRoutes } from './modules/esignature/esignature.routes.js';
 import { lmsRoutes } from './modules/lms/lms.routes.js';
 import { assetRoutes } from './modules/assets/assets.routes.js';
+import { travelRoutes } from './modules/travel/travel.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -111,6 +112,7 @@ export async function buildApp() {
   await app.register(eSignatureRoutes, { prefix });
   await app.register(lmsRoutes, { prefix });
   await app.register(assetRoutes, { prefix });
+  await app.register(travelRoutes, { prefix });
 
   await app.ready();
   return app;

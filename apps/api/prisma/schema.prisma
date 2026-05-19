@@ -192,6 +192,21 @@ enum BiometricPreference {
   NO_BIOMETRIC
 }
 
+enum TravelStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum TravelMode {
+  FLIGHT
+  TRAIN
+  BUS
+  CAR
+  OTHER
+}
+
 enum AssetStatus {
   AVAILABLE
   ASSIGNED
@@ -276,6 +291,7 @@ model Organization {
   courseEnrollments       CourseEnrollment[]
   assets                  Asset[]
   assetAssignments        AssetAssignment[]
+  travelRequests          TravelRequest[]
 
   @@map("organizations")
 }
@@ -443,6 +459,8 @@ model Employee {
   feedbacksReceived        PeerFeedback[]         @relation("FeedbackReceiver")
   offboardingAssignments   OffboardingAssignment[]
   assetAssignments         AssetAssignment[]
+  travelRequests           TravelRequest[]
+  travelApprovals          TravelRequest[]  @relation("TravelApprover")
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1707,4 +1725,39 @@ model AssetAssignment {
   @@index([organizationId, assetId])
   @@index([organizationId, employeeId])
   @@map("asset_assignments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// TRAVEL REQUESTS
+// ─────────────────────────────────────────────────────────────
+
+model TravelRequest {
+  id               String        @id @default(uuid())
+  organizationId   String
+  employeeId       String
+  purpose          String
+  fromCity         String
+  toCity           String
+  departureDate    DateTime
+  returnDate       DateTime?
+  travelMode       TravelMode    @default(FLIGHT)
+  estimatedBudget  Decimal?      @db.Decimal(12, 2)
+  hotelRequired    Boolean       @default(false)
+  advanceRequired  Boolean       @default(false)
+  advanceAmount    Decimal?      @db.Decimal(12, 2)
+  status           TravelStatus  @default(PENDING)
+  approvedById     String?
+  approvedAt       DateTime?
+  rejectedReason   String?
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  approvedBy   Employee?    @relation("TravelApprover", fields: [approvedById], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("travel_requests")
 }
