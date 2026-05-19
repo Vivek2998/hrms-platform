@@ -202,14 +202,14 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent aria-describedby={undefined} className="flex h-[640px] max-h-[90vh] max-w-2xl flex-col">
-        <DialogHeader className="shrink-0">
+      <DialogContent aria-describedby={undefined} className="max-w-2xl">
+        <DialogHeader>
           <DialogTitle>Add New Employee</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden w-full">
-            <div className="shrink-0">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div>
               {/* Mobile: select dropdown */}
               <Select value={activeTab} onValueChange={setActiveTab}>
                 <SelectTrigger className="mb-4 sm:hidden">
@@ -228,7 +228,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 ))}
               </TabsList>
             </div>
-            <div className="flex-1 overflow-y-auto pr-1">
+            <div className="h-[380px] overflow-y-auto pr-1">
 
             {/* ── Tab 1: Personal ── */}
             <TabsContent value="personal" className="space-y-4">
@@ -493,7 +493,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
             </div>
           </Tabs>
 
-          <DialogFooter className="mt-4 shrink-0 border-t pt-4">
+          <DialogFooter className="mt-4 border-t pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
