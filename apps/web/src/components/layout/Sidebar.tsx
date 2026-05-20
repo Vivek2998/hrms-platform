@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -48,6 +48,12 @@ import {
   ArrowLeftRight,
   Users2,
   Calculator,
+  ShieldAlert,
+  Shield,
+  Bot,
+  Crown,
+  Gift,
+  Map,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -115,6 +121,9 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Shift Swap', to: '/shift-swap', icon: ArrowLeftRight },
       { label: 'Referrals', to: '/referrals', icon: Users2 },
       { label: 'FnF Settlement', to: '/fnf', icon: Calculator },
+      { label: 'Salary Revision', to: '/salary-revision', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'Timesheets', to: '/timesheets', icon: Clock },
+      { label: 'Benefits', to: '/benefits', icon: Gift },
     ],
   },
   {
@@ -140,6 +149,11 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Performance', to: '/performance', icon: Target, feature: 'performance' },
       { label: 'Offboarding', to: '/offboarding', icon: UserMinus, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'offboarding' },
       { label: 'Pulse Surveys', to: '/pulse-surveys', icon: BarChart2, feature: 'pulse-surveys' },
+      { label: 'PIP', to: '/pip', icon: Target, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
+      { label: 'Nine-Box Grid', to: '/nine-box', icon: BarChart2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'Career Paths', to: '/career', icon: Map },
+      { label: 'Succession Planning', to: '/succession', icon: Crown, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'Headcount Planning', to: '/headcount', icon: Users, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
     ],
   },
   {
@@ -151,8 +165,11 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Help Desk', to: '/helpdesk', icon: Headphones, feature: 'helpdesk' },
       { label: 'Suggestion Box', to: '/suggestions', icon: Lightbulb, feature: 'suggestions' },
       { label: 'HR Policies', to: '/hr-policies', icon: BookOpen, feature: 'hr-policies' },
+      { label: 'Compliance Calendar', to: '/compliance', icon: Shield, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'POSH Cases', to: '/posh', icon: ShieldAlert },
     ],
   },
+  { group: false, label: 'HR Assistant', to: '/chat', icon: Bot },
   { group: false, label: 'Recruitment', to: '/recruitment', icon: Briefcase, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'recruitment' },
   { group: false, label: 'Analytics', to: '/analytics', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'analytics' },
   { group: false, label: 'Reports', to: '/reports', icon: FileText, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
@@ -208,6 +225,7 @@ export function Sidebar() {
   const orgPlan = useAuthStore((s) => s.user?.orgPlan);
   const { sidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
@@ -238,8 +256,13 @@ export function Sidebar() {
     setOpenGroups(new Set());
   }, [location.pathname, sidebarOpen]);
 
-  function toggleGroup(key: string) {
-    setOpenGroups((prev) => new Set(prev.has(key) ? [] : [key]));
+  function handleGroupClick(key: string, visible: NavItem[]) {
+    const isCurrentlyOpen = openGroups.has(key);
+    setOpenGroups(isCurrentlyOpen ? new Set() : new Set([key]));
+    if (!isCurrentlyOpen) {
+      const firstChild = visible.find((c) => !isLocked(c, orgPlan));
+      if (firstChild) navigate(firstChild.to);
+    }
   }
 
   // True when an open accordion's children don't include the current URL.
@@ -386,13 +409,8 @@ export function Sidebar() {
                   return (
                     <li key={entry.key}>
                       <button
-                        onClick={() => toggleGroup(entry.key)}
-                        className={cn(
-                          'group/nav flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                          isOpen && !isChildActive
-                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                        )}
+                        onClick={() => handleGroupClick(entry.key, visible)}
+                        className="group/nav flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       >
                         <entry.icon className="h-5 w-5 shrink-0" />
                         <span className="flex-1 text-left">{entry.label}</span>

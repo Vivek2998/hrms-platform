@@ -56,6 +56,17 @@ const WFHPage = lazy(() => import('@/pages/wfh/WFHPage'));
 const ShiftSwapPage = lazy(() => import('@/pages/shift-swap/ShiftSwapPage'));
 const ReferralPage = lazy(() => import('@/pages/referrals/ReferralPage'));
 const FnFPage = lazy(() => import('@/pages/fnf/FnFPage'));
+const SalaryRevisionPage = lazy(() => import('@/pages/salary-revision/SalaryRevisionPage'));
+const CompliancePage = lazy(() => import('@/pages/compliance/CompliancePage'));
+const POSHPage = lazy(() => import('@/pages/posh/POSHPage'));
+const TimesheetPage = lazy(() => import('@/pages/timesheets/TimesheetPage'));
+const BenefitsPage = lazy(() => import('@/pages/benefits/BenefitsPage'));
+const PIPPage = lazy(() => import('@/pages/pip/PIPPage'));
+const NineBoxPage = lazy(() => import('@/pages/nine-box/NineBoxPage'));
+const HeadcountPage = lazy(() => import('@/pages/headcount/HeadcountPage'));
+const CareerPage = lazy(() => import('@/pages/career/CareerPage'));
+const SuccessionPage = lazy(() => import('@/pages/succession/SuccessionPage'));
+const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -308,6 +319,74 @@ export const router = createBrowserRouter([
       {
         path: 'fnf',
         element: (<Lazy><FnFPage /></Lazy>),
+      },
+      {
+        path: 'salary-revision',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy><SalaryRevisionPage /></Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'compliance',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy><CompliancePage /></Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'posh',
+        element: (<Lazy><POSHPage /></Lazy>),
+      },
+      {
+        path: 'timesheets',
+        element: (<Lazy><TimesheetPage /></Lazy>),
+      },
+      {
+        path: 'benefits',
+        element: (<Lazy><BenefitsPage /></Lazy>),
+      },
+      {
+        path: 'pip',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER']}>
+            <Lazy><PIPPage /></Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'nine-box',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy><NineBoxPage /></Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'headcount',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy><HeadcountPage /></Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'career',
+        element: (<Lazy><CareerPage /></Lazy>),
+      },
+      {
+        path: 'succession',
+        element: (
+          <RoleGuard allow={['SUPER_ADMIN', 'ORG_ADMIN', 'HR']}>
+            <Lazy><SuccessionPage /></Lazy>
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'chat',
+        element: (<Lazy><ChatPage /></Lazy>),
       },
       {
         path: 'directory',

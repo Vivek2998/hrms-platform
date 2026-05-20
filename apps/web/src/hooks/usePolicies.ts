@@ -59,3 +59,25 @@ export function useDeletePolicy() {
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ['hr-policies'] }); },
   });
 }
+
+export function useAcknowledgePolicy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post(`/hr-policies/${id}/acknowledge`);
+      return res.data.data;
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['hr-policies'] }); },
+  });
+}
+
+export function usePolicyAcknowledgments(id: string) {
+  return useQuery({
+    queryKey: ['hr-policy-acks', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/hr-policies/${id}/acknowledgments`);
+      return res.data.data as { acknowledged: number; total: number; pending: any[] };
+    },
+    enabled: !!id,
+  });
+}

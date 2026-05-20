@@ -53,4 +53,36 @@ export function hrPolicyRoutes(app: FastifyInstance) {
     });
     return reply.status(200).send(ok({ message: 'Policy archived' }));
   });
+
+  // POST /hr-policies/:id/acknowledge — employee acknowledges a policy
+  app.post('/hr-policies/:id/acknowledge', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { orgId, sub: employeeId } = req.user;
+
+    const policy = await app.prisma.hrPolicy.findFirst({ where: { id, organizationId: orgId, isActive: true } });
+    if (!policy) return reply.status(404).send({ message: 'Policy not found' });
+
+    await app.prisma.policyAcknowledgment.upsert({
+      where: { policyId_employeeId: { policyId: id, employeeId } },
+      create: { organizationId: orgId, policyId: id, employeeId },
+      update: { acknowledgedAt: new Date() },
+    });
+    return reply.status(200).send(ok({ acknowledged: true }));
+  });
+
+  // GET /hr-policies/:id/acknowledgments — HR sees who acknowledged
+  app.get('/hr-policies/:id/acknowledgments', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { orgId, role } = req.user;
+    if (!(HR_ROLES as readonly string[]).includes(role)) {
+      return reply.status(403).send({ message: 'Forbidden' });
+    }
+    const { id } = req.params as { id: string };
+    const acks = await app.prisma.policyAcknowledgment.findMany({
+      where: { organizationId: orgId, policyId: id },
+      include: { employee: { select: { id: true, firstName: true, lastName: true, employeeCode: true, avatarUrl: true, designation: true } } },
+      orderBy: { acknowledgedAt: 'desc' },
+    });
+    const total = await app.prisma.employee.count({ where: { organizationId: orgId, status: 'ACTIVE', deletedAt: null } });
+    return reply.status(200).send(ok({ acknowledged: acks, total, pending: total - acks.length }));
+  });
 }

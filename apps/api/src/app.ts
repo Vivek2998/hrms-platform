@@ -53,6 +53,17 @@ import { wfhRoutes } from './modules/wfh/wfh.routes.js';
 import { shiftSwapRoutes } from './modules/shift-swap/shift-swap.routes.js';
 import { referralRoutes } from './modules/referrals/referral.routes.js';
 import { fnfRoutes } from './modules/fnf/fnf.routes.js';
+import { salaryRevisionProposalRoutes } from './modules/salary-revision-proposals/salary-revision-proposal.routes.js';
+import { complianceRoutes } from './modules/compliance/compliance.routes.js';
+import { poshRoutes } from './modules/posh/posh.routes.js';
+import { timesheetRoutes } from './modules/timesheets/timesheet.routes.js';
+import { benefitsRoutes } from './modules/benefits/benefits.routes.js';
+import { pipRoutes } from './modules/pip/pip.routes.js';
+import { nineBoxRoutes } from './modules/nine-box/nine-box.routes.js';
+import { headcountRoutes } from './modules/headcount/headcount.routes.js';
+import { careerRoutes } from './modules/career/career.routes.js';
+import { successionRoutes } from './modules/succession/succession.routes.js';
+import { chatRoutes } from './modules/chat/chat.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -125,6 +136,18 @@ export async function buildApp() {
   await app.register(shiftSwapRoutes, { prefix });
   await app.register(referralRoutes, { prefix });
   await app.register(fnfRoutes, { prefix });
+  // Tier 2
+  await app.register(salaryRevisionProposalRoutes, { prefix });
+  await app.register(complianceRoutes, { prefix });
+  await app.register(poshRoutes, { prefix });
+  await app.register(timesheetRoutes, { prefix });
+  await app.register(benefitsRoutes, { prefix });
+  await app.register(pipRoutes, { prefix });
+  await app.register(nineBoxRoutes, { prefix });
+  await app.register(headcountRoutes, { prefix });
+  await app.register(careerRoutes, { prefix });
+  await app.register(successionRoutes, { prefix });
+  await app.register(chatRoutes, { prefix });
 
   await app.ready();
   return app;

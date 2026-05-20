@@ -278,6 +278,66 @@ enum FnFStatus {
   PAID
 }
 
+enum RevisionProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum POSHCaseStatus {
+  FILED
+  UNDER_INVESTIGATION
+  HEARING
+  RESOLVED
+  DISMISSED
+  CLOSED
+}
+
+enum TimesheetStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum BenefitType {
+  HEALTH_INSURANCE
+  LIFE_INSURANCE
+  NPS
+  GYM
+  MEAL_ALLOWANCE
+  TRANSPORT
+  OTHER
+}
+
+enum BenefitEnrollmentStatus {
+  PENDING
+  ENROLLED
+  WAIVED
+  CANCELLED
+}
+
+enum PIPStatus {
+  ACTIVE
+  COMPLETED
+  EXTENDED
+  TERMINATED
+}
+
+enum SuccessorReadiness {
+  READY_NOW
+  ONE_TO_TWO_YEARS
+  THREE_TO_FIVE_YEARS
+}
+
+enum OpenPositionStatus {
+  OPEN
+  IN_PROGRESS
+  FILLED
+  ON_HOLD
+  CANCELLED
+}
+
 // ─────────────────────────────────────────────────────────────
 // ORGANIZATIONS (Tenants)
 // ─────────────────────────────────────────────────────────────
@@ -346,6 +406,20 @@ model Organization {
   shiftSwapRequests       ShiftSwapRequest[]
   employeeReferrals       EmployeeReferral[]
   fnfSettlements          FnFSettlement[]
+  // Tier 2
+  salaryRevisionProposals SalaryRevisionProposal[]
+  poshCases               POSHCase[]
+  projects                Project[]
+  timesheetEntries        TimesheetEntry[]
+  benefitPlans            BenefitPlan[]
+  benefitEnrollments      BenefitEnrollment[]
+  pips                    PerformanceImprovementPlan[]
+  nineBoxAssessments      NineBoxAssessment[]
+  headcountPlans          HeadcountPlan[]
+  openPositions           OpenPosition[]
+  designations            Designation[]
+  successionPlans         SuccessionPlan[]
+  chatSessions            ChatSession[]
 
   @@map("organizations")
 }
@@ -528,6 +602,21 @@ model Employee {
   referralsMade            EmployeeReferral[]
   fnfSettlements           FnFSettlement[]
   fnfApprovals             FnFSettlement[]      @relation("FnFApprover")
+  // Tier 2
+  salaryRevisionProposals      SalaryRevisionProposal[] @relation("RevisionEmployee")
+  salaryRevisionProposalsOwned SalaryRevisionProposal[] @relation("RevisionProposer")
+  salaryRevisionApprovals      SalaryRevisionProposal[] @relation("RevisionApprover")
+  poshCases                POSHCase[]
+  poshCaseUpdates          POSHCaseUpdate[]
+  timesheetEntries         TimesheetEntry[]
+  timesheetApprovals       TimesheetEntry[]     @relation("TimesheetApprover")
+  benefitEnrollments       BenefitEnrollment[]
+  pips                     PerformanceImprovementPlan[] @relation("PIPEmployee")
+  managedPips              PerformanceImprovementPlan[] @relation("PIPManager")
+  nineBoxAssessments       NineBoxAssessment[]  @relation("NineBoxEmployee")
+  nineBoxAssessmentsGiven  NineBoxAssessment[]  @relation("NineBoxAssessor")
+  successorNominations     SuccessorNomination[]
+  policyAcknowledgments    PolicyAcknowledgment[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1059,6 +1148,8 @@ model HrPolicy {
   deletedAt      DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  acknowledgments PolicyAcknowledgment[]
 
   @@index([organizationId])
   @@map("hr_policies")
@@ -2034,4 +2125,438 @@ model FnFSettlement {
 
   @@index([organizationId])
   @@map("fnf_settlements")
+}
+
+// ─────────────────────────────────────────────────────────────
+// POLICY ACKNOWLEDGMENT TRACKING (#21)
+// ─────────────────────────────────────────────────────────────
+
+model PolicyAcknowledgment {
+  id             String   @id @default(uuid())
+  organizationId String
+  policyId       String
+  employeeId     String
+  acknowledgedAt DateTime @default(now())
+
+  policy   HrPolicy @relation(fields: [policyId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([policyId, employeeId])
+  @@index([organizationId, policyId])
+  @@map("policy_acknowledgments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SALARY REVISION PROPOSAL / APPRAISAL WORKFLOW (#23)
+// ─────────────────────────────────────────────────────────────
+
+model SalaryRevisionProposal {
+  id              String                 @id @default(uuid())
+  organizationId  String
+  employeeId      String
+  proposedById    String
+  effectiveFrom   DateTime               @db.Date
+  currentCtc      Float
+  proposedCtc     Float
+  currentBasic    Float
+  proposedBasic   Float
+  currentGross    Float
+  proposedGross   Float
+  currentNetPay   Float
+  proposedNetPay  Float
+  components      Json
+  reason          String
+  status          RevisionProposalStatus @default(PENDING)
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectedReason  String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation("RevisionEmployee", fields: [employeeId], references: [id])
+  proposedBy   Employee     @relation("RevisionProposer", fields: [proposedById], references: [id])
+  approvedBy   Employee?    @relation("RevisionApprover", fields: [approvedById], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("salary_revision_proposals")
+}
+
+// ─────────────────────────────────────────────────────────────
+// POSH CASE MANAGEMENT (#19)
+// ─────────────────────────────────────────────────────────────
+
+model POSHCase {
+  id               String         @id @default(uuid())
+  organizationId   String
+  caseNumber       String
+  complainantId    String
+  respondentName   String
+  incidentDate     DateTime       @db.Date
+  incidentLocation String?
+  description      String
+  status           POSHCaseStatus @default(FILED)
+  assignedTo       String?
+  resolvedAt       DateTime?
+  resolution       String?
+  isAnonymous      Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  complainant  Employee        @relation(fields: [complainantId], references: [id])
+  updates      POSHCaseUpdate[]
+
+  @@unique([organizationId, caseNumber])
+  @@index([organizationId, status])
+  @@map("posh_cases")
+}
+
+model POSHCaseUpdate {
+  id        String   @id @default(uuid())
+  caseId    String
+  updatedBy String
+  note      String
+  createdAt DateTime @default(now())
+
+  case      POSHCase @relation(fields: [caseId], references: [id])
+  updatedByEmp Employee @relation(fields: [updatedBy], references: [id])
+
+  @@index([caseId])
+  @@map("posh_case_updates")
+}
+
+// ─────────────────────────────────────────────────────────────
+// TIMESHEET / PROJECT TIME TRACKING (#20)
+// ─────────────────────────────────────────────────────────────
+
+model Project {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  description    String?
+  clientName     String?
+  isBillable     Boolean   @default(true)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  entries      TimesheetEntry[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("projects")
+}
+
+model TimesheetEntry {
+  id             String          @id @default(uuid())
+  organizationId String
+  employeeId     String
+  projectId      String
+  date           DateTime        @db.Date
+  hours          Float
+  description    String?
+  isBillable     Boolean         @default(true)
+  status         TimesheetStatus @default(DRAFT)
+  weekStart      DateTime        @db.Date
+  approvedById   String?
+  approvedAt     DateTime?
+  rejectedReason String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  project      Project      @relation(fields: [projectId], references: [id])
+  approvedBy   Employee?    @relation("TimesheetApprover", fields: [approvedById], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, weekStart])
+  @@map("timesheet_entries")
+}
+
+// ─────────────────────────────────────────────────────────────
+// BENEFITS ADMINISTRATION (#17)
+// ─────────────────────────────────────────────────────────────
+
+model BenefitPlan {
+  id                 String      @id @default(uuid())
+  organizationId     String
+  name               String
+  type               BenefitType
+  description        String?
+  maxAmount          Float?
+  isActive           Boolean     @default(true)
+  enrollmentDeadline DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  enrollments  BenefitEnrollment[]
+
+  @@index([organizationId])
+  @@map("benefit_plans")
+}
+
+model BenefitEnrollment {
+  id             String                  @id @default(uuid())
+  organizationId String
+  planId         String
+  employeeId     String
+  status         BenefitEnrollmentStatus @default(PENDING)
+  amount         Float?
+  details        Json?
+  enrolledAt     DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  plan         BenefitPlan  @relation(fields: [planId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@unique([planId, employeeId])
+  @@index([organizationId, employeeId])
+  @@map("benefit_enrollments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PERFORMANCE IMPROVEMENT PLAN (#13)
+// ─────────────────────────────────────────────────────────────
+
+model PerformanceImprovementPlan {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  managerId      String
+  title          String
+  reason         String
+  startDate      DateTime  @db.Date
+  endDate        DateTime  @db.Date
+  status         PIPStatus @default(ACTIVE)
+  outcome        String?
+  closedAt       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation("PIPEmployee", fields: [employeeId], references: [id])
+  manager      Employee     @relation("PIPManager", fields: [managerId], references: [id])
+  goals        PIPGoal[]
+  checkIns     PIPCheckIn[]
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@map("performance_improvement_plans")
+}
+
+model PIPGoal {
+  id          String     @id @default(uuid())
+  pipId       String
+  title       String
+  description String?
+  targetDate  DateTime?  @db.Date
+  status      GoalStatus @default(NOT_STARTED)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  pip PerformanceImprovementPlan @relation(fields: [pipId], references: [id], onDelete: Cascade)
+
+  @@index([pipId])
+  @@map("pip_goals")
+}
+
+model PIPCheckIn {
+  id          String   @id @default(uuid())
+  pipId       String
+  conductedAt DateTime
+  notes       String?
+  progress    String?
+  createdAt   DateTime @default(now())
+
+  pip PerformanceImprovementPlan @relation(fields: [pipId], references: [id], onDelete: Cascade)
+
+  @@index([pipId])
+  @@map("pip_check_ins")
+}
+
+// ─────────────────────────────────────────────────────────────
+// NINE-BOX GRID (#14)
+// ─────────────────────────────────────────────────────────────
+
+model NineBoxAssessment {
+  id             String   @id @default(uuid())
+  organizationId String
+  cycleId        String?
+  employeeId     String
+  assessedById   String
+  performance    Int      // 1=Low 2=Medium 3=High
+  potential      Int      // 1=Low 2=Medium 3=High
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  employee     Employee         @relation("NineBoxEmployee", fields: [employeeId], references: [id])
+  assessedBy   Employee         @relation("NineBoxAssessor", fields: [assessedById], references: [id])
+
+  @@unique([organizationId, cycleId, employeeId])
+  @@index([organizationId])
+  @@map("nine_box_assessments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// HEADCOUNT / WORKFORCE PLANNING (#18)
+// ─────────────────────────────────────────────────────────────
+
+model HeadcountPlan {
+  id             String    @id @default(uuid())
+  organizationId String
+  departmentId   String?
+  financialYear  String
+  budgetedCount  Int
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  openPositions OpenPosition[]
+
+  @@unique([organizationId, departmentId, financialYear])
+  @@index([organizationId])
+  @@map("headcount_plans")
+}
+
+model OpenPosition {
+  id             String             @id @default(uuid())
+  organizationId String
+  planId         String?
+  departmentId   String?
+  title          String
+  count          Int                @default(1)
+  status         OpenPositionStatus @default(OPEN)
+  targetDate     DateTime?          @db.Date
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  plan         HeadcountPlan? @relation(fields: [planId], references: [id])
+
+  @@index([organizationId, status])
+  @@map("open_positions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CAREER PATH VISUALIZATION (#15)
+// ─────────────────────────────────────────────────────────────
+
+model Designation {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  level          Int      @default(1)
+  department     String?
+  description    String?
+  skills         String[] @default([])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  fromPaths    CareerPath[] @relation("FromDesignation")
+  toPaths      CareerPath[] @relation("ToDesignation")
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("designations")
+}
+
+model CareerPath {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  fromDesignationId  String
+  toDesignationId    String
+  typicalYears       Int?
+  skillsRequired     String[] @default([])
+  notes              String?
+  createdAt          DateTime @default(now())
+
+  fromDesignation Designation @relation("FromDesignation", fields: [fromDesignationId], references: [id])
+  toDesignation   Designation @relation("ToDesignation", fields: [toDesignationId], references: [id])
+
+  @@unique([organizationId, fromDesignationId, toDesignationId])
+  @@index([organizationId])
+  @@map("career_paths")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUCCESSION PLANNING (#16)
+// ─────────────────────────────────────────────────────────────
+
+model SuccessionPlan {
+  id             String   @id @default(uuid())
+  organizationId String
+  roleTitle      String
+  departmentId   String?
+  isCritical     Boolean  @default(true)
+  riskLevel      String   @default("MEDIUM")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  successors   SuccessorNomination[]
+
+  @@index([organizationId])
+  @@map("succession_plans")
+}
+
+model SuccessorNomination {
+  id         String             @id @default(uuid())
+  planId     String
+  employeeId String
+  readiness  SuccessorReadiness @default(ONE_TO_TWO_YEARS)
+  notes      String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  plan     SuccessionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  employee Employee       @relation(fields: [employeeId], references: [id])
+
+  @@unique([planId, employeeId])
+  @@index([planId])
+  @@map("successor_nominations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI CHATBOT SESSIONS (#24)
+// ─────────────────────────────────────────────────────────────
+
+model ChatSession {
+  id             String   @id @default(uuid())
+  organizationId String
+  employeeId     String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  messages     ChatMessage[]
+
+  @@index([organizationId, employeeId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String   // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("chat_messages")
 }
