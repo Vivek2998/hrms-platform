@@ -21,7 +21,7 @@ class ChatScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('HR Assistant'),
+        title: const Text('Assistant'),
         backgroundColor: AppColors.white,
         foregroundColor: AppColors.primary,
         elevation: 0,

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { AssistantWidget } from './AssistantWidget';
 import { useUiStore } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ export function AppShell() {
         </main>
       </div>
       <BottomNav />
+      <AssistantWidget />
     </div>
   );
 }

@@ -182,7 +182,6 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'POSH Cases', to: '/posh', icon: ShieldAlert },
     ],
   },
-  { group: false, label: 'HR Assistant', to: '/chat', icon: Bot },
   { group: false, label: 'Earned Wage Access', to: '/ewa', icon: Coins },
   { group: false, label: 'Biometric Devices', to: '/biometric-devices', icon: Fingerprint, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Hiring Drives', to: '/hiring-drives', icon: GraduationCap, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },

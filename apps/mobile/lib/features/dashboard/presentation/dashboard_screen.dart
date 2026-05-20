@@ -32,17 +32,17 @@ class DashboardScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton(
-            onPressed: () => context.push('/helpdesk'),
-            backgroundColor: const Color(0xFFF97316),
+            onPressed: () => context.push('/chat'),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             elevation: 10,
-            child: const Icon(Icons.support_agent_rounded, size: 24),
+            child: const Icon(Icons.smart_toy_rounded, size: 24),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Helpdesk',
+          Text(
+            'Assistant',
             style: TextStyle(
-              color: Color(0xFFF97316),
+              color: AppColors.primary,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -385,8 +385,8 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFF059669), const Color(0xFFD1FAE5), '/benefits'),
       _Action('Career', Icons.trending_up_rounded,
           const Color(0xFF7C3AED), const Color(0xFFF5F3FF), '/career-paths'),
-      _Action('HR Chat', Icons.smart_toy_rounded,
-          const Color(0xFF0284C7), const Color(0xFFE0F2FE), '/chat'),
+      _Action('Help Desk', Icons.support_agent_rounded,
+          const Color(0xFFF97316), const Color(0xFFFFF7ED), '/helpdesk'),
       _Action('Compliance', Icons.gavel_rounded,
           const Color(0xFFB45309), const Color(0xFFFEF3C7), '/compliance'),
       _Action('Headcount', Icons.groups_rounded,
