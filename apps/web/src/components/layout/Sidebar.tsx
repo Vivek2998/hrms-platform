@@ -309,7 +309,7 @@ export function Sidebar() {
 
         <aside
           className={cn(
-            'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r transition-all duration-300',
+            'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r overflow-hidden transition-[width,transform] duration-200',
             sidebarOpen ? 'w-64' : 'w-16',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
           )}
@@ -346,7 +346,7 @@ export function Sidebar() {
           </div>
 
           {/* ── Navigation ── */}
-          <nav className="flex-1 overflow-y-auto py-3">
+          <nav className="flex-1 overflow-y-auto [scrollbar-gutter:stable] py-3">
             {/* Expanded: px-2 gutters. Collapsed: no gutters — items center themselves */}
             <ul className={cn('space-y-0.5', sidebarOpen ? 'px-2' : 'px-0')}>
               {ENTRIES.map((entry) => {
@@ -446,8 +446,8 @@ export function Sidebar() {
                           )}
                         />
                       </button>
-                      {isOpen && (
-                        <ul className="mt-0.5 space-y-0.5">
+                      <div className={cn('grid overflow-hidden transition-[grid-template-rows] duration-200', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+                        <ul className="min-h-0 mt-0.5 space-y-0.5">
                           {visible.map((child) => {
                             const locked = isLocked(child, orgPlan);
                             if (locked) {
@@ -480,7 +480,7 @@ export function Sidebar() {
                             );
                           })}
                         </ul>
-                      )}
+                      </div>
                     </li>
                   );
                 }
