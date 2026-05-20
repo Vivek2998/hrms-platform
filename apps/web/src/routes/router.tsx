@@ -67,6 +67,16 @@ const HeadcountPage = lazy(() => import('@/pages/headcount/HeadcountPage'));
 const CareerPage = lazy(() => import('@/pages/career/CareerPage'));
 const SuccessionPage = lazy(() => import('@/pages/succession/SuccessionPage'));
 const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
+const EWAPage = lazy(() => import('@/pages/ewa/EWAPage'));
+const AttritionPage = lazy(() => import('@/pages/attrition/AttritionPage'));
+const BiometricDevicesPage = lazy(() => import('@/pages/biometric-devices/BiometricDevicesPage'));
+const HiringDrivesPage = lazy(() => import('@/pages/hiring-drives/HiringDrivesPage'));
+const PayEquityPage = lazy(() => import('@/pages/pay-equity/PayEquityPage'));
+const InterviewScorecardsPage = lazy(() => import('@/pages/interview-scorecards/InterviewScorecardsPage'));
+const ResumeParsePage = lazy(() => import('@/pages/resume-parse/ResumeParsePage'));
+const ContractorsPage = lazy(() => import('@/pages/contractors/ContractorsPage'));
+const ESOPPage = lazy(() => import('@/pages/esop/ESOPPage'));
+const EAPPage = lazy(() => import('@/pages/eap/EAPPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
@@ -388,6 +398,16 @@ export const router = createBrowserRouter([
         path: 'chat',
         element: (<Lazy><ChatPage /></Lazy>),
       },
+      { path: 'ewa', element: (<Lazy><EWAPage /></Lazy>) },
+      { path: 'attrition', element: (<Lazy><AttritionPage /></Lazy>) },
+      { path: 'biometric-devices', element: (<Lazy><BiometricDevicesPage /></Lazy>) },
+      { path: 'hiring-drives', element: (<Lazy><HiringDrivesPage /></Lazy>) },
+      { path: 'pay-equity', element: (<Lazy><PayEquityPage /></Lazy>) },
+      { path: 'interview-scorecards', element: (<Lazy><InterviewScorecardsPage /></Lazy>) },
+      { path: 'resume-parse', element: (<Lazy><ResumeParsePage /></Lazy>) },
+      { path: 'contractors', element: (<Lazy><ContractorsPage /></Lazy>) },
+      { path: 'esop', element: (<Lazy><ESOPPage /></Lazy>) },
+      { path: 'eap', element: (<Lazy><EAPPage /></Lazy>) },
       {
         path: 'directory',
         element: (

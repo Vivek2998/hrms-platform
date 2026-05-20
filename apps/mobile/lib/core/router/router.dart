@@ -46,6 +46,16 @@ import '../../features/shift_swap/presentation/shift_swap_screen.dart';
 import '../../features/referrals/presentation/referrals_screen.dart';
 import '../../features/fnf/presentation/fnf_screen.dart';
 import '../../features/my_letters/presentation/my_letters_screen.dart';
+import '../../features/ewa/presentation/ewa_screen.dart';
+import '../../features/attrition/presentation/attrition_screen.dart';
+import '../../features/biometric_devices/presentation/biometric_devices_screen.dart';
+import '../../features/hiring_drives/presentation/hiring_drives_screen.dart';
+import '../../features/pay_equity/presentation/pay_equity_screen.dart';
+import '../../features/interview_scorecards/presentation/interview_scorecards_screen.dart';
+import '../../features/resume_parse/presentation/resume_parse_screen.dart';
+import '../../features/contractors/presentation/contractors_screen.dart';
+import '../../features/esop/presentation/esop_screen.dart';
+import '../../features/eap/presentation/eap_screen.dart';
 import '../../features/benefits/presentation/benefits_screen.dart';
 import '../../features/career/presentation/career_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
@@ -268,6 +278,16 @@ GoRouter router(RouterRef ref) {
         path: '/timesheets',
         builder: (_, __) => const TimesheetsScreen(),
       ),
+      GoRoute(path: '/ewa', builder: (_, __) => const EWAScreen()),
+      GoRoute(path: '/attrition', builder: (_, __) => const AttritionScreen()),
+      GoRoute(path: '/biometric-devices', builder: (_, __) => const BiometricDevicesScreen()),
+      GoRoute(path: '/hiring-drives', builder: (_, __) => const HiringDrivesScreen()),
+      GoRoute(path: '/pay-equity', builder: (_, __) => const PayEquityScreen()),
+      GoRoute(path: '/interview-scorecards', builder: (_, __) => const InterviewScorecardsScreen()),
+      GoRoute(path: '/resume-parse', builder: (_, __) => const ResumeParseScreen()),
+      GoRoute(path: '/contractors', builder: (_, __) => const ContractorsScreen()),
+      GoRoute(path: '/esop', builder: (_, __) => const EsopScreen()),
+      GoRoute(path: '/eap', builder: (_, __) => const EapScreen()),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),
         routes: [

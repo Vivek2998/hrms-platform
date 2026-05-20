@@ -420,6 +420,17 @@ model Organization {
   designations            Designation[]
   successionPlans         SuccessionPlan[]
   chatSessions            ChatSession[]
+  // Tier 3
+  ewaRequests             EwaRequest[]
+  attritionScores         AttritionScore[]
+  biometricDevices        BiometricDevice[]
+  hiringDrives            HiringDrive[]
+  payEquitySnapshots      PayEquitySnapshot[]
+  interviewScorecards     InterviewScorecard[]
+  parsedResumes           ParsedResume[]
+  contractors             Contractor[]
+  esopGrants              EsopGrant[]
+  eapResources            EapResource[]
 
   @@map("organizations")
 }
@@ -617,6 +628,9 @@ model Employee {
   nineBoxAssessmentsGiven  NineBoxAssessment[]  @relation("NineBoxAssessor")
   successorNominations     SuccessorNomination[]
   policyAcknowledgments    PolicyAcknowledgment[]
+  ewaRequests              EwaRequest[]
+  attritionScore           AttritionScore?
+  esopGrants               EsopGrant[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -2559,4 +2573,352 @@ model ChatMessage {
 
   @@index([sessionId])
   @@map("chat_messages")
+}
+
+// ═════════════════════════════════════════════════════════════
+// TIER 3 — ENTERPRISE / SCALE FEATURES
+// ═════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────
+// T3-1. EARNED WAGE ACCESS (EWA)
+// ─────────────────────────────────────────────────────────────
+
+model EwaRequest {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  amount         Float
+  status         EwaStatus @default(PENDING)
+  requestedAt    DateTime  @default(now())
+  processedAt    DateTime?
+  rejectedReason String?
+  repaymentDate  DateTime?
+  notes          String?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, employeeId])
+  @@map("ewa_requests")
+}
+
+enum EwaStatus {
+  PENDING
+  APPROVED
+  DISBURSED
+  REJECTED
+  REPAID
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-2. ATTRITION PREDICTION
+// ─────────────────────────────────────────────────────────────
+
+model AttritionScore {
+  id             String   @id @default(uuid())
+  organizationId String
+  employeeId     String   @unique
+  riskScore      Float
+  riskLevel      String
+  factors        Json
+  computedAt     DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  @@index([organizationId, riskLevel])
+  @@map("attrition_scores")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-3. BIOMETRIC DEVICE INTEGRATION
+// ─────────────────────────────────────────────────────────────
+
+model BiometricDevice {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  vendor         String
+  serialNumber   String?
+  ipAddress      String?
+  location       String?
+  isActive       Boolean  @default(true)
+  lastSyncAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  logs         BiometricDeviceLog[]
+
+  @@index([organizationId])
+  @@map("biometric_devices")
+}
+
+model BiometricDeviceLog {
+  id         String   @id @default(uuid())
+  deviceId   String
+  employeeId String?
+  eventType  String
+  deviceTime DateTime
+  receivedAt DateTime @default(now())
+  raw        Json?
+
+  device BiometricDevice @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, deviceTime])
+  @@map("biometric_device_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-4. BULK / CAMPUS HIRING
+// ─────────────────────────────────────────────────────────────
+
+model HiringDrive {
+  id             String      @id @default(uuid())
+  organizationId String
+  name           String
+  driveType      DriveType   @default(CAMPUS)
+  venue          String?
+  driveDate      DateTime?
+  targetCount    Int         @default(0)
+  status         DriveStatus @default(PLANNED)
+  description    String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  candidates   BulkCandidate[]
+
+  @@index([organizationId, status])
+  @@map("hiring_drives")
+}
+
+enum DriveType {
+  CAMPUS
+  WALKIN
+  REFERRAL_DRIVE
+  LATERAL
+}
+
+enum DriveStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+model BulkCandidate {
+  id          String    @id @default(uuid())
+  driveId     String
+  name        String
+  email       String?
+  phone       String?
+  college     String?
+  degree      String?
+  cgpa        Float?
+  status      String    @default("APPLIED")
+  offerSentAt DateTime?
+  resumeUrl   String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  drive HiringDrive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+
+  @@index([driveId, status])
+  @@map("bulk_candidates")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-5. PAY EQUITY ANALYSIS
+// ─────────────────────────────────────────────────────────────
+
+model PayEquitySnapshot {
+  id             String   @id @default(uuid())
+  organizationId String
+  snapshotDate   DateTime @default(now())
+  reportData     Json
+  generatedBy    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("pay_equity_snapshots")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-6. INTERVIEW SCORECARD (ATS)
+// ─────────────────────────────────────────────────────────────
+
+model InterviewScorecard {
+  id             String    @id @default(uuid())
+  organizationId String
+  applicationId  String?
+  interviewId    String?
+  candidateName  String
+  interviewerIds String[]
+  template       Json
+  scores         Json
+  overallRating  Float?
+  recommendation String?
+  notes          String?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, applicationId])
+  @@map("interview_scorecards")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-7. RESUME PARSING
+// ─────────────────────────────────────────────────────────────
+
+model ParsedResume {
+  id             String   @id @default(uuid())
+  organizationId String
+  uploadedBy     String
+  fileName       String
+  fileUrl        String
+  parsedData     Json?
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, status])
+  @@map("parsed_resumes")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-8. CONTRACTOR / GIG WORKER MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+model Contractor {
+  id             String           @id @default(uuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  pan            String?
+  gstNumber      String?
+  contractType   ContractorType   @default(INDIVIDUAL)
+  skills         String[]
+  startDate      DateTime?
+  endDate        DateTime?
+  dailyRate      Float?
+  currency       String           @default("INR")
+  status         ContractorStatus @default(ACTIVE)
+  documents      Json?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  pos          PurchaseOrder[]
+
+  @@index([organizationId, status])
+  @@map("contractors")
+}
+
+enum ContractorType {
+  INDIVIDUAL
+  AGENCY
+  FREELANCER
+}
+
+enum ContractorStatus {
+  ACTIVE
+  INACTIVE
+  BLACKLISTED
+}
+
+model PurchaseOrder {
+  id           String    @id @default(uuid())
+  contractorId String
+  poNumber     String
+  description  String?
+  amount       Float
+  currency     String    @default("INR")
+  startDate    DateTime?
+  endDate      DateTime?
+  status       String    @default("OPEN")
+  invoiceUrl   String?
+  createdAt    DateTime  @default(now())
+
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+
+  @@index([contractorId, status])
+  @@map("purchase_orders")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-9. ESOP / EQUITY MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+model EsopGrant {
+  id              String     @id @default(uuid())
+  organizationId  String
+  employeeId      String
+  grantDate       DateTime
+  options         Int
+  strikePrice     Float
+  currency        String     @default("INR")
+  vestingSchedule Json
+  cliffMonths     Int        @default(12)
+  totalVestMonths Int        @default(48)
+  status          EsopStatus @default(ACTIVE)
+  notes           String?
+  createdAt       DateTime   @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  employee     Employee      @relation(fields: [employeeId], references: [id])
+  exercises    EsopExercise[]
+
+  @@index([organizationId, employeeId])
+  @@map("esop_grants")
+}
+
+enum EsopStatus {
+  ACTIVE
+  VESTED
+  EXERCISED
+  CANCELLED
+  EXPIRED
+}
+
+model EsopExercise {
+  id            String   @id @default(uuid())
+  grantId       String
+  options       Int
+  exercisePrice Float
+  exercisedAt   DateTime @default(now())
+  notes         String?
+
+  grant EsopGrant @relation(fields: [grantId], references: [id])
+
+  @@index([grantId])
+  @@map("esop_exercises")
+}
+
+// ─────────────────────────────────────────────────────────────
+// T3-10. MENTAL HEALTH / EAP RESOURCES
+// ─────────────────────────────────────────────────────────────
+
+model EapResource {
+  id             String   @id @default(uuid())
+  organizationId String
+  title          String
+  category       String
+  description    String?
+  providerName   String?
+  contactEmail   String?
+  contactPhone   String?
+  websiteUrl     String?
+  isAnonymous    Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, category])
+  @@map("eap_resources")
 }

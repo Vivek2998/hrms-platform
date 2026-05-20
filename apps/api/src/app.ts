@@ -64,6 +64,16 @@ import { headcountRoutes } from './modules/headcount/headcount.routes.js';
 import { careerRoutes } from './modules/career/career.routes.js';
 import { successionRoutes } from './modules/succession/succession.routes.js';
 import { chatRoutes } from './modules/chat/chat.routes.js';
+import { ewaRoutes } from './modules/ewa/ewa.routes.js';
+import { attritionRoutes } from './modules/attrition/attrition.routes.js';
+import { biometricDevicesRoutes } from './modules/biometric-devices/biometric-devices.routes.js';
+import { hiringDrivesRoutes } from './modules/hiring-drives/hiring-drives.routes.js';
+import { payEquityRoutes } from './modules/pay-equity/pay-equity.routes.js';
+import { interviewScorecardsRoutes } from './modules/interview-scorecards/interview-scorecards.routes.js';
+import { resumeParseRoutes } from './modules/resume-parse/resume-parse.routes.js';
+import { contractorsRoutes } from './modules/contractors/contractors.routes.js';
+import { esopRoutes } from './modules/esop/esop.routes.js';
+import { eapRoutes } from './modules/eap/eap.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -148,6 +158,17 @@ export async function buildApp() {
   await app.register(careerRoutes, { prefix });
   await app.register(successionRoutes, { prefix });
   await app.register(chatRoutes, { prefix });
+  // Tier 3
+  await app.register(ewaRoutes, { prefix });
+  await app.register(attritionRoutes, { prefix });
+  await app.register(biometricDevicesRoutes, { prefix });
+  await app.register(hiringDrivesRoutes, { prefix });
+  await app.register(payEquityRoutes, { prefix });
+  await app.register(interviewScorecardsRoutes, { prefix });
+  await app.register(resumeParseRoutes, { prefix });
+  await app.register(contractorsRoutes, { prefix });
+  await app.register(esopRoutes, { prefix });
+  await app.register(eapRoutes, { prefix });
 
   await app.ready();
   return app;
