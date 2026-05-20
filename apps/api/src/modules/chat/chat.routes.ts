@@ -15,7 +15,7 @@ You have access to the logged-in employee's real data and can take actions on th
 
 CAPABILITIES:
 - Answer HR questions using the employee's actual data (leave balance, attendance, shift, holidays, announcements)
-- Take actions: apply leave, request WFH, regularise attendance, raise helpdesk tickets, send kudos
+- Take actions: apply leave, request WFH, regularise attendance, submit travel requests, raise helpdesk tickets, send kudos
 - Multi-turn conversations with full context
 
 RULES:
@@ -25,7 +25,7 @@ RULES:
 3. NEVER access other employees' private data.
 4. Be concise and friendly. Use bullet points for lists of data.
 5. After completing an action, clearly confirm what was done and any reference info (e.g. ticket ID).
-6. If a question is outside your tools (travel booking, documents, salary structure), tell the employee which section of the portal to visit.
+6. If a question is outside your tools (documents, salary structure), tell the employee which section of the portal to visit.
 7. Today's date in your context may be approximate — always use the current date from the system when doing date logic.`;
 
 // ─── Tool definitions ─────────────────────────────────────────────────────────
@@ -162,6 +162,32 @@ const TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ['toEmployeeId', 'message', 'category'],
+    },
+  },
+  {
+    name: 'get_my_travel_requests',
+    description: "Get the employee's own travel requests and their current approval status.",
+    input_schema: { type: 'object' as const, properties: {}, required: [] },
+  },
+  {
+    name: 'submit_travel_request',
+    description: 'Submit a travel request on behalf of the employee (e.g. when asked by manager to travel). Always confirm full details before calling.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        purpose: { type: 'string', description: 'Purpose / reason for the trip' },
+        fromCity: { type: 'string', description: 'Departure city' },
+        toCity: { type: 'string', description: 'Destination city' },
+        departureDate: { type: 'string', description: 'Departure date YYYY-MM-DD' },
+        returnDate: { type: 'string', description: 'Return date YYYY-MM-DD (optional for one-way)' },
+        travelMode: { type: 'string', enum: ['FLIGHT', 'TRAIN', 'BUS', 'CAR', 'OTHER'], description: 'Mode of travel' },
+        estimatedBudget: { type: 'number', description: 'Estimated cost in INR (optional)' },
+        hotelRequired: { type: 'boolean', description: 'Whether hotel accommodation is needed' },
+        advanceRequired: { type: 'boolean', description: 'Whether a cash advance is needed' },
+        advanceAmount: { type: 'number', description: 'Advance amount in INR if advanceRequired is true' },
+        notes: { type: 'string', description: 'Any additional notes' },
+      },
+      required: ['purpose', 'fromCity', 'toCity', 'departureDate', 'travelMode'],
     },
   },
   // ── Sensitive tools ────────────────────────────────────────────────────────
@@ -423,6 +449,55 @@ async function executeTool(
         return JSON.stringify({
           success: true,
           message: `Kudos sent to ${kudos.toEmployee.firstName} ${kudos.toEmployee.lastName}!`,
+        });
+      }
+
+      case 'get_my_travel_requests': {
+        const requests = await prisma.travelRequest.findMany({
+          where: { organizationId: orgId, employeeId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          select: {
+            id: true, purpose: true, fromCity: true, toCity: true,
+            departureDate: true, returnDate: true, travelMode: true,
+            estimatedBudget: true, hotelRequired: true, advanceRequired: true,
+            status: true, rejectedReason: true,
+          },
+        });
+        return JSON.stringify(requests);
+      }
+
+      case 'submit_travel_request': {
+        const {
+          purpose, fromCity, toCity, departureDate, returnDate,
+          travelMode, estimatedBudget, hotelRequired, advanceRequired, advanceAmount, notes,
+        } = input as {
+          purpose: string; fromCity: string; toCity: string; departureDate: string;
+          returnDate?: string; travelMode: string; estimatedBudget?: number;
+          hotelRequired?: boolean; advanceRequired?: boolean; advanceAmount?: number; notes?: string;
+        };
+        const travel = await prisma.travelRequest.create({
+          data: {
+            organizationId: orgId,
+            employeeId,
+            purpose,
+            fromCity,
+            toCity,
+            departureDate: new Date(departureDate),
+            returnDate: returnDate ? new Date(returnDate) : null,
+            travelMode: travelMode as never,
+            estimatedBudget: estimatedBudget ?? null,
+            hotelRequired: hotelRequired ?? false,
+            advanceRequired: advanceRequired ?? false,
+            advanceAmount: advanceAmount ?? null,
+            notes: notes ?? null,
+          },
+        });
+        return JSON.stringify({
+          success: true,
+          requestId: travel.id,
+          status: travel.status,
+          message: `Travel request submitted: ${fromCity} → ${toCity} on ${departureDate}. Awaiting approval.`,
         });
       }
 
