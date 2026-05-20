@@ -46,6 +46,17 @@ import '../../features/shift_swap/presentation/shift_swap_screen.dart';
 import '../../features/referrals/presentation/referrals_screen.dart';
 import '../../features/fnf/presentation/fnf_screen.dart';
 import '../../features/my_letters/presentation/my_letters_screen.dart';
+import '../../features/benefits/presentation/benefits_screen.dart';
+import '../../features/career/presentation/career_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart';
+import '../../features/compliance/presentation/compliance_screen.dart';
+import '../../features/headcount/presentation/headcount_screen.dart';
+import '../../features/nine_box/presentation/nine_box_screen.dart';
+import '../../features/pip/presentation/pip_screen.dart';
+import '../../features/posh/presentation/posh_screen.dart';
+import '../../features/salary_revision/presentation/salary_revision_screen.dart';
+import '../../features/succession/presentation/succession_screen.dart';
+import '../../features/timesheets/presentation/timesheets_screen.dart';
 
 part 'router.g.dart';
 
@@ -212,6 +223,50 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/my-letters',
         builder: (_, __) => const MyLettersScreen(),
+      ),
+      GoRoute(
+        path: '/benefits',
+        builder: (_, __) => const BenefitsScreen(),
+      ),
+      GoRoute(
+        path: '/career-paths',
+        builder: (_, __) => const CareerScreen(),
+      ),
+      GoRoute(
+        path: '/chat',
+        builder: (_, __) => const ChatScreen(),
+      ),
+      GoRoute(
+        path: '/compliance',
+        builder: (_, __) => const ComplianceScreen(),
+      ),
+      GoRoute(
+        path: '/headcount',
+        builder: (_, __) => const HeadcountScreen(),
+      ),
+      GoRoute(
+        path: '/nine-box',
+        builder: (_, __) => const NineBoxScreen(),
+      ),
+      GoRoute(
+        path: '/pip',
+        builder: (_, __) => const PIPScreen(),
+      ),
+      GoRoute(
+        path: '/posh',
+        builder: (_, __) => const POSHScreen(),
+      ),
+      GoRoute(
+        path: '/salary-revision',
+        builder: (_, __) => const SalaryRevisionScreen(),
+      ),
+      GoRoute(
+        path: '/succession',
+        builder: (_, __) => const SuccessionScreen(),
+      ),
+      GoRoute(
+        path: '/timesheets',
+        builder: (_, __) => const TimesheetsScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => HomeShell(child: child),
