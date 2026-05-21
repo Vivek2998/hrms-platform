@@ -6,7 +6,7 @@ import { CreditCard, Plus, CheckCircle, XCircle, Clock, Banknote, Lock } from 'l
 import {
   useLoans, useCreateLoan, useApproveLoan, useRejectLoan,
   useDisburseLoan, useCloseLoan, useCancelLoan,
-  LoanRequest, LoanType,
+  type LoanRequest, type LoanType,
 } from '@/hooks/useLoans';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';

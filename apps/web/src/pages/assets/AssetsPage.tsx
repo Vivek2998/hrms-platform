@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Package, Plus, Laptop, Phone, Monitor, Keyboard, User, RotateCcw, Pencil, Trash2 } from 'lucide-react';
-import { useAssets, useCreateAsset, useDeleteAsset, useAssignAsset, useReturnAsset, Asset, AssetCategory } from '@/hooks/useAssets';
+import { useAssets, useCreateAsset, useDeleteAsset, useAssignAsset, useReturnAsset, type Asset, type AssetCategory } from '@/hooks/useAssets';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
