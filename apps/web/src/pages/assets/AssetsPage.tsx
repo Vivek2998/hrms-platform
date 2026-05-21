@@ -50,7 +50,8 @@ export default function AssetsPage() {
   const deleteAsset = useDeleteAsset();
   const assignAsset = useAssignAsset();
   const returnAsset = useReturnAsset();
-  const { data: employees = [] } = useEmployees();
+  const { data: employeesData } = useEmployees();
+  const employees = employeesData?.employees ?? [];
 
   const [showCreate, setShowCreate] = useState(false);
   const [assignTarget, setAssignTarget] = useState<Asset | null>(null);
