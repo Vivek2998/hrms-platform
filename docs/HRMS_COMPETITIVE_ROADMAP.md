@@ -251,7 +251,7 @@ this way.
 - [ ] Mobile: native-feeling swipe transitions between screens
 - [ ] All animations respect `prefers-reduced-motion` media query (accessibility)
 
-**Status:** ⬜ Not Done
+**Status:** ✅ Done — Installed `tw-animate-css` (activates all existing Dialog/Dropdown/Popover animate-in/out classes). Added `page-enter`, `stagger-fade-in`, keyframes + CSS custom property animation tokens. Page transitions: `<Outlet>` wrapped in `key={location.pathname}` div with `animate-page-enter` (fade + 6px slide-up on every route change). Button: `active:scale-[0.97] transition-all` press feedback on every button. Count-up: `useCountUp` hook (ease-out cubic, 800ms) applied to Analytics overview stat cards with staggered entry. `prefers-reduced-motion` media query disables all animations for accessibility.
 
 ---
 

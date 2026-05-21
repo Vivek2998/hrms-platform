@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 export function AppShell() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
+  const location = useLocation();
 
   return (
     <div className="bg-background flex h-screen overflow-hidden">
@@ -22,7 +23,9 @@ export function AppShell() {
       >
         <Header />
         <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-6">
-          <Outlet />
+          <div key={location.pathname} className="animate-page-enter h-full">
+            <Outlet />
+          </div>
         </main>
       </div>
       <BottomNav />

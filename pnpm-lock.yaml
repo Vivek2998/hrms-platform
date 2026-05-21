@@ -300,6 +300,9 @@ importers:
       tailwind-merge:
         specifier: ^3.2.0
         version: 3.5.0
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
       zod:
         specifier: 'catalog:'
         version: 3.25.76
@@ -4433,6 +4436,9 @@ packages:
   turbo@2.9.7:
     resolution: {integrity: sha512-epxzqVO2s0IxcSWcgb+qKrtco8isfe7g3VtiS6hkYnEK4A9XQDZbrtavQ6MtWR1KoQn+1fUomaQth2rfRHlUlg==}
     hasBin: true
+
+  tw-animate-css@1.4.0:
+    resolution: {integrity: sha512-7bziOlRqH0hJx80h/3mbicLW7o8qLsH5+RaLR2t+OHM3D0JlWGODQKQ4cxbK7WlvmUxpcj6Kgu6EKqjrGFe3QQ==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -8829,6 +8835,8 @@ snapshots:
       '@turbo/linux-arm64': 2.9.7
       '@turbo/windows-64': 2.9.7
       '@turbo/windows-arm64': 2.9.7
+
+  tw-animate-css@1.4.0: {}
 
   type-check@0.4.0:
     dependencies:
