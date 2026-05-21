@@ -33,6 +33,7 @@ import {
 } from '@/hooks/useAnnouncements';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 function NewAnnouncementDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const createMutation = useCreateAnnouncement();
@@ -259,18 +260,12 @@ export default function AnnouncementsPage() {
           ))}
         </div>
       ) : announcements.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-16">
-            <Megaphone className="text-muted-foreground h-12 w-12" />
-            <p className="text-muted-foreground text-sm">No announcements yet.</p>
-            {isHR && (
-              <Button variant="outline" onClick={() => { setShowNew(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Post first announcement
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          illustration="announcements"
+          title="No announcements yet"
+          description={isHR ? 'Keep your team informed by posting the first announcement.' : 'No company announcements at this time.'}
+          action={isHR ? { label: 'Post First Announcement', onClick: () => { setShowNew(true); } } : undefined}
+        />
       ) : (
         <div className="space-y-4">
           {announcements.map((a) => (

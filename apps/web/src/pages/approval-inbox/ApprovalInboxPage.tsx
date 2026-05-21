@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useApprovalInbox';
 import type { ApprovalInboxItem, ApprovalItemType } from '@hrms/shared-types';
 import { formatDistanceToNow } from 'date-fns';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type FilterType = 'ALL' | ApprovalItemType;
 
@@ -104,15 +105,11 @@ export default function ApprovalInboxPage() {
           ))}
         </div>
       ) : !items || items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
-            <Inbox className="w-8 h-8 text-indigo-400" />
-          </div>
-          <h3 className="text-lg font-semibold">All caught up!</h3>
-          <p className="text-muted-foreground text-sm mt-1">
-            No pending approvals at this time.
-          </p>
-        </div>
+        <EmptyState
+          illustration="caught-up"
+          title="All caught up!"
+          description="No pending approvals at this time. Check back later."
+        />
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{items.length} item{items.length !== 1 ? 's' : ''} pending</p>

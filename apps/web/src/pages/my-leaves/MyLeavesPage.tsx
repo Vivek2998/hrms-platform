@@ -29,6 +29,7 @@ import {
   useCancelMyLeave,
   type MyLeaveRequest,
 } from '@/hooks/useMyLeaves';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type Tab = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
@@ -270,9 +271,13 @@ export default function MyLeavesPage() {
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
           ) : data?.data.length === 0 ? (
-            <p className="text-muted-foreground py-12 text-center text-sm">
-              No {tab !== 'ALL' ? tab.toLowerCase() : ''} leave requests found.
-            </p>
+            <EmptyState
+              illustration="my-leaves"
+              title="No leave requests"
+              description={tab !== 'ALL' ? `No ${tab.toLowerCase()} requests found.` : 'You have not applied for any leaves yet.'}
+              action={tab === 'ALL' ? { label: 'Apply Leave', onClick: () => { setShowApply(true); } } : undefined}
+              className="py-4"
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Headphones, Loader2, MessageCircle, Plus } from 'lucide-react';
+import { Loader2, MessageCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,7 @@ import {
 } from '@/hooks/useHelpDesk';
 import type { TicketStatus, TicketCategory, TicketPriority } from '@/hooks/useHelpDesk';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const createSchema = z.object({
   subject: z.string().min(5, 'Subject must be at least 5 characters'),
@@ -340,13 +341,12 @@ export default function HelpDeskPage() {
           ))}
         </div>
       ) : tickets?.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-16">
-            <Headphones className="text-muted-foreground h-12 w-12" />
-            <p className="text-muted-foreground text-sm">No tickets yet.</p>
-            <Button onClick={() => { setShowCreate(true); }}>Raise a ticket</Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          illustration="helpdesk"
+          title="No tickets yet"
+          description="Need help? Raise a ticket and our support team will assist you."
+          action={{ label: 'Raise a Ticket', onClick: () => { setShowCreate(true); } }}
+        />
       ) : (
         <div className="space-y-3">
           {tickets?.map((t) => (

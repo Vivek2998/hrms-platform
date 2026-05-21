@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, IndianRupee, Printer } from 'lucide-react';
+import { FileText, Download, Printer } from 'lucide-react';
 import { DialogContentSkeleton } from '@/components/ui/skeleton-patterns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useMyPayslips, useMyPayslipDetail, monthLabel } from '@/hooks/useMyPayslips';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-600',
@@ -172,12 +173,11 @@ export default function MyPayslipsPage() {
           ))}
         </div>
       ) : !payslips?.length ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-16">
-            <IndianRupee className="text-muted-foreground h-12 w-12" />
-            <p className="text-muted-foreground text-sm">No payslips available yet.</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          illustration="payslips"
+          title="No payslips yet"
+          description="Your payslips will appear here once payroll is processed."
+        />
       ) : (
         <div className="space-y-3">
           {payslips.map((p) => (

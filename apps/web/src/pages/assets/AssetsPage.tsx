@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Package, Plus, Laptop, Phone, Monitor, Keyboard, User, RotateCcw, Pencil, Trash2 } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useAssets, useCreateAsset, useDeleteAsset, useAssignAsset, useReturnAsset, type Asset, type AssetCategory } from '@/hooks/useAssets';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/stores/auth.store';
@@ -158,7 +159,16 @@ export default function AssetsPage() {
           </thead>
           <tbody className="divide-y">
             {filtered.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No assets found</td></tr>
+              <tr>
+                <td colSpan={6}>
+                  <EmptyState
+                    illustration={search || filterStatus !== 'ALL' ? 'search' : 'assets'}
+                    title={search || filterStatus !== 'ALL' ? 'No matching assets' : 'No assets yet'}
+                    description={search ? `No assets match "${search}".` : filterStatus !== 'ALL' ? `No assets with status "${filterStatus.replace('_', ' ')}" found.` : 'Start tracking company assets by adding your first item.'}
+                    action={isHr && !search && filterStatus === 'ALL' ? { label: 'Add Asset', onClick: () => { setShowCreate(true); } } : undefined}
+                  />
+                </td>
+              </tr>
             ) : filtered.map(asset => {
               const currentAssignment = asset.assignments?.[0];
               return (

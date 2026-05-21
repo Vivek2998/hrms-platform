@@ -18,6 +18,7 @@ import { useLeaves, useApproveLeave } from '@/hooks/useLeaves';
 import { downloadCsv } from '@/lib/downloadCsv';
 import { toast } from 'sonner';
 import type { LeaveRecord } from '@/hooks/useLeaves';
+import { EmptyState } from '@/components/ui/empty-state';
 import { LeaveTypesPanel } from './LeaveTypesPage';
 import {
   useLeaveBalances,
@@ -517,9 +518,12 @@ export default function LeavesPage() {
                   ))}
                 </div>
               ) : data?.data.length === 0 ? (
-                <p className="text-muted-foreground py-12 text-center text-sm">
-                  No {tab !== 'ALL' ? tab.toLowerCase() : ''} leave requests found.
-                </p>
+                <EmptyState
+                  illustration="leaves"
+                  title="No leave requests"
+                  description={tab !== 'ALL' ? `No ${tab.toLowerCase()} requests found.` : 'No leave requests have been submitted yet.'}
+                  className="py-4"
+                />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">

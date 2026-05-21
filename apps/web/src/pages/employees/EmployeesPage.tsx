@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEmployees } from '@/hooks/useEmployees';
 import { AddEmployeeDialog } from '@/components/employees/AddEmployeeDialog';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function EmployeesPage() {
   const navigate = useNavigate();
@@ -61,9 +62,12 @@ export default function EmployeesPage() {
               ))}
             </div>
           ) : data?.employees.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center">
-              No employees found. Add your first employee to get started.
-            </p>
+            <EmptyState
+              illustration={search ? 'search' : 'employees'}
+              title={search ? 'No results found' : 'No employees yet'}
+              description={search ? `No employees match "${search}".` : 'Add your first employee to get started.'}
+              action={search ? undefined : { label: 'Add Employee', onClick: () => { setShowAdd(true); } }}
+            />
           ) : (
             <div className="space-y-2">
               {data?.employees.map((emp) => (

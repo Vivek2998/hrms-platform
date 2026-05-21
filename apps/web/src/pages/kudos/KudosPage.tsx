@@ -18,6 +18,7 @@ import { useKudosFeed, useGiveKudos, useReactToKudos, useDeleteKudos } from '@/h
 import { useAuthStore } from '@/stores/auth.store';
 import { formatDistanceToNow } from 'date-fns';
 import type { Kudos, KudosCategory } from '@hrms/shared-types';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const CATEGORIES: { value: KudosCategory; label: string; emoji: string }[] = [
   { value: 'TEAMWORK', label: 'Teamwork', emoji: '🤝' },
@@ -71,11 +72,12 @@ export default function KudosPage() {
           ))}
         </div>
       ) : !kudos || kudos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-6xl mb-4">🎉</div>
-          <h3 className="text-lg font-semibold">Be the first to recognise someone!</h3>
-          <p className="text-muted-foreground text-sm mt-1">Spread positivity in your team.</p>
-        </div>
+        <EmptyState
+          illustration="kudos"
+          title="Be the first to recognise someone!"
+          description="Spread positivity by celebrating your colleagues' great work."
+          action={{ label: 'Give Kudos', onClick: () => setShowGive(true) }}
+        />
       ) : (
         <div className="space-y-4">
           {kudos.map((k) => (
