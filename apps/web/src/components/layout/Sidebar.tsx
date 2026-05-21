@@ -256,6 +256,7 @@ export function Sidebar() {
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
+  const [sidebarVisible, setSidebarVisible] = useState(sidebarOpen);
 
   useEffect(() => {
     if (window.innerWidth < 768) setSidebarOpen(false);
@@ -264,6 +265,15 @@ export function Sidebar() {
 
   useEffect(() => {
     if (sidebarOpen) setFlyoutGroup(null);
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      setSidebarVisible(true);
+    } else {
+      const t = setTimeout(() => setSidebarVisible(false), 200);
+      return () => clearTimeout(t);
+    }
   }, [sidebarOpen]);
 
   // Auto-open the group whose child matches the current path; close all when no group matches
@@ -322,8 +332,8 @@ export function Sidebar() {
           )}
         >
           {/* ── Header: logo + brand + collapse toggle ── */}
-          <div className={cn('flex h-16 shrink-0 items-center border-b', sidebarOpen ? 'px-4' : 'justify-center')}>
-            {sidebarOpen ? (
+          <div className={cn('flex h-16 shrink-0 items-center border-b', sidebarVisible ? 'px-4' : 'justify-center')}>
+            {sidebarVisible ? (
               <>
                 <div className="flex flex-1 items-center gap-2.5 overflow-hidden">
                   <div className="bg-primary h-8 w-8 shrink-0 rounded-lg" />
@@ -355,7 +365,7 @@ export function Sidebar() {
           {/* ── Navigation ── */}
           <nav className="flex-1 overflow-y-auto [scrollbar-gutter:stable] py-3">
             {/* Expanded: px-2 gutters. Collapsed: no gutters — items center themselves */}
-            <ul className={cn('space-y-0.5', sidebarOpen ? 'px-2' : 'px-0')}>
+            <ul className={cn('space-y-0.5', sidebarVisible ? 'px-2' : 'px-0')}>
               {ENTRIES.map((entry) => {
                 // ── Group entries ──
                 if (entry.group) {
@@ -363,12 +373,12 @@ export function Sidebar() {
                   if (visible.length === 0) return null;
 
                   // Collapsed → Popover flyout
-                  if (!sidebarOpen) {
+                  if (!sidebarVisible) {
                     const isChildActive = visible.some((c) =>
                       location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
                     );
                     return (
-                      <li key={entry.key} className="flex justify-center py-0.5">
+                      <li key={entry.key} className="flex justify-center py-1">
                         <Popover
                           open={flyoutGroup === entry.key}
                           onOpenChange={(open) => setFlyoutGroup(open ? entry.key : null)}
@@ -497,9 +507,9 @@ export function Sidebar() {
                 const locked = isLocked(entry, orgPlan);
 
                 // Collapsed → centered square icon + tooltip
-                if (!sidebarOpen) {
+                if (!sidebarVisible) {
                   return (
-                    <li key={entry.to} className="flex justify-center py-0.5">
+                    <li key={entry.to} className="flex justify-center py-1">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           {locked ? (
