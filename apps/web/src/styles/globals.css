@@ -205,3 +205,16 @@
   font-size: 0.7rem;
   color: var(--muted-foreground);
 }
+/* Tidy up the arrow */
+.hrms-tour-popover .driver-popover-arrow {
+  border-color: var(--border) transparent transparent transparent;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.06));
+}
+/* Hide arrow entirely on fixed-position header elements */
+.hrms-tour-no-arrow .driver-popover-arrow { display: none !important; }
+/* Done button matches Next button */
+.hrms-tour-popover .driver-popover-done-btn {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+}

@@ -38,7 +38,8 @@ const HR_STEPS = [
       title: 'Global Search',
       description: 'Press Ctrl+K (or ⌘K on Mac) anywhere to instantly search employees, pages, and actions.',
       side: 'bottom' as const,
-      align: 'end' as const,
+      align: 'center' as const,
+      popoverClass: 'hrms-tour-popover hrms-tour-no-arrow',
     },
   },
   {
@@ -47,7 +48,8 @@ const HR_STEPS = [
       title: 'Notifications',
       description: 'Stay on top of leave requests, announcements, and approvals. The badge shows unread items.',
       side: 'bottom' as const,
-      align: 'end' as const,
+      align: 'center' as const,
+      popoverClass: 'hrms-tour-popover hrms-tour-no-arrow',
     },
   },
   {
@@ -55,7 +57,7 @@ const HR_STEPS = [
     popover: {
       title: 'Setup Guide',
       description: 'Follow this checklist to finish setting up your HRMS. Each step links directly to the relevant page.',
-      side: 'top' as const,
+      side: 'bottom' as const,
       align: 'start' as const,
     },
   },
@@ -69,7 +71,7 @@ const EMPLOYEE_STEPS = HR_STEPS.filter((s) =>
     popover: {
       title: 'Your Getting Started Guide',
       description: 'Complete these quick steps to make the most of your HRMS.',
-      side: 'top' as const,
+      side: 'bottom' as const,
       align: 'start' as const,
     },
   },
