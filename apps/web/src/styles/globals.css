@@ -161,3 +161,47 @@
   --animate-stagger-4: stagger-fade-in 0.25s ease-out 0.20s both;
   --animate-stagger-5: stagger-fade-in 0.25s ease-out 0.25s both;
 }
+
+/* ── driver.js tour popover overrides ─────────────────────────── */
+.hrms-tour-popover .driver-popover-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.hrms-tour-popover .driver-popover-description {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+.hrms-tour-popover {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.12);
+  padding: 1rem;
+  min-width: 260px;
+  max-width: 320px;
+}
+.hrms-tour-popover .driver-popover-footer button {
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  transition: opacity 0.15s;
+}
+.hrms-tour-popover .driver-popover-footer button:hover { opacity: 0.8; }
+.hrms-tour-popover .driver-popover-next-btn {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+}
+.hrms-tour-popover .driver-popover-prev-btn,
+.hrms-tour-popover .driver-popover-close-btn {
+  background: transparent;
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+.hrms-tour-popover .driver-popover-progress-text {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}

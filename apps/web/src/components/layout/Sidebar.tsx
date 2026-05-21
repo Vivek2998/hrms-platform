@@ -326,6 +326,7 @@ export function Sidebar() {
         )}
 
         <aside
+          id="tour-sidebar"
           className={cn(
             'bg-sidebar fixed left-0 top-0 z-40 flex h-full flex-col border-r overflow-hidden transition-[width,transform] duration-200',
             sidebarOpen ? 'w-64' : 'w-16',

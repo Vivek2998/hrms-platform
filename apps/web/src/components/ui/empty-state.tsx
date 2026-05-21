@@ -92,7 +92,7 @@ function CheckCircleIllustration() {
   return (
     <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <circle cx="60" cy="60" r="56" fill="var(--muted)" />
-      <circle cx="60" cy="60" r="32" fill="var(--primary)" opacity=".15" stroke="var(--primary)" strokeWidth="2" opacity=".3" />
+      <circle cx="60" cy="60" r="32" fill="var(--primary)" fillOpacity=".15" stroke="var(--primary)" strokeWidth="2" strokeOpacity=".3" />
       <path d="M44 61 L55 72 L76 50" stroke="var(--primary)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity=".7" />
       <circle cx="84" cy="36" r="6" fill="var(--primary)" opacity=".2" />
       <circle cx="34" cy="80" r="5" fill="var(--primary)" opacity=".2" />
@@ -144,12 +144,9 @@ export type EmptyStateVariant = keyof typeof ILLUSTRATIONS;
 interface EmptyStateProps {
   illustration?: EmptyStateVariant;
   title: string;
-  description?: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  className?: string;
+  description?: string | undefined;
+  action?: { label: string; onClick: () => void } | undefined;
+  className?: string | undefined;
 }
 
 export function EmptyState({

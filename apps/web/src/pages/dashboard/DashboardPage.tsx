@@ -18,6 +18,9 @@ import { usePayrollRuns } from '@/hooks/usePayroll';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { SetupGuide } from '@/components/onboarding/SetupGuide';
+import { AutoTour, useProductTour } from '@/components/onboarding/ProductTour';
+import { useSetupGuide } from '@/hooks/useSetupGuide';
 import type { UserRole } from '@hrms/shared-types';
 import type {
   BirthdayEntry,
@@ -421,6 +424,8 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role;
   const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role);
+  const { state: guideState } = useSetupGuide();
+  const { start: startTour } = useProductTour();
   const { from, to } = todayRange();
 
   const { data: empData, isLoading: empLoading } = useEmployees({ limit: 1 });
@@ -433,11 +438,23 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      <HeroCard />
+      <AutoTour />
+
+      <div id="tour-hero">
+        <HeroCard />
+      </div>
 
       <ThoughtOfTheDay />
 
-      <QuickActionsSection role={role} />
+      <div id="tour-quick-actions">
+        <QuickActionsSection role={role} />
+      </div>
+
+      {!guideState.dismissed && (
+        <div id="tour-setup-guide">
+          <SetupGuide onStartTour={startTour} />
+        </div>
+      )}
 
       {isHR && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
