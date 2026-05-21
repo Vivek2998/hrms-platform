@@ -169,19 +169,6 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'ESOP / Equity', to: '/esop', icon: LineChart, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'EMPLOYEE'] },
     ],
   },
-  {
-    group: true,
-    key: 'support',
-    label: 'Support',
-    icon: LifeBuoy,
-    children: [
-      { label: 'Help Desk', to: '/helpdesk', icon: Headphones, feature: 'helpdesk' },
-      { label: 'Suggestion Box', to: '/suggestions', icon: Lightbulb, feature: 'suggestions' },
-      { label: 'HR Policies', to: '/hr-policies', icon: BookOpen, feature: 'hr-policies' },
-      { label: 'Compliance Calendar', to: '/compliance', icon: Shield, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-      { label: 'POSH Cases', to: '/posh', icon: ShieldAlert },
-    ],
-  },
   { group: false, label: 'Earned Wage Access', to: '/ewa', icon: Coins },
   { group: false, label: 'Biometric Devices', to: '/biometric-devices', icon: Fingerprint, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   {
@@ -204,6 +191,19 @@ const ENTRIES: SidebarEntry[] = [
   { group: false, label: 'Shifts', to: '/shifts', icon: Timer, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'], feature: 'shifts' },
   { group: false, label: 'Office Locations', to: '/office-locations', icon: MapPin, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
   { group: false, label: 'Approval Inbox', to: '/approval-inbox', icon: Inbox, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
+  {
+    group: true,
+    key: 'support',
+    label: 'Support',
+    icon: LifeBuoy,
+    children: [
+      { label: 'Help Desk', to: '/helpdesk', icon: Headphones, feature: 'helpdesk' },
+      { label: 'Suggestion Box', to: '/suggestions', icon: Lightbulb, feature: 'suggestions' },
+      { label: 'HR Policies', to: '/hr-policies', icon: BookOpen, feature: 'hr-policies' },
+      { label: 'Compliance Calendar', to: '/compliance', icon: Shield, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'POSH Cases', to: '/posh', icon: ShieldAlert },
+    ],
+  },
   { group: false, label: 'Settings', to: '/settings', icon: Settings },
 ];
 

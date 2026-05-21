@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Briefcase, Plus, AlertTriangle, X } from 'lucide-react';
+import { Briefcase, Plus, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,12 +12,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import {
   Select,
   SelectContent,
@@ -85,11 +78,11 @@ function ContractorDrawer({
   }
 
   return (
-    <Sheet open onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="mb-4">
-          <SheetTitle>Contractor Details</SheetTitle>
-        </SheetHeader>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Contractor Details</DialogTitle>
+        </DialogHeader>
 
         {isLoading ? (
           <div className="space-y-3">
@@ -245,8 +238,8 @@ function ContractorDrawer({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
