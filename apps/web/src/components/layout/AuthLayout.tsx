@@ -169,7 +169,7 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
       </aside>
 
       {/* ── Right panel ── */}
-      <div className="flex flex-1 flex-col bg-white">
+      <div className="flex flex-1 flex-col bg-background">
         <main className="flex flex-1 flex-col items-center px-6 py-14 sm:px-10">
 
           {/* Mobile-only logo */}
@@ -177,7 +177,7 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900">
               <BrandMark onDark />
             </div>
-            <span className="text-sm font-semibold tracking-tight text-slate-900">
+            <span className="text-sm font-semibold tracking-tight text-foreground">
               WorkAxis HRMS
             </span>
           </div>
@@ -188,9 +188,9 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
         </main>
 
         {/* ── Footer ── */}
-        <footer className="border-t border-slate-100 bg-white px-6 py-4">
+        <footer className="border-t bg-background px-6 py-4">
           <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2.5 sm:flex-row sm:gap-0">
-            <p className="text-xs text-slate-400">
+            <p className="text-muted-foreground text-xs">
               © {new Date().getFullYear()} WorkAxis HRMS. All rights reserved.
             </p>
             <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
@@ -198,7 +198,7 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
                 <a
                   key={link}
                   href="#"
-                  className="text-xs text-slate-400 transition-colors hover:text-slate-600"
+                  className="text-muted-foreground hover:text-foreground text-xs transition-colors"
                 >
                   {link}
                 </a>

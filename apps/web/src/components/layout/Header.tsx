@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Moon, Sun, LogOut, User, Loader2, Menu } from 'lucide-react';
+import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
@@ -132,16 +132,30 @@ export function Header() {
       </Button>
 
       <div className="flex flex-1 items-center justify-end gap-3">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => {
-          setTheme(theme === 'dark' ? 'light' : 'dark');
-        }}
-        aria-label="Toggle theme"
-      >
-        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label="Toggle theme">
+            {theme === 'dark' ? (
+              <Moon className="h-5 w-5" />
+            ) : theme === 'light' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Monitor className="h-5 w-5" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => { setTheme('light'); }}>
+            <Sun className="mr-2 h-4 w-4" /> Light
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setTheme('dark'); }}>
+            <Moon className="mr-2 h-4 w-4" /> Dark
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setTheme('system'); }}>
+            <Monitor className="mr-2 h-4 w-4" /> System
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <NotificationBell />
 

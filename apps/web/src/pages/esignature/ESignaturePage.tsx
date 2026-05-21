@@ -31,7 +31,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   PENDING: { label: 'Awaiting Signature', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   SIGNED: { label: 'Signed', color: 'bg-green-100 text-green-700 border-green-200' },
   DECLINED: { label: 'Declined', color: 'bg-red-100 text-red-700 border-red-200' },
-  EXPIRED: { label: 'Expired', color: 'bg-gray-100 text-gray-600 border-gray-200' },
+  EXPIRED: { label: 'Expired', color: 'bg-muted text-muted-foreground border-border' },
 };
 
 export default function ESignaturePage() {
@@ -331,7 +331,7 @@ function SignDocumentDialog({ request, onClose }: { request: ESignatureRequest; 
           <p className="text-sm text-muted-foreground">
             Signing: <span className="font-semibold text-foreground">{request.documentName}</span>
           </p>
-          <div className="border rounded-lg overflow-hidden bg-white">
+          <div className="border rounded-lg overflow-hidden bg-background">
             <canvas
               ref={canvasRef}
               width={500}

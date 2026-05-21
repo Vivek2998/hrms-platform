@@ -20,7 +20,7 @@ type View = 'login' | 'forgot' | 'forgot-sent';
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
       {children}
     </p>
   );
@@ -67,8 +67,8 @@ export default function LoginPage() {
       {view === 'login' && (
         <div>
           <div className="mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h1>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Sign in to your account to continue
             </p>
           </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
-                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                className="h-10 border-input text-foreground placeholder:text-muted-foreground"
                 {...loginForm.register('email')}
               />
               {loginForm.formState.errors.email && (
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setView('forgot'); }}
-                  className="text-[11px] text-slate-400 transition-colors hover:text-slate-700"
+                  className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Forgot password?
                 </button>
@@ -109,13 +109,13 @@ export default function LoginPage() {
                   type={showPwd ? 'text' : 'password'}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="h-10 border-slate-200 pr-10 text-slate-900 placeholder:text-slate-400"
+                  className="h-10 border-input pr-10 text-foreground placeholder:text-muted-foreground"
                   {...loginForm.register('password')}
                 />
                 <button
                   type="button"
                   onClick={() => { setShowPwd((v) => !v); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   aria-label={showPwd ? 'Hide password' : 'Show password'}
                 >
                   {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -131,7 +131,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isPending}
-              className="h-10 w-full bg-slate-900 text-white hover:bg-slate-800"
+              className="h-10 w-full bg-foreground text-background hover:bg-foreground/90"
             >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
@@ -144,7 +144,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-slate-100" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-slate-400">New to WorkAxis?</span>
+              <span className="bg-background px-3 text-xs text-muted-foreground">New to WorkAxis?</span>
             </div>
           </div>
 
@@ -152,7 +152,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               type="button"
-              className="h-10 w-full border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="h-10 w-full border-input text-foreground hover:bg-accent"
             >
               Create a company account
             </Button>
@@ -166,15 +166,15 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => { setView('login'); }}
-            className="mb-6 flex items-center gap-1.5 text-xs text-slate-400 transition-colors hover:text-slate-700"
+            className="mb-6 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to sign in
           </button>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Reset password</h1>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Reset password</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Enter your work email and we&apos;ll send you a reset link.
             </p>
           </div>
@@ -186,7 +186,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
-                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                className="h-10 border-input text-foreground placeholder:text-muted-foreground"
                 {...forgotForm.register('email')}
               />
               {forgotForm.formState.errors.email && (
@@ -199,7 +199,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={forgotForm.formState.isSubmitting}
-              className="h-10 w-full bg-slate-900 text-white hover:bg-slate-800"
+              className="h-10 w-full bg-foreground text-background hover:bg-foreground/90"
             >
               {forgotForm.formState.isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -215,15 +215,15 @@ export default function LoginPage() {
         <div>
           <div className="flex flex-col items-center gap-4 py-6 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-50">
-              <CheckCircle2 className="h-7 w-7 text-slate-700" />
+              <CheckCircle2 className="h-7 w-7 text-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">Check your email</h1>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Check your email</h1>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 If an account exists for that email, a password reset
                 link has been sent.
               </p>
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-muted-foreground">
                 In development mode the reset link appears in the notification above.
               </p>
             </div>
@@ -231,7 +231,7 @@ export default function LoginPage() {
 
           <Button
             variant="outline"
-            className="mt-2 h-10 w-full border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="mt-2 h-10 w-full border-input text-foreground hover:bg-accent"
             onClick={() => { setView('login'); }}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

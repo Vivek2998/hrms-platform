@@ -99,8 +99,8 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={cn('overflow-hidden border-slate-200 shadow-sm', className)}>
-      <CardHeader className="border-b border-slate-100 bg-slate-50/60 px-6 pb-4 pt-5">
+    <Card className={cn('overflow-hidden shadow-sm', className)}>
+      <CardHeader className="border-b bg-muted/40 px-6 pb-4 pt-5">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800">
             <Icon className="h-4 w-4 text-white" />
@@ -197,8 +197,8 @@ export default function SettingsPage() {
     <div className="max-w-5xl space-y-6">
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
-        <p className="mt-1 text-sm text-slate-500">Manage your personal information and account settings</p>
+        <h1 className="text-2xl font-bold">My Profile</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Manage your personal information and account settings</p>
       </div>
 
       {/* ── Profile hero ── */}

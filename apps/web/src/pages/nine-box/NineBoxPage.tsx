@@ -83,7 +83,7 @@ export default function NineBoxPage() {
                         <p className="text-xs font-semibold text-center mb-2">{BOX_LABELS[key]}</p>
                         <div className="space-y-1">
                           {employees.map((a: any) => (
-                            <div key={a.id} className="text-xs bg-white rounded px-1.5 py-0.5 shadow-sm truncate">
+                            <div key={a.id} className="bg-background text-foreground text-xs rounded px-1.5 py-0.5 shadow-sm truncate">
                               {a.employee?.firstName} {a.employee?.lastName}
                             </div>
                           ))}

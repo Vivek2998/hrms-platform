@@ -135,7 +135,7 @@ completely.
 - [ ] All images/illustrations/icons visible in dark mode
 - [ ] Transitions between light/dark are smooth (no flash)
 
-**Status:** ⬜ Not Done
+**Status:** ✅ Web Done — Dark mode CSS tokens existed, fixed theme init (index.html inline script), fixed `onRehydrateStorage` in ui.store.ts, upgraded header toggle to 3-way Light/Dark/System dropdown, fixed all hardcoded colors across AuthLayout, LoginPage, RegisterPage, SettingsPage, ExpensesPage, NineBoxPage, ESignaturePage. Mobile dark mode pending.
 
 ---
 
@@ -801,7 +801,7 @@ massive trust — companies know they're never locked in.
 | Tier | Feature | Status |
 |------|---------|--------|
 | **T1** | T1-1 Design System Overhaul | ⬜ Not Done |
-| **T1** | T1-2 Dark Mode (Web + Mobile) | ⬜ Not Done |
+| **T1** | T1-2 Dark Mode (Web + Mobile) | ✅ Done (Web) · ⬜ Mobile pending |
 | **T1** | T1-3 Command Palette (CMD+K) | ⬜ Not Done |
 | **T1** | T1-4 Customizable Home Dashboard | ⬜ Not Done |
 | **T1** | T1-5 Skeleton Loaders Everywhere | ⬜ Not Done |

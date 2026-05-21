@@ -100,7 +100,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* Claims table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-xl border overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-400">Loading...</div>
         ) : claims.length === 0 ? (
@@ -223,7 +223,7 @@ export default function ExpensesPage() {
       {/* Review modal */}
       {reviewModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-card rounded-xl p-6 w-full max-w-md shadow-xl">
             <h2 className="text-lg font-bold mb-1">
               {reviewModal.action === 'APPROVE' ? 'Approve' : 'Reject'} Expense
             </h2>
@@ -269,7 +269,7 @@ export default function ExpensesPage() {
 function SummaryCard({ label, value, icon, bg }: { label: string; value: string; icon: React.ReactNode; bg: string }) {
   return (
     <div className={`${bg} rounded-xl p-4 flex items-center gap-4`}>
-      <div className="p-2 bg-white rounded-lg shadow-sm">{icon}</div>
+      <div className="p-2 bg-background/80 rounded-lg shadow-sm">{icon}</div>
       <div>
         <p className="text-xs text-gray-500 font-medium">{label}</p>
         <p className="text-xl font-bold text-gray-900">{value}</p>
@@ -318,7 +318,7 @@ function CreateExpenseModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+      <div className="bg-card rounded-xl p-6 w-full max-w-lg shadow-xl">
         <h2 className="text-lg font-bold mb-4">New Expense Claim</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {field('Title *', input({

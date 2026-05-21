@@ -1,6 +1,6 @@
 # HRMS Project — AI Manager's Master Prompt File
 
-> **Version:** 1.0 | **Owner:** Vivek Kumar | **Status:** Active  
+> **Version:** 1.0 | **Owner:** Vivek Kumar | **Status:** Active
 > **Purpose:** This is your single source of truth. Feed this file to Claude AI (or any AI agent) at the start of every session. The AI is your engineering team — you are the Product Manager.
 
 ---
@@ -433,5 +433,113 @@ Do step-by-step, confirm each step before proceeding.
 - White-label support (custom logo, colors, domain)
 
 ---
+
+## New Updates:
+
+- TIER 1 — Critical Gaps (Daily-use features employees worldwide love most)
+
+1. Onboarding Module ❌
+   Every top platform (Darwinbox, BambooHR, Rippling, Keka) considers this the #1 differentiator.
+
+Joining form & document collection automation (PAN, Aadhaar, bank details, etc.)
+New hire task checklists — assign tasks to IT (give laptop), Finance (create bank), HR (issue ID card), buddy
+Offer letter generation + digital acceptance
+Welcome email automation on date of joining
+Compliance training auto-assigned on day 1 2. Offboarding Module ❌
+Resignation submission + manager approval workflow
+Exit interview questionnaire
+Clearance checklist (IT, Finance, Admin, Manager sign-off)
+Knowledge transfer task assignment
+Access revocation trigger
+Rehire eligibility flag 3. Full & Final (FnF) Settlement Calculator ❌
+India's #1 requested feature in Keka, GreytHR, Darwinbox reviews. Calculates final salary, pending leaves encashment, gratuity, deductions, and generates the FnF payslip automatically.
+
+4. Investment Proof Collection / IT Declaration ❌ (partially pending)
+   Form 12BB submission, 80C / 80D / HRA / LTA proofs upload, TDS computation sheet visible to employees — heavily used every January–March in India. Without this, tax is over-deducted.
+
+5. Attendance Regularization (I think regularise is the same thing).
+   Employees forget to punch, work from a different location, or punch fails due to network. Every major HRMS lets employees submit a "missed punch correction" request with reason. Manager approves it. Currently missing entirely.
+
+6. Work From Home (WFH) Requests ❌
+   Separate from leave — WFH is not a leave but a location status. Employees apply for WFH, manager approves, attendance auto-marks as "WFH" instead of "Absent." Darwinbox, Keka, Zoho People all have this as a separate module.
+
+7. Comp-off (Compensatory Off) Management (I think this is also built as comp off)
+   When an employee works on a holiday or weekend, they earn a comp-off. Currently no mechanism to: (a) earn comp-off from weekend work, (b) apply it as leave, (c) track balance. Keka and Darwinbox users cite this as essential.
+
+8. Shift Swap Requests ❌
+   Employees can request another employee to swap a shift. Manager approves. UKG Pro even allows SMS-based acceptance. Very common requirement in companies with 2+ shifts.
+
+9. Self-Service Employment Documents ❌
+   Employees cannot generate these on-demand (instant PDF): Experience Letter, Employment Verification Letter, Salary Certificate, Relieving Letter. In every top HRMS, these are one-click. Currently employees must ask HR to generate manually.
+
+10. Employee Referral Portal ❌
+    Employees submit candidate referrals directly from the app, track referral status, and receive referral bonus when hired. One of the highest ROI recruitment sources. BambooHR, Darwinbox, Keka all have this built-in.
+
+- TIER 2 — Important Gaps (What separates good HRMS from great) 11. Pulse Surveys / Employee Engagement Surveys ❌
+  Short pulse surveys (5–10 questions, weekly or monthly)
+  eNPS (Employee Net Promoter Score) — "How likely are you to recommend this company?"
+  Lifecycle surveys — auto-triggered at Day 30, Day 90, every 6 months, and on exit
+  Culture Amp, 15Five, and Keka are globally praised specifically for this 12. Social Recognition Feed ❌ (Kudos pending but no social wall)
+  Points-based rewards, company-wide recognition feed where everyone sees appreciation posts, values-aligned badges, service anniversary auto-posts, birthday celebrations. Keka's "Celebrate" and Darwinbox's recognition wall are among the most loved features in their respective user reviews.
+
+13. Performance Improvement Plan (PIP) ❌
+    When an employee underperforms, HR/manager creates a PIP with goals, timeline, and check-in schedule. Both parties digitally acknowledge. Progress tracked. Outcome recorded. Lattice is the #1 rated platform on G2 partly because of this.
+
+14. Nine-Box Grid (Performance vs. Potential) ❌
+    Visual 3×3 grid that maps all employees by performance rating vs. potential. Identifies HiPos (high potential), flight risks, and underperformers at a glance. Used in every talent review meeting. Lattice, Workday, and SAP SuccessFactors are heavily praised for this.
+
+15. Career Path Visualization ❌
+    Shows an employee what roles they can grow into from their current role, what skills they need, and how others made that transition. Reduces attrition by giving employees a future to work toward.
+
+16. Succession Planning ❌
+    For critical roles, HR identifies 2–3 successors with readiness ratings (Ready Now / 1–2 Years / 3–5 Years). Prevents leadership gaps. Oracle HCM and Workday are industry standards for this.
+
+17. Benefits Administration ❌
+    Group health insurance enrollment (Mediclaim), Group Term Life, NPS enrollment, Perks management (gym, meals, transport). Employees select their benefits during joining and open enrollment windows. Heavily requested in Indian enterprise HRMS reviews.
+
+18. Headcount / Workforce Planning ❌
+    Department-wise headcount budget, open position tracking, attrition scenario modeling. Without this, HR can't justify new hires to leadership. Workday and Oracle HCM are the gold standard here.
+
+19. POSH Case Management ❌
+    Prevention of Sexual Harassment Act (India) — mandatory for any company with 10+ employees. A private, confidential case filing system with ICC committee workflow. GreytHR and Darwinbox have this as a dedicated module. This is a legal compliance requirement in India.
+
+20. Timesheet / Project Time Tracking ❌
+    Employees log hours by project (billable vs. non-billable). Manager approves. Feeds into client billing or project cost analysis. Very important for IT companies, consulting firms, agencies.
+
+21. Policy Acknowledgment Tracking ❌
+    HR uploads policies (Employee Handbook, Code of Conduct, IT Policy). Employees must read and digitally acknowledge. HR dashboard shows who has and hasn't signed. Used as legal protection in case of disputes.
+
+22. Compliance Calendar ❌
+    Monthly view of all statutory deadlines — PF challan by 15th, ESI by 15th, PT by state deadlines, TDS by 7th, Form 24Q quarterly. Currently there is nothing alerting HR of upcoming compliance deadlines.
+
+23. Salary Revision / Appraisal Workflow ❌
+    After performance reviews, HR/manager proposes a revised salary. Multi-level approval. Notification to employee. New CTC effective from a date. Currently payroll has no mechanism for structured revision cycles linked to performance.
+
+24. AI Chatbot / Virtual HR Assistant ❌
+    The most impactful 2025 feature. Employees ask: "How many leaves do I have?" "When is my next payslip?" "What's the company's WFH policy?" The AI answers instantly. BambooHR's "Ask BambooHR" and Darwinbox's "Jinie" are among the most praised features in reviews globally.
+
+TIER 3 — Enterprise / Scale Features (Build when user base grows)
+Feature Who has it Why it matters
+Earned Wage Access (on-demand pay) Gusto, ADP, Rippling Employee can withdraw earned salary before payday — reduces financial stress, huge retention tool
+Attrition Prediction (AI) Workday, Oracle, Culture Amp Flags employees likely to resign 60–90 days before they do, based on patterns
+Org Chart (dynamic, visual, clickable) All major platforms Employees navigate the company visually. Check if yours is interactive
+Biometric device integration (ZKTeco, ESSL) Darwinbox, Keka, GreytHR Physical attendance machines used in factories/offices sync directly to HRMS
+Bulk/Campus Hiring Darwinbox, Keka Mass hiring drives, walk-ins, bulk offer letters
+Pay Equity Analysis Workday, Lattice Report on gender/role pay gaps — increasingly a legal requirement
+Multi-language UI SAP, Oracle, Zoho If company has non-English employees
+Interview Scorecard (ATS) BambooHR, Darwinbox, Keka Structured interview feedback forms with ratings per competency
+Resume Parsing (AI) All major ATS Bulk upload resumes → auto-create candidate profiles
+Contractor / Gig Worker Management Rippling, ADP Separate profile type, PO-based payment, no payroll
+ESOP / Equity Management Rippling, Workday Grant, vest, exercise tracking for startups giving ESOPs
+Mental Health / EAP Integrations BambooHR, Keka Links to Employee Assistance Programs
+The 5 Biggest Gaps Employees Notice First
+Based specifically on G2 and Capterra employee reviews (not HR admin reviews):
+
+Can't fix wrong attendance themselves → Regularization is #1 pain point when missing
+No WFH tracking → Employees marked absent even when working from home
+Can't get their own letters → Still emailing HR for experience/salary certificate
+No recognition wall → Appreciation is invisible; morale suffers
+No pulse survey → Employees feel unheard; no anonymous feedback channel
+Bottom line: Your HRMS is solid on the transactional side (attendance, leaves, payroll, assets, travel, loans). The biggest gaps are in the lifecycle layer (onboarding/offboarding), employee experience layer (surveys, recognition wall, career paths, WFH, regularization), and India compliance layer (FnF, POSH, investment declarations). These are the features that determine whether employees like using the system daily vs. just tolerating it.
 
 _Last Updated: May 2026 | Maintained by Vivek Kumar_

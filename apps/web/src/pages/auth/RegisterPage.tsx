@@ -52,7 +52,7 @@ interface RegisterResponse {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
       {children}
     </p>
   );
@@ -61,7 +61,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4 flex items-center gap-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{children}</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{children}</p>
       <div className="h-px flex-1 bg-slate-100" />
     </div>
   );
@@ -122,8 +122,8 @@ export default function RegisterPage() {
   return (
     <AuthLayout variant="register">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your account</h1>
-        <p className="mt-1.5 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
           Set up your company and admin account — free forever on the Starter plan.
         </p>
       </div>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
             <FieldLabel>Company Name</FieldLabel>
             <Input
               placeholder="Acme Pvt Ltd"
-              className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+              className="h-10 border-input text-foreground placeholder:text-muted-foreground"
               {...form.register('name', {
                 onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
                   const slug = e.target.value
@@ -161,13 +161,13 @@ export default function RegisterPage() {
               <FieldLabel>URL Slug</FieldLabel>
               <Input
                 placeholder="acme-pvt-ltd"
-                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                className="h-10 border-input text-foreground placeholder:text-muted-foreground"
                 {...form.register('slug')}
               />
               {form.formState.errors.slug ? (
                 <p className="mt-1 text-xs text-red-500">{form.formState.errors.slug.message}</p>
               ) : (
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Login URL: /login?org={slugValue || 'slug'}
                 </p>
               )}
@@ -177,7 +177,7 @@ export default function RegisterPage() {
               <Input
                 type="email"
                 placeholder="hr@acme.in"
-                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                className="h-10 border-input text-foreground placeholder:text-muted-foreground"
                 {...form.register('email')}
               />
               {form.formState.errors.email && (
@@ -195,7 +195,7 @@ export default function RegisterPage() {
             <div>
               <FieldLabel>First Name</FieldLabel>
               <Input
-                className="h-10 border-slate-200 text-slate-900"
+                className="h-10 border-input text-foreground"
                 {...form.register('adminFirstName')}
               />
               {form.formState.errors.adminFirstName && (
@@ -207,7 +207,7 @@ export default function RegisterPage() {
             <div>
               <FieldLabel>Last Name</FieldLabel>
               <Input
-                className="h-10 border-slate-200 text-slate-900"
+                className="h-10 border-input text-foreground"
                 {...form.register('adminLastName')}
               />
               {form.formState.errors.adminLastName && (
@@ -223,7 +223,7 @@ export default function RegisterPage() {
             <Input
               type="email"
               placeholder="you@acme.in"
-              className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+              className="h-10 border-input text-foreground placeholder:text-muted-foreground"
               {...form.register('adminEmail')}
             />
             {form.formState.errors.adminEmail && (
@@ -239,7 +239,7 @@ export default function RegisterPage() {
               <Input
                 type="password"
                 placeholder="Min 8 characters"
-                className="h-10 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                className="h-10 border-input text-foreground placeholder:text-muted-foreground"
                 {...form.register('adminPassword')}
               />
               {form.formState.errors.adminPassword && (
@@ -252,7 +252,7 @@ export default function RegisterPage() {
               <FieldLabel>Confirm Password</FieldLabel>
               <Input
                 type="password"
-                className="h-10 border-slate-200 text-slate-900"
+                className="h-10 border-input text-foreground"
                 {...form.register('confirmPassword')}
               />
               {form.formState.errors.confirmPassword && (
@@ -279,11 +279,11 @@ export default function RegisterPage() {
           Create Account — Free
         </Button>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-muted-foreground">
           By creating an account, you agree to our{' '}
-          <a href="#" className="text-slate-500 hover:text-slate-700 hover:underline">Terms of Service</a>{' '}
+          <a href="#" className="text-muted-foreground hover:text-foreground hover:underline">Terms of Service</a>{' '}
           and{' '}
-          <a href="#" className="text-slate-500 hover:text-slate-700 hover:underline">Privacy Policy</a>.
+          <a href="#" className="text-muted-foreground hover:text-foreground hover:underline">Privacy Policy</a>.
         </p>
       </form>
 
@@ -293,7 +293,7 @@ export default function RegisterPage() {
           <div className="w-full border-t border-slate-100" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-slate-400">Already have an account?</span>
+          <span className="bg-background px-3 text-xs text-muted-foreground">Already have an account?</span>
         </div>
       </div>
 
@@ -301,7 +301,7 @@ export default function RegisterPage() {
         <Button
           variant="outline"
           type="button"
-          className="h-10 w-full border-slate-200 text-slate-700 hover:bg-slate-50"
+          className="h-10 w-full border-input text-foreground hover:bg-accent"
         >
           Sign in instead
         </Button>
