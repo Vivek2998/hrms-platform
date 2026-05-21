@@ -147,8 +147,7 @@ export function Header() {
             <span>Search…</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="flex items-center gap-1.5">
-          <span>Open command palette</span>
+        <TooltipContent side="bottom" className="flex items-center gap-1">
           <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] border">⌘K</kbd>
           <span className="text-muted-foreground">/</span>
           <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] border">Ctrl K</kbd>
