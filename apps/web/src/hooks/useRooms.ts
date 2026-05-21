@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/axios';
+import { apiClient } from '@/lib/axios';
 
 export interface MeetingRoom {
   id: string;
@@ -45,7 +45,7 @@ export function useRooms() {
   return useQuery<MeetingRoom[]>({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const r = await api.get('/rooms');
+      const r = await apiClient.get('/rooms');
       return r.data.data;
     },
   });
@@ -55,7 +55,7 @@ export function useRoomBookings(filters?: { roomId?: string; date?: string }) {
   return useQuery<RoomBooking[]>({
     queryKey: ['room-bookings', filters],
     queryFn: async () => {
-      const r = await api.get('/rooms/bookings', { params: filters });
+      const r = await apiClient.get('/rooms/bookings', { params: filters });
       return r.data.data;
     },
   });
@@ -64,7 +64,7 @@ export function useRoomBookings(filters?: { roomId?: string; date?: string }) {
 export function useCreateRoom() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateRoomInput) => api.post('/rooms', data),
+    mutationFn: (data: CreateRoomInput) => apiClient.post('/rooms', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['rooms'] }),
   });
 }
@@ -73,7 +73,7 @@ export function useUpdateRoom() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<CreateRoomInput> & { id: string; isActive?: boolean }) =>
-      api.patch(`/rooms/${id}`, data),
+      apiClient.patch(`/rooms/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['rooms'] }),
   });
 }
@@ -81,7 +81,7 @@ export function useUpdateRoom() {
 export function useDeactivateRoom() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/rooms/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/rooms/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['rooms'] }),
   });
 }
@@ -89,7 +89,7 @@ export function useDeactivateRoom() {
 export function useCreateBooking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateBookingInput) => api.post('/rooms/bookings', data),
+    mutationFn: (data: CreateBookingInput) => apiClient.post('/rooms/bookings', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['room-bookings'] }),
   });
 }
@@ -97,7 +97,7 @@ export function useCreateBooking() {
 export function useCancelBooking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/rooms/bookings/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/rooms/bookings/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['room-bookings'] }),
   });
 }
