@@ -802,7 +802,7 @@ massive trust — companies know they're never locked in.
 |------|---------|--------|
 | **T1** | T1-1 Design System Overhaul | ⬜ Not Done |
 | **T1** | T1-2 Dark Mode (Web + Mobile) | ✅ Done (Web) · ⬜ Mobile pending |
-| **T1** | T1-3 Command Palette (CMD+K) | ⬜ Not Done |
+| **T1** | T1-3 Command Palette (CMD+K) | ✅ Done |
 | **T1** | T1-4 Customizable Home Dashboard | ⬜ Not Done |
 | **T1** | T1-5 Skeleton Loaders Everywhere | ⬜ Not Done |
 | **T1** | T1-6 Micro-Animations and Page Transitions | ⬜ Not Done |

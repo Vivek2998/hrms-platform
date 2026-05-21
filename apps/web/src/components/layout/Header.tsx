@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu, Check } from 'lucide-react';
+import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu, Check, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
@@ -132,6 +132,19 @@ export function Header() {
       </Button>
 
       <div className="flex flex-1 items-center justify-end gap-3">
+      {/* CMD+K trigger — visible on md+ screens */}
+      <button
+        onClick={() => {
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+        }}
+        className="hidden md:flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        aria-label="Open command palette"
+      >
+        <Search className="h-3.5 w-3.5" />
+        <span>Search…</span>
+        <kbd className="ml-2 rounded bg-background px-1.5 py-0.5 font-mono text-[10px] border">⌘K</kbd>
+      </button>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" aria-label="Toggle theme">

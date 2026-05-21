@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
 import { AssistantWidget } from './AssistantWidget';
+import { CommandPalette } from './CommandPalette';
 import { useUiStore } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ export function AppShell() {
       </div>
       <BottomNav />
       <AssistantWidget />
+      <CommandPalette />
     </div>
   );
 }
