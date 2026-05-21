@@ -449,7 +449,7 @@ export function Sidebar() {
                             'h-4 w-4 shrink-0 transition-all duration-200',
                             isOpen
                               ? 'rotate-180 opacity-100'
-                              : 'opacity-0 group-hover/nav:opacity-100',
+                              : 'opacity-40 group-hover/nav:opacity-100',
                           )}
                         />
                       </button>
