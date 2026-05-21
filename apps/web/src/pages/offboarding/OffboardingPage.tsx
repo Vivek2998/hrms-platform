@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2, UserMinus, Plus, Trash2, CheckCircle2, Circle, SkipForward } from 'lucide-react';
+import { DialogContentSkeleton } from '@/components/ui/skeleton-patterns';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -270,7 +271,7 @@ function AssignmentDetailDialog({ assignmentId, open, onClose }: { assignmentId:
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <DialogContentSkeleton rows={3} />
         ) : assignment ? (
           <div className="space-y-4">
             <div className="flex items-center gap-3">

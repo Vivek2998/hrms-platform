@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FileText, Download, Loader2, IndianRupee, Printer } from 'lucide-react';
+import { FileText, Download, IndianRupee, Printer } from 'lucide-react';
+import { DialogContentSkeleton } from '@/components/ui/skeleton-patterns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -85,11 +86,7 @@ function PayslipDetailDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {isLoading && (
-          <div className="flex justify-center py-10">
-            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-          </div>
-        )}
+        {isLoading && <DialogContentSkeleton />}
 
         {payslip && (
           <div className="space-y-4">

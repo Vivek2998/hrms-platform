@@ -164,7 +164,7 @@ consumer-grade power feature that enterprise software ignores. We won't.
 - [ ] Smooth open/close animation
 - [ ] Mobile: floating search button triggers similar functionality
 
-**Status:** ⬜ Not Done
+**Status:** ✅ Done — Full `CommandPalette.tsx` built on `@radix-ui/react-dialog`. CMD+K / Ctrl+K global listener, 60+ nav items grouped by section, role-based filtering, keyboard navigation (arrows + Enter), smooth open/close animation, theme cycle action, logout action. Header now shows a visible `Search…` button for mouse-user discoverability. Role-based: EMPLOYEE sees personal actions, HR/Admin see employee management + payroll + admin actions.
 
 ---
 
@@ -220,7 +220,7 @@ blank white screens while loading. This is a perceived performance win with near
 - [ ] No spinner anywhere in the app (replace all instances)
 - [ ] Skeleton disappears smoothly when content loads (no jarring jump)
 
-**Status:** ⬜ Not Done
+**Status:** ✅ Done — Upgraded skeleton.tsx with shimmer animation (moving gradient via CSS keyframe). Created `skeleton-patterns.tsx` with `ChartSkeleton` (bar chart bars) and `DialogContentSkeleton` (rows). Replaced all 5 page-level Loader2 spinners in AnalyticsPage with ChartSkeleton. Replaced dialog-content spinners in MyPayslipsPage, OffboardingPage (assignment detail), and PulseSurveyPage with DialogContentSkeleton. Button-level spinners preserved (correct pattern for async actions).
 
 ---
 

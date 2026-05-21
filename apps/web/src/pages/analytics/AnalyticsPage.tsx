@@ -7,7 +7,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users, UserPlus, UserMinus, TrendingDown } from 'lucide-react';
+import { Users, UserPlus, UserMinus, TrendingDown } from 'lucide-react';
+import { ChartSkeleton } from '@/components/ui/skeleton-patterns';
 import {
   useAnalyticsOverview,
   useHeadcountTrend,
@@ -71,7 +72,7 @@ function HeadcountTrendChart() {
     <Card>
       <CardHeader><CardTitle className="text-base">Headcount Trend (12 months)</CardTitle></CardHeader>
       <CardContent>
-        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : (
+        {isLoading ? <ChartSkeleton /> : (
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -94,7 +95,7 @@ function DepartmentChart() {
     <Card>
       <CardHeader><CardTitle className="text-base">Employees by Department</CardTitle></CardHeader>
       <CardContent>
-        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+        {isLoading ? <ChartSkeleton /> : !data?.length ? (
           <p className="text-muted-foreground text-sm text-center py-8">No department data.</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -119,7 +120,7 @@ function AttendanceChart() {
     <Card>
       <CardHeader><CardTitle className="text-base">Attendance Summary (Last 30 Days)</CardTitle></CardHeader>
       <CardContent>
-        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+        {isLoading ? <ChartSkeleton /> : !data?.length ? (
           <p className="text-muted-foreground text-sm text-center py-8">No attendance data.</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -145,7 +146,7 @@ function LeaveUtilizationChart() {
     <Card>
       <CardHeader><CardTitle className="text-base">Leave Utilization (This Year)</CardTitle></CardHeader>
       <CardContent>
-        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+        {isLoading ? <ChartSkeleton /> : !data?.length ? (
           <p className="text-muted-foreground text-sm text-center py-8">No leave data.</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -172,7 +173,7 @@ function PayrollTrendChart() {
     <Card>
       <CardHeader><CardTitle className="text-base">Payroll Cost Trend</CardTitle></CardHeader>
       <CardContent>
-        {isLoading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : !data?.length ? (
+        {isLoading ? <ChartSkeleton /> : !data?.length ? (
           <p className="text-muted-foreground text-sm text-center py-8">No payroll data yet.</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>

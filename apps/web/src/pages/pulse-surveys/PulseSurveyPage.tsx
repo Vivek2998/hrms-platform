@@ -40,6 +40,7 @@ import {
 } from '@/hooks/useSurveys';
 import type { SurveyStatus, QuestionType, SurveySummary } from '@/hooks/useSurveys';
 import { cn } from '@/lib/utils';
+import { DialogContentSkeleton } from '@/components/ui/skeleton-patterns';
 
 const STATUS_COLORS: Record<SurveyStatus, string> = {
   DRAFT: 'bg-gray-100 text-gray-600',
@@ -292,11 +293,7 @@ function ResultsDialog({ surveyId, onClose }: { surveyId: string | null; onClose
         <DialogHeader>
           <DialogTitle>Survey Results</DialogTitle>
         </DialogHeader>
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-          </div>
-        )}
+        {isLoading && <DialogContentSkeleton rows={3} />}
         {results && (
           <div className="space-y-4">
             <p className="text-muted-foreground text-sm">
