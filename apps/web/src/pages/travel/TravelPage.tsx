@@ -9,8 +9,8 @@ import {
   useApproveTravelRequest,
   useRejectTravelRequest,
   useCancelTravelRequest,
-  TravelRequest,
-  TravelMode,
+  type TravelRequest,
+  type TravelMode,
 } from '@/hooks/useTravel';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
