@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/axios';
 
 export type TravelStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 export type TravelMode = 'FLIGHT' | 'TRAIN' | 'BUS' | 'CAR' | 'OTHER';
@@ -52,7 +52,7 @@ export function useTravelRequests() {
   return useQuery<TravelRequest[]>({
     queryKey: ['travel'],
     queryFn: async () => {
-      const res = await api.get('/travel');
+      const res = await apiClient.get('/travel');
       return res.data.data;
     },
     staleTime: 2 * 60 * 1000,
@@ -62,7 +62,7 @@ export function useTravelRequests() {
 export function useCreateTravelRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateTravelInput) => api.post('/travel', data),
+    mutationFn: (data: CreateTravelInput) => apiClient.post('/travel', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['travel'] }),
   });
 }
@@ -70,7 +70,7 @@ export function useCreateTravelRequest() {
 export function useApproveTravelRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/travel/${id}/approve`),
+    mutationFn: (id: string) => apiClient.patch(`/travel/${id}/approve`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['travel'] }),
   });
 }
@@ -79,7 +79,7 @@ export function useRejectTravelRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      api.patch(`/travel/${id}/reject`, { reason }),
+      apiClient.patch(`/travel/${id}/reject`, { reason }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['travel'] }),
   });
 }
@@ -87,7 +87,7 @@ export function useRejectTravelRequest() {
 export function useCancelTravelRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/travel/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/travel/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['travel'] }),
   });
 }
