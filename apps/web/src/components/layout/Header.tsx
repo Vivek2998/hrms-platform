@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu, Check, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -109,6 +109,8 @@ export function Header() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { theme, setTheme, toggleSidebar } = useUiStore();
+  const [showKbd, setShowKbd] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleLogout() {
     logout();
@@ -137,12 +139,23 @@ export function Header() {
         onClick={() => {
           document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
         }}
+        onMouseEnter={() => {
+          hoverTimer.current = setTimeout(() => setShowKbd(true), 2000);
+        }}
+        onMouseLeave={() => {
+          if (hoverTimer.current) clearTimeout(hoverTimer.current);
+          setShowKbd(false);
+        }}
         className="hidden md:flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-label="Open command palette"
       >
         <Search className="h-3.5 w-3.5" />
         <span>Search…</span>
-        <kbd className="ml-2 rounded bg-background px-1.5 py-0.5 font-mono text-[10px] border">⌘K</kbd>
+        <kbd
+          className={`ml-2 rounded bg-background px-1.5 py-0.5 font-mono text-[10px] border transition-all duration-200 ${
+            showKbd ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 w-0 ml-0 px-0 overflow-hidden'
+          }`}
+        >⌘K</kbd>
       </button>
 
       <DropdownMenu>
