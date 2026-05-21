@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu } from 'lucide-react';
+import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
@@ -147,12 +147,15 @@ export function Header() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => { setTheme('light'); }}>
             <Sun className="mr-2 h-4 w-4" /> Light
+            {theme === 'light' && <Check className="ml-auto h-4 w-4" />}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => { setTheme('dark'); }}>
             <Moon className="mr-2 h-4 w-4" /> Dark
+            {theme === 'dark' && <Check className="ml-auto h-4 w-4" />}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => { setTheme('system'); }}>
             <Monitor className="mr-2 h-4 w-4" /> System
+            {theme === 'system' && <Check className="ml-auto h-4 w-4" />}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
