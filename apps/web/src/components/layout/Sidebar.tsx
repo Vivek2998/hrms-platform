@@ -364,9 +364,9 @@ export function Sidebar() {
           </div>
 
           {/* ── Navigation ── */}
-          <nav className={cn('flex-1 overflow-y-auto py-3', sidebarVisible && '[scrollbar-gutter:stable]')}>
-            {/* Expanded: px-2 gutters. Collapsed: icons pinned to fixed 64px track */}
-            <ul className={cn(sidebarVisible ? 'space-y-0.5 px-2' : 'space-y-0.5 flex flex-col items-center')}>
+          <nav className={cn('flex-1 overflow-y-auto py-3', sidebarVisible ? '[scrollbar-gutter:stable]' : 'overflow-x-hidden')}>
+            {/* Expanded: px-2 gutters. Collapsed: fixed-height slots, centered */}
+            <ul className={cn(sidebarVisible ? 'space-y-0.5 px-2' : 'space-y-px')}>
               {ENTRIES.map((entry) => {
                 // ── Group entries ──
                 if (entry.group) {
@@ -379,7 +379,7 @@ export function Sidebar() {
                       location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
                     );
                     return (
-                      <li key={entry.key} className="py-1.5">
+                      <li key={entry.key} className="flex h-10 items-center justify-center">
                         <Popover
                           open={flyoutGroup === entry.key}
                           onOpenChange={(open) => setFlyoutGroup(open ? entry.key : null)}
@@ -510,7 +510,7 @@ export function Sidebar() {
                 // Collapsed → centered square icon + tooltip
                 if (!sidebarVisible) {
                   return (
-                    <li key={entry.to} className="py-1.5">
+                    <li key={entry.to} className="flex h-10 items-center justify-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           {locked ? (
