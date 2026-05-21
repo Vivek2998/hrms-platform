@@ -82,7 +82,7 @@ class _NineBoxGrid extends StatelessWidget {
           children: [1, 2, 3].map((performance) {
             final key = '$performance-$potential';
             final items = grid[key] ?? [];
-            final label = NineBoxAssessment._boxLabels[key] ?? '';
+            final label = NineBoxAssessment.boxLabels[key] ?? '';
             final color = _boxColors[key] ?? const Color(0xFFF3F4F6);
             return Expanded(
               child: Container(

@@ -50,9 +50,9 @@ class NineBoxAssessment {
             : null,
       );
 
-  String get boxLabel => _boxLabels['$performance-$potential'] ?? '';
+  String get boxLabel => boxLabels['$performance-$potential'] ?? '';
 
-  static const _boxLabels = {
+  static const boxLabels = {
     '1-1': 'Underperformer', '2-1': 'Inconsistent Player',
     '3-1': 'High Professional', '1-2': 'Core Player',
     '2-2': 'Core Player', '3-2': 'High Performer',
