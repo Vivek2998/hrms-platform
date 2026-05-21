@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/axios';
 
 export type LoanStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISBURSED' | 'CLOSED' | 'CANCELLED';
 export type LoanType = 'PERSONAL_LOAN' | 'SALARY_ADVANCE' | 'VEHICLE_LOAN' | 'HOME_LOAN' | 'EDUCATION_LOAN' | 'OTHER';
@@ -43,7 +43,7 @@ export function useLoans() {
   return useQuery<LoanRequest[]>({
     queryKey: ['loans'],
     queryFn: async () => {
-      const res = await api.get('/loans');
+      const res = await apiClient.get('/loans');
       return res.data.data;
     },
     staleTime: 2 * 60 * 1000,
@@ -53,7 +53,7 @@ export function useLoans() {
 export function useCreateLoan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateLoanInput) => api.post('/loans', data),
+    mutationFn: (data: CreateLoanInput) => apiClient.post('/loans', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loans'] }),
   });
 }
@@ -61,7 +61,7 @@ export function useCreateLoan() {
 export function useApproveLoan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/loans/${id}/approve`),
+    mutationFn: (id: string) => apiClient.patch(`/loans/${id}/approve`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loans'] }),
   });
 }
@@ -70,7 +70,7 @@ export function useRejectLoan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      api.patch(`/loans/${id}/reject`, { reason }),
+      apiClient.patch(`/loans/${id}/reject`, { reason }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loans'] }),
   });
 }
@@ -78,7 +78,7 @@ export function useRejectLoan() {
 export function useDisburseLoan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/loans/${id}/disburse`),
+    mutationFn: (id: string) => apiClient.patch(`/loans/${id}/disburse`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loans'] }),
   });
 }
@@ -86,7 +86,7 @@ export function useDisburseLoan() {
 export function useCloseLoan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/loans/${id}/close`),
+    mutationFn: (id: string) => apiClient.patch(`/loans/${id}/close`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loans'] }),
   });
 }
@@ -94,7 +94,7 @@ export function useCloseLoan() {
 export function useCancelLoan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/loans/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/loans/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loans'] }),
   });
 }

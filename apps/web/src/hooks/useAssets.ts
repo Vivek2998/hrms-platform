@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/axios';
 
 export type AssetStatus = 'AVAILABLE' | 'ASSIGNED' | 'UNDER_REPAIR' | 'RETIRED' | 'LOST';
 export type AssetCategory = 'LAPTOP' | 'DESKTOP' | 'PHONE' | 'TABLET' | 'MONITOR' | 'KEYBOARD' | 'MOUSE' | 'HEADSET' | 'CHAIR' | 'DESK' | 'ID_CARD' | 'ACCESS_CARD' | 'OTHER';
@@ -56,7 +56,7 @@ export function useAssets() {
   return useQuery<Asset[]>({
     queryKey: ['assets'],
     queryFn: async () => {
-      const res = await api.get('/assets');
+      const res = await apiClient.get('/assets');
       return res.data.data;
     },
     staleTime: 2 * 60 * 1000,
@@ -66,7 +66,7 @@ export function useAssets() {
 export function useCreateAsset() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateAssetInput) => api.post('/assets', data),
+    mutationFn: (data: CreateAssetInput) => apiClient.post('/assets', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assets'] }),
   });
 }
@@ -75,7 +75,7 @@ export function useUpdateAsset() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<CreateAssetInput> & { id: string }) =>
-      api.patch(`/assets/${id}`, data),
+      apiClient.patch(`/assets/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assets'] }),
   });
 }
@@ -83,7 +83,7 @@ export function useUpdateAsset() {
 export function useDeleteAsset() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/assets/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/assets/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assets'] }),
   });
 }
@@ -92,7 +92,7 @@ export function useAssignAsset() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, employeeId, notes, condition }: { id: string; employeeId: string; notes?: string; condition?: string }) =>
-      api.post(`/assets/${id}/assign`, { employeeId, notes, condition }),
+      apiClient.post(`/assets/${id}/assign`, { employeeId, notes, condition }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assets'] }),
   });
 }
@@ -101,7 +101,7 @@ export function useReturnAsset() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, condition, notes }: { id: string; condition?: string; notes?: string }) =>
-      api.post(`/assets/${id}/return`, { condition, notes }),
+      apiClient.post(`/assets/${id}/return`, { condition, notes }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assets'] }),
   });
 }

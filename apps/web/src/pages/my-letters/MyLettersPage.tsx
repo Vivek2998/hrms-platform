@@ -3,7 +3,7 @@ import { FileText, Download, Loader2, Briefcase, IndianRupee } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/axios';
 import { printLetter } from '@/lib/printLetter';
 
 interface LetterOrg {
@@ -95,7 +95,7 @@ export default function MyLettersPage() {
   const handleDownload = async (letter: typeof LETTERS[0]) => {
     setLoading(letter.id);
     try {
-      const res = await api.get(letter.endpoint);
+      const res = await apiClient.get(letter.endpoint);
       const html = letter.build(res.data.data);
       printLetter(html, letter.docTitle);
     } catch {

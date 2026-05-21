@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/axios';
 
 export function useShiftSwaps() {
   return useQuery({
     queryKey: ['shift-swaps'],
     queryFn: async () => {
-      const res = await api.get('/shift-swaps');
+      const res = await apiClient.get('/shift-swaps');
       return res.data.data as any[];
     },
   });
@@ -15,7 +15,7 @@ export function useCreateShiftSwap() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { targetId: string; requesterDate: string; targetDate: string; reason?: string }) =>
-      api.post('/shift-swaps', data),
+      apiClient.post('/shift-swaps', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['shift-swaps'] }),
   });
 }
@@ -23,7 +23,7 @@ export function useCreateShiftSwap() {
 export function useAcceptShiftSwap() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/shift-swaps/${id}/accept`),
+    mutationFn: (id: string) => apiClient.patch(`/shift-swaps/${id}/accept`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['shift-swaps'] }),
   });
 }
@@ -31,7 +31,7 @@ export function useAcceptShiftSwap() {
 export function useApproveShiftSwap() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/shift-swaps/${id}/approve`),
+    mutationFn: (id: string) => apiClient.patch(`/shift-swaps/${id}/approve`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['shift-swaps'] }),
   });
 }
@@ -40,7 +40,7 @@ export function useRejectShiftSwap() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      api.patch(`/shift-swaps/${id}/reject`, { reason }),
+      apiClient.patch(`/shift-swaps/${id}/reject`, { reason }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['shift-swaps'] }),
   });
 }
@@ -48,7 +48,7 @@ export function useRejectShiftSwap() {
 export function useCancelShiftSwap() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/shift-swaps/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/shift-swaps/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['shift-swaps'] }),
   });
 }

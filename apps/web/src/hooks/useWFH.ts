@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/axios';
 
 export function useWFHRequests() {
   return useQuery({
     queryKey: ['wfh'],
     queryFn: async () => {
-      const res = await api.get('/wfh');
+      const res = await apiClient.get('/wfh');
       return res.data.data as any[];
     },
   });
@@ -14,7 +14,7 @@ export function useWFHRequests() {
 export function useCreateWFH() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { date: string; reason?: string }) => api.post('/wfh', data),
+    mutationFn: (data: { date: string; reason?: string }) => apiClient.post('/wfh', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['wfh'] }),
   });
 }
@@ -22,7 +22,7 @@ export function useCreateWFH() {
 export function useApproveWFH() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/wfh/${id}/approve`),
+    mutationFn: (id: string) => apiClient.patch(`/wfh/${id}/approve`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['wfh'] }),
   });
 }
@@ -31,7 +31,7 @@ export function useRejectWFH() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      api.patch(`/wfh/${id}/reject`, { reason }),
+      apiClient.patch(`/wfh/${id}/reject`, { reason }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['wfh'] }),
   });
 }
@@ -39,7 +39,7 @@ export function useRejectWFH() {
 export function useCancelWFH() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/wfh/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/wfh/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['wfh'] }),
   });
 }
