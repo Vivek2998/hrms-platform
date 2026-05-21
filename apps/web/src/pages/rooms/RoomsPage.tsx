@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, Trash2, Calendar, Clock, Users, MapPin, Wifi, Monitor, Coffee, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   useRooms, useRoomBookings, useCreateRoom, useDeactivateRoom, useCreateBooking, useCancelBooking,
   type MeetingRoom, type CreateRoomInput,

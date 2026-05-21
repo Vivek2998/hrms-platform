@@ -8,7 +8,7 @@ import {
   useDisburseLoan, useCloseLoan, useCancelLoan,
   LoanRequest, LoanType,
 } from '@/hooks/useLoans';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

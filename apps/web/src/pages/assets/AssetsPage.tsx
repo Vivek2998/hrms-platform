@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Package, Plus, Laptop, Phone, Monitor, Keyboard, User, RotateCcw, Pencil, Trash2 } from 'lucide-react';
 import { useAssets, useCreateAsset, useDeleteAsset, useAssignAsset, useReturnAsset, Asset, AssetCategory } from '@/hooks/useAssets';
 import { useEmployees } from '@/hooks/useEmployees';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
