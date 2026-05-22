@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -28,26 +29,20 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            onPressed: () => context.push('/chat'),
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            elevation: 10,
-            child: const Icon(Icons.auto_awesome_rounded, size: 24),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Assistant',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/chat'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 10,
+        icon: SvgPicture.string(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
+          width: 22,
+          height: 22,
+        ),
+        label: const Text(
+          'Assistant',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -461,8 +456,8 @@ class _QuickActionsGridState extends State<_QuickActionsGrid> {
           const Color(0xFFDB2777), const Color(0xFFFCE7F3), '/eap'),
     ];
 
-    // 3 rows × 88px + 2 gaps × 4px = 272px visible; rest scrolls internally
-    const double rowHeight = 88;
+    // 3 rows × 108px + 2 gaps × 4px = 332px visible; rest scrolls internally
+    const double rowHeight = 108;
     const double gap = 4;
     const int visibleRows = 3;
     const double gridHeight = visibleRows * rowHeight + (visibleRows - 1) * gap;
