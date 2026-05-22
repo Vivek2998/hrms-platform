@@ -229,49 +229,141 @@ class _HeroHeader extends ConsumerWidget {
               const SizedBox(width: 8),
               PopupMenuButton<String>(
                 onSelected: (value) => _onMenuSelected(context, ref, value),
-                offset: const Offset(0, 52),
+                offset: const Offset(0, 54),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                elevation: 12,
-                constraints: const BoxConstraints(minWidth: 192),
-                itemBuilder: (_) => [
-                  PopupMenuItem<String>(
-                    value: 'profile',
-                    child: Row(children: [
-                      const Icon(Icons.person_outline_rounded,
-                          size: 19, color: AppColors.primary),
-                      const SizedBox(width: 12),
-                      const Text('My Profile',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600)),
-                    ]),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'change_password',
-                    child: Row(children: [
-                      const Icon(Icons.lock_outline_rounded, size: 19),
-                      const SizedBox(width: 12),
-                      const Text('Change Password',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600)),
-                    ]),
-                  ),
-                  const PopupMenuDivider(height: 8),
-                  PopupMenuItem<String>(
-                    value: 'logout',
-                    child: Row(children: [
-                      const Icon(Icons.logout_rounded,
-                          size: 19, color: AppColors.error),
-                      const SizedBox(width: 12),
-                      const Text('Log Out',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.error)),
-                    ]),
-                  ),
-                ],
+                elevation: 20,
+                shadowColor: Colors.black.withAlpha(55),
+                color: Theme.of(context).colorScheme.surface,
+                constraints: const BoxConstraints(minWidth: 230),
+                itemBuilder: (menuCtx) {
+                  final user =
+                      ref.read(authNotifierProvider).valueOrNull?.user;
+                  final scheme = Theme.of(menuCtx).colorScheme;
+                  return [
+                    // ── Mini profile header (non-selectable) ──────────────
+                    PopupMenuItem<String>(
+                      enabled: false,
+                      padding: EdgeInsets.zero,
+                      height: 72,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary.withAlpha(22),
+                              AppColors.gradientEnd.withAlpha(12),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20)),
+                        ),
+                        child: Row(children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: AppColors.primary.withAlpha(60),
+                                  width: 2),
+                            ),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: AppColors.primaryLight,
+                              backgroundImage: user?.avatarUrl != null
+                                  ? NetworkImage(user!.avatarUrl!)
+                                  : null,
+                              child: user?.avatarUrl == null
+                                  ? Text(
+                                      firstName.isNotEmpty
+                                          ? firstName[0].toUpperCase()
+                                          : 'U',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${user?.firstName ?? firstName} ${user?.lastName ?? ''}'
+                                      .trim(),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: scheme.onSurface,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  user?.workEmail ?? '',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                    const PopupMenuDivider(height: 1),
+                    // ── My Profile ────────────────────────────────────────
+                    PopupMenuItem<String>(
+                      value: 'profile',
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 2),
+                      child: _MenuTile(
+                        icon: Icons.person_outline_rounded,
+                        iconBg: AppColors.primaryLight,
+                        iconColor: AppColors.primary,
+                        label: 'My Profile',
+                      ),
+                    ),
+                    // ── Change Password ───────────────────────────────────
+                    PopupMenuItem<String>(
+                      value: 'change_password',
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 2),
+                      child: _MenuTile(
+                        icon: Icons.lock_outline_rounded,
+                        iconBg: AppColors.infoLight,
+                        iconColor: AppColors.info,
+                        label: 'Change Password',
+                      ),
+                    ),
+                    const PopupMenuDivider(height: 1),
+                    // ── Log Out ───────────────────────────────────────────
+                    PopupMenuItem<String>(
+                      value: 'logout',
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 2),
+                      child: _MenuTile(
+                        icon: Icons.logout_rounded,
+                        iconBg: AppColors.errorLight,
+                        iconColor: AppColors.error,
+                        label: 'Log Out',
+                        labelColor: AppColors.error,
+                        showChevron: false,
+                      ),
+                    ),
+                  ];
+                },
                 child: _Avatar(avatarUrl: avatarUrl, firstName: firstName),
               ),
             ],
@@ -1270,6 +1362,59 @@ class _AnnouncementCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Menu tile used inside the avatar popup dropdown ─────────────────────────
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String label;
+  final Color? labelColor;
+  final bool showChevron;
+
+  const _MenuTile({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.label,
+    this.labelColor,
+    this.showChevron = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final lc = labelColor ?? Theme.of(context).colorScheme.onSurface;
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: iconColor, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600, color: lc),
+          ),
+        ),
+        if (showChevron)
+          Icon(Icons.chevron_right_rounded,
+              size: 16,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withAlpha(120)),
+      ],
     );
   }
 }
