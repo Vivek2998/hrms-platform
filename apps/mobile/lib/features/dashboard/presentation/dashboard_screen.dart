@@ -99,9 +99,34 @@ class DashboardScreen extends ConsumerWidget {
                   _AttendanceStats(attendanceAsync: attendanceAsync),
 
                   const SizedBox(height: 24),
-                  _SectionLabel('Quick Actions'),
-                  const SizedBox(height: 12),
-                  _QuickActionsGrid(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(12),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 12),
+                          child: _SectionLabel('Quick Actions'),
+                        ),
+                        _QuickActionsGrid(),
+                      ],
+                    ),
+                  ),
 
                   _BirthdaySection(),
 
@@ -509,53 +534,45 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant, width: 0.8),
-        color: scheme.surface,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => context.push(action.route),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: action.bgColor,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: action.color.withAlpha(35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Icon(action.icon, color: action.color, size: 26),
+        onTap: () => context.push(action.route),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: action.bgColor,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: action.color.withAlpha(35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  action.label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
+                child: Icon(action.icon, color: action.color, size: 26),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                action.label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-              ],
-            ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+              ),
+            ],
           ),
         ),
       ),
