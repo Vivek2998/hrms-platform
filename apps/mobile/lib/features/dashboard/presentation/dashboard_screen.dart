@@ -94,14 +94,14 @@ class DashboardScreen extends ConsumerWidget {
                   ),
 
                   const SizedBox(height: 20),
-                  _SectionLabel('Quick Actions'),
-                  const SizedBox(height: 12),
-                  _QuickActionsGrid(),
-
-                  const SizedBox(height: 24),
                   _SectionLabel('This Month'),
                   const SizedBox(height: 12),
                   _AttendanceStats(attendanceAsync: attendanceAsync),
+
+                  const SizedBox(height: 24),
+                  _SectionLabel('Quick Actions'),
+                  const SizedBox(height: 12),
+                  _QuickActionsGrid(),
 
                   _BirthdaySection(),
 
@@ -425,18 +425,26 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFFDB2777), const Color(0xFFFCE7F3), '/eap'),
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-        mainAxisExtent: 88,
+    // 3 rows × 88px + 2 gaps × 4px = 272px visible; rest scroll internally
+    const double rowHeight = 88;
+    const double gap = 4;
+    const int visibleRows = 3;
+    const double gridHeight = visibleRows * rowHeight + (visibleRows - 1) * gap;
+
+    return SizedBox(
+      height: gridHeight,
+      child: GridView.builder(
+        physics: const ClampingScrollPhysics(),
+        padding: EdgeInsets.zero,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: gap,
+          mainAxisSpacing: gap,
+          mainAxisExtent: rowHeight,
+        ),
+        itemCount: actions.length,
+        itemBuilder: (_, i) => _QuickActionTile(action: actions[i]),
       ),
-      itemCount: actions.length,
-      itemBuilder: (_, i) => _QuickActionTile(action: actions[i]),
     );
   }
 }
