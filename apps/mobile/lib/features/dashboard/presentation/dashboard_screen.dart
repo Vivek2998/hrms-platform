@@ -36,7 +36,7 @@ class DashboardScreen extends ConsumerWidget {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             elevation: 10,
-            child: const Icon(Icons.smart_toy_outlined, size: 24),
+            child: const Icon(Icons.auto_awesome_rounded, size: 24),
           ),
           const SizedBox(height: 4),
           Text(
@@ -99,6 +99,8 @@ class DashboardScreen extends ConsumerWidget {
                   _AttendanceStats(attendanceAsync: attendanceAsync),
 
                   const SizedBox(height: 24),
+                  _SectionLabel('Quick Actions'),
+                  const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
@@ -115,14 +117,10 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 12),
-                          child: _SectionLabel('Quick Actions'),
-                        ),
                         _QuickActionsGrid(),
                       ],
                     ),
@@ -481,7 +479,7 @@ class _QuickActionsGridState extends State<_QuickActionsGrid> {
             radius: const Radius.circular(2),
             child: GridView.builder(
               controller: _scrollController,
-              physics: const ClampingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               // right padding leaves room for scrollbar thumb
               padding: const EdgeInsets.only(right: 6),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
