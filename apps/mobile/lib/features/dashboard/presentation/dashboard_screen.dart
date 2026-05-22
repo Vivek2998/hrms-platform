@@ -487,7 +487,7 @@ class _QuickActionsGridState extends State<_QuickActionsGrid> {
             thumbColor: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(110),
             child: GridView.builder(
               controller: _scrollController,
-              physics: const ClampingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               // right padding leaves room for scrollbar thumb
               padding: const EdgeInsets.only(right: 6),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
