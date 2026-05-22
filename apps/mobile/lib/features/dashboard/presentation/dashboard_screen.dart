@@ -168,7 +168,7 @@ class DashboardScreen extends ConsumerWidget {
 
 // ─── Hero Header ──────────────────────────────────────────────────────────────
 
-class _HeroHeader extends ConsumerWidget {
+class _HeroHeader extends ConsumerStatefulWidget {
   final String firstName;
   final String? avatarUrl;
   final String? orgName;
@@ -186,7 +186,14 @@ class _HeroHeader extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HeroHeader> createState() => _HeroHeaderState();
+}
+
+class _HeroHeaderState extends ConsumerState<_HeroHeader> {
+  bool _menuOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(gradient: AppColors.brandGradient),
       padding: EdgeInsets.only(
@@ -198,7 +205,6 @@ class _HeroHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: greeting + notification bell + avatar
           Row(
             children: [
               Expanded(
@@ -206,7 +212,7 @@ class _HeroHeader extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hi, ${firstName.isEmpty ? 'there' : firstName}! 👋',
+                      'Hi, ${widget.firstName.isEmpty ? 'there' : widget.firstName}! 👋',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -215,7 +221,7 @@ class _HeroHeader extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      today,
+                      widget.today,
                       style: TextStyle(
                         color: Colors.white.withAlpha(200),
                         fontSize: 13,
@@ -225,61 +231,84 @@ class _HeroHeader extends ConsumerWidget {
                   ],
                 ),
               ),
-              _NotificationBell(unreadAsync: unreadAsync),
+              _NotificationBell(unreadAsync: widget.unreadAsync),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
-                onSelected: (value) => _onMenuSelected(context, ref, value),
+                onOpened: () => setState(() => _menuOpen = true),
+                onCanceled: () => setState(() => _menuOpen = false),
+                onSelected: (value) {
+                  setState(() => _menuOpen = false);
+                  _onMenuSelected(context, value);
+                },
                 offset: const Offset(0, 54),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                elevation: 20,
-                shadowColor: Colors.black.withAlpha(55),
+                elevation: 16,
+                shadowColor: Colors.black.withAlpha(50),
                 color: Theme.of(context).colorScheme.surface,
-                constraints: const BoxConstraints(minWidth: 230),
+                constraints: const BoxConstraints(minWidth: 190),
                 itemBuilder: (_) => [
-                    PopupMenuItem<String>(
-                      value: 'profile',
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 2),
-                      child: _MenuTile(
-                        icon: Icons.person_outline_rounded,
-                        iconBg: AppColors.primaryLight,
-                        iconColor: AppColors.primary,
-                        label: 'My Profile',
-                      ),
+                  PopupMenuItem<String>(
+                    value: 'profile',
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 0),
+                    child: _MenuTile(
+                      icon: Icons.person_outline_rounded,
+                      iconBg: AppColors.primaryLight,
+                      iconColor: AppColors.primary,
+                      label: 'My Profile',
                     ),
-                    PopupMenuItem<String>(
-                      value: 'change_password',
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 2),
-                      child: _MenuTile(
-                        icon: Icons.lock_outline_rounded,
-                        iconBg: AppColors.infoLight,
-                        iconColor: AppColors.info,
-                        label: 'Change Password',
-                      ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'change_password',
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 0),
+                    child: _MenuTile(
+                      icon: Icons.lock_outline_rounded,
+                      iconBg: AppColors.infoLight,
+                      iconColor: AppColors.info,
+                      label: 'Change Password',
                     ),
-                    PopupMenuItem<String>(
-                      value: 'logout',
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 2),
-                      child: _MenuTile(
-                        icon: Icons.logout_rounded,
-                        iconBg: AppColors.errorLight,
-                        iconColor: AppColors.error,
-                        label: 'Log Out',
-                        labelColor: AppColors.error,
-                        showChevron: false,
-                      ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 0),
+                    child: _MenuTile(
+                      icon: Icons.logout_rounded,
+                      iconBg: AppColors.errorLight,
+                      iconColor: AppColors.error,
+                      label: 'Log Out',
+                      labelColor: AppColors.error,
+                      showChevron: false,
                     ),
-                  ],
-                child: _Avatar(avatarUrl: avatarUrl, firstName: firstName),
+                  ),
+                ],
+                // Glow ring around avatar while menu is open
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: _menuOpen
+                        ? [
+                            BoxShadow(
+                              color: Colors.white.withAlpha(110),
+                              blurRadius: 10,
+                              spreadRadius: 3,
+                            )
+                          ]
+                        : [],
+                  ),
+                  child: _Avatar(
+                      avatarUrl: widget.avatarUrl,
+                      firstName: widget.firstName,
+                      isActive: _menuOpen),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Row 2: org branding
           Row(
             children: [
               Container(
@@ -288,22 +317,24 @@ class _HeroHeader extends ConsumerWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withAlpha(30),
-                  border: Border.all(color: Colors.white.withAlpha(80), width: 1.5),
-                  image: orgLogoUrl != null
+                  border:
+                      Border.all(color: Colors.white.withAlpha(80), width: 1.5),
+                  image: widget.orgLogoUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(orgLogoUrl!),
+                          image: NetworkImage(widget.orgLogoUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,
                 ),
-                child: orgLogoUrl == null
-                    ? const Icon(Icons.business_rounded, color: Colors.white, size: 16)
+                child: widget.orgLogoUrl == null
+                    ? const Icon(Icons.business_rounded,
+                        color: Colors.white, size: 16)
                     : null,
               ),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  orgName ?? 'HRMS',
+                  widget.orgName ?? 'HRMS',
                   style: TextStyle(
                     color: Colors.white.withAlpha(230),
                     fontSize: 13,
@@ -320,18 +351,18 @@ class _HeroHeader extends ConsumerWidget {
     );
   }
 
-  void _onMenuSelected(BuildContext context, WidgetRef ref, String value) {
+  void _onMenuSelected(BuildContext context, String value) {
     switch (value) {
       case 'profile':
         context.go('/profile');
       case 'change_password':
         context.push('/change-password');
       case 'logout':
-        _confirmLogout(context, ref);
+        _confirmLogout(context);
     }
   }
 
-  void _confirmLogout(BuildContext context, WidgetRef ref) {
+  void _confirmLogout(BuildContext context) {
     final notifier = ref.read(authNotifierProvider.notifier);
     showDialog<void>(
       context: context,
@@ -405,14 +436,18 @@ class _NotificationBell extends StatelessWidget {
 class _Avatar extends StatelessWidget {
   final String? avatarUrl;
   final String firstName;
-  const _Avatar({required this.avatarUrl, required this.firstName});
+  final bool isActive;
+  const _Avatar({required this.avatarUrl, required this.firstName, this.isActive = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withAlpha(120), width: 2),
+        border: Border.all(
+          color: Colors.white.withAlpha(isActive ? 255 : 120),
+          width: isActive ? 2.5 : 2,
+        ),
       ),
       child: CircleAvatar(
         radius: 24,
@@ -1301,25 +1336,25 @@ class _MenuTile extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 34,
-          height: 34,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
             color: iconBg,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: iconColor, size: 18),
+          child: Icon(icon, color: iconColor, size: 16),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w600, color: lc),
+                fontSize: 13, fontWeight: FontWeight.w600, color: lc),
           ),
         ),
         if (showChevron)
           Icon(Icons.chevron_right_rounded,
-              size: 16,
+              size: 15,
               color: Theme.of(context)
                   .colorScheme
                   .onSurfaceVariant
