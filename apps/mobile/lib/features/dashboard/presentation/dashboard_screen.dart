@@ -36,7 +36,7 @@ class DashboardScreen extends ConsumerWidget {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             elevation: 10,
-            child: const Icon(Icons.smart_toy_rounded, size: 24),
+            child: const Icon(Icons.smart_toy_outlined, size: 24),
           ),
           const SizedBox(height: 4),
           Text(
@@ -327,7 +327,20 @@ Widget _SectionLabel(String text) => Text(
 
 // ─── Quick Actions Grid ──────────────────────────────────────────────────────
 
-class _QuickActionsGrid extends StatelessWidget {
+class _QuickActionsGrid extends StatefulWidget {
+  @override
+  State<_QuickActionsGrid> createState() => _QuickActionsGridState();
+}
+
+class _QuickActionsGridState extends State<_QuickActionsGrid> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final actions = [
@@ -425,26 +438,57 @@ class _QuickActionsGrid extends StatelessWidget {
           const Color(0xFFDB2777), const Color(0xFFFCE7F3), '/eap'),
     ];
 
-    // 3 rows × 88px + 2 gaps × 4px = 272px visible; rest scroll internally
+    // 3 rows × 88px + 2 gaps × 4px = 272px visible; rest scrolls internally
     const double rowHeight = 88;
     const double gap = 4;
     const int visibleRows = 3;
     const double gridHeight = visibleRows * rowHeight + (visibleRows - 1) * gap;
+    final bg = Theme.of(context).scaffoldBackgroundColor;
 
-    return SizedBox(
-      height: gridHeight,
-      child: GridView.builder(
-        physics: const ClampingScrollPhysics(),
-        padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: gap,
-          mainAxisSpacing: gap,
-          mainAxisExtent: rowHeight,
+    return Stack(
+      children: [
+        SizedBox(
+          height: gridHeight,
+          child: Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            thickness: 3,
+            radius: const Radius.circular(2),
+            child: GridView.builder(
+              controller: _scrollController,
+              physics: const ClampingScrollPhysics(),
+              // right padding leaves room for scrollbar thumb
+              padding: const EdgeInsets.only(right: 6),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: gap,
+                mainAxisSpacing: gap,
+                mainAxisExtent: rowHeight,
+              ),
+              itemCount: actions.length,
+              itemBuilder: (_, i) => _QuickActionTile(action: actions[i]),
+            ),
+          ),
         ),
-        itemCount: actions.length,
-        itemBuilder: (_, i) => _QuickActionTile(action: actions[i]),
-      ),
+        // Bottom fade — visual hint that more rows exist below
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [bg.withAlpha(0), bg.withAlpha(220)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -465,45 +509,53 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push(action.route),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: action.bgColor,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: action.color.withAlpha(35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+        border: Border.all(color: scheme.outlineVariant, width: 0.8),
+        color: scheme.surface,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => context.push(action.route),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: action.bgColor,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: action.color.withAlpha(35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(action.icon, color: action.color, size: 26),
                 ),
-                child: Icon(action.icon, color: action.color, size: 26),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                action.label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
+                const SizedBox(height: 6),
+                Text(
+                  action.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
