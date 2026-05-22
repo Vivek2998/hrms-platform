@@ -29,20 +29,31 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/chat'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 10,
-        icon: SvgPicture.string(
-          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
-          width: 22,
-          height: 22,
-        ),
-        label: const Text(
-          'Assistant',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          FloatingActionButton(
+            onPressed: () => context.push('/chat'),
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            elevation: 10,
+            child: SvgPicture.string(
+              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
+              width: 22,
+              height: 22,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Assistant',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -534,9 +545,10 @@ class _QuickActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push(action.route),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          padding: const EdgeInsets.fromLTRB(4, 10, 4, 4),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 52,
