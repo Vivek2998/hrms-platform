@@ -237,93 +237,7 @@ class _HeroHeader extends ConsumerWidget {
                 shadowColor: Colors.black.withAlpha(55),
                 color: Theme.of(context).colorScheme.surface,
                 constraints: const BoxConstraints(minWidth: 230),
-                itemBuilder: (menuCtx) {
-                  final user =
-                      ref.read(authNotifierProvider).valueOrNull?.user;
-                  final scheme = Theme.of(menuCtx).colorScheme;
-                  return [
-                    // ── Mini profile header (non-selectable) ──────────────
-                    PopupMenuItem<String>(
-                      enabled: false,
-                      padding: EdgeInsets.zero,
-                      height: 72,
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primary.withAlpha(22),
-                              AppColors.gradientEnd.withAlpha(12),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(20)),
-                        ),
-                        child: Row(children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: AppColors.primary.withAlpha(60),
-                                  width: 2),
-                            ),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primaryLight,
-                              backgroundImage: user?.avatarUrl != null
-                                  ? NetworkImage(user!.avatarUrl!)
-                                  : null,
-                              child: user?.avatarUrl == null
-                                  ? Text(
-                                      firstName.isNotEmpty
-                                          ? firstName[0].toUpperCase()
-                                          : 'U',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.primary,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '${user?.firstName ?? firstName} ${user?.lastName ?? ''}'
-                                      .trim(),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: scheme.onSurface,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  user?.workEmail ?? '',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ]),
-                      ),
-                    ),
-                    const PopupMenuDivider(height: 1),
-                    // ── My Profile ────────────────────────────────────────
+                itemBuilder: (_) => [
                     PopupMenuItem<String>(
                       value: 'profile',
                       padding: const EdgeInsets.symmetric(
@@ -335,7 +249,6 @@ class _HeroHeader extends ConsumerWidget {
                         label: 'My Profile',
                       ),
                     ),
-                    // ── Change Password ───────────────────────────────────
                     PopupMenuItem<String>(
                       value: 'change_password',
                       padding: const EdgeInsets.symmetric(
@@ -347,8 +260,6 @@ class _HeroHeader extends ConsumerWidget {
                         label: 'Change Password',
                       ),
                     ),
-                    const PopupMenuDivider(height: 1),
-                    // ── Log Out ───────────────────────────────────────────
                     PopupMenuItem<String>(
                       value: 'logout',
                       padding: const EdgeInsets.symmetric(
@@ -362,8 +273,7 @@ class _HeroHeader extends ConsumerWidget {
                         showChevron: false,
                       ),
                     ),
-                  ];
-                },
+                  ],
                 child: _Avatar(avatarUrl: avatarUrl, firstName: firstName),
               ),
             ],
