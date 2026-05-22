@@ -485,7 +485,7 @@ class _QuickActionsGridState extends State<_QuickActionsGrid> {
             radius: const Radius.circular(2),
             child: GridView.builder(
               controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               // right padding leaves room for scrollbar thumb
               padding: const EdgeInsets.only(right: 6),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
