@@ -191,6 +191,149 @@ class _HeroHeader extends ConsumerStatefulWidget {
 
 class _HeroHeaderState extends ConsumerState<_HeroHeader> {
   bool _menuOpen = false;
+  final _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void dispose() {
+    _overlayEntry?.remove();
+    super.dispose();
+  }
+
+  void _openMenu(BuildContext context) {
+    final overlay = Overlay.of(context);
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final router = GoRouter.of(context);
+
+    _overlayEntry = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          // Transparent barrier — tap anywhere to close
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _closeMenu,
+            ),
+          ),
+          // Card anchored to bottom-right of avatar
+          CompositedTransformFollower(
+            link: _layerLink,
+            targetAnchor: Alignment.bottomRight,
+            followerAnchor: Alignment.topRight,
+            offset: const Offset(0, 6),
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Caret pointing up toward the avatar
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: CustomPaint(
+                      size: const Size(14, 7),
+                      painter: _CaretPainter(color: cardColor),
+                    ),
+                  ),
+                  // Dropdown card
+                  Container(
+                    width: 190,
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(50),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _DropdownItem(
+                            icon: Icons.person_outline_rounded,
+                            iconBg: AppColors.primaryLight,
+                            iconColor: AppColors.primary,
+                            label: 'My Profile',
+                            onTap: () {
+                              _closeMenu();
+                              router.go('/profile');
+                            },
+                          ),
+                          _DropdownItem(
+                            icon: Icons.lock_outline_rounded,
+                            iconBg: AppColors.infoLight,
+                            iconColor: AppColors.info,
+                            label: 'Change Password',
+                            onTap: () {
+                              _closeMenu();
+                              router.push('/change-password');
+                            },
+                          ),
+                          _DropdownItem(
+                            icon: Icons.logout_rounded,
+                            iconBg: AppColors.errorLight,
+                            iconColor: AppColors.error,
+                            label: 'Log Out',
+                            labelColor: AppColors.error,
+                            showChevron: false,
+                            onTap: () {
+                              _closeMenu();
+                              _showLogoutDialog(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    overlay.insert(_overlayEntry!);
+    setState(() => _menuOpen = true);
+  }
+
+  void _closeMenu() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) setState(() => _menuOpen = false);
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    final notifier = ref.read(authNotifierProvider.notifier);
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Log Out',
+            style: TextStyle(fontWeight: FontWeight.w800)),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              await notifier.logout();
+            },
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,77 +376,32 @@ class _HeroHeaderState extends ConsumerState<_HeroHeader> {
               ),
               _NotificationBell(unreadAsync: widget.unreadAsync),
               const SizedBox(width: 8),
-              PopupMenuButton<String>(
-                onOpened: () => setState(() => _menuOpen = true),
-                onCanceled: () => setState(() => _menuOpen = false),
-                onSelected: (value) {
-                  setState(() => _menuOpen = false);
-                  _onMenuSelected(context, value);
-                },
-                offset: const Offset(0, 54),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 16,
-                shadowColor: Colors.black.withAlpha(50),
-                color: Theme.of(context).colorScheme.surface,
-                constraints: const BoxConstraints(minWidth: 190),
-                itemBuilder: (_) => [
-                  PopupMenuItem<String>(
-                    value: 'profile',
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 0),
-                    child: _MenuTile(
-                      icon: Icons.person_outline_rounded,
-                      iconBg: AppColors.primaryLight,
-                      iconColor: AppColors.primary,
-                      label: 'My Profile',
+              // Avatar anchored for the overlay
+              CompositedTransformTarget(
+                link: _layerLink,
+                child: GestureDetector(
+                  onTap: () =>
+                      _menuOpen ? _closeMenu() : _openMenu(context),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: _menuOpen
+                          ? [
+                              BoxShadow(
+                                color: Colors.white.withAlpha(110),
+                                blurRadius: 10,
+                                spreadRadius: 3,
+                              )
+                            ]
+                          : [],
                     ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'change_password',
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 0),
-                    child: _MenuTile(
-                      icon: Icons.lock_outline_rounded,
-                      iconBg: AppColors.infoLight,
-                      iconColor: AppColors.info,
-                      label: 'Change Password',
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'logout',
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 0),
-                    child: _MenuTile(
-                      icon: Icons.logout_rounded,
-                      iconBg: AppColors.errorLight,
-                      iconColor: AppColors.error,
-                      label: 'Log Out',
-                      labelColor: AppColors.error,
-                      showChevron: false,
-                    ),
-                  ),
-                ],
-                // Glow ring around avatar while menu is open
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: _menuOpen
-                        ? [
-                            BoxShadow(
-                              color: Colors.white.withAlpha(110),
-                              blurRadius: 10,
-                              spreadRadius: 3,
-                            )
-                          ]
-                        : [],
-                  ),
-                  child: _Avatar(
+                    child: _Avatar(
                       avatarUrl: widget.avatarUrl,
                       firstName: widget.firstName,
-                      isActive: _menuOpen),
+                      isActive: _menuOpen,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -317,8 +415,8 @@ class _HeroHeaderState extends ConsumerState<_HeroHeader> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withAlpha(30),
-                  border:
-                      Border.all(color: Colors.white.withAlpha(80), width: 1.5),
+                  border: Border.all(
+                      color: Colors.white.withAlpha(80), width: 1.5),
                   image: widget.orgLogoUrl != null
                       ? DecorationImage(
                           image: NetworkImage(widget.orgLogoUrl!),
@@ -345,44 +443,6 @@ class _HeroHeaderState extends ConsumerState<_HeroHeader> {
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _onMenuSelected(BuildContext context, String value) {
-    switch (value) {
-      case 'profile':
-        context.go('/profile');
-      case 'change_password':
-        context.push('/change-password');
-      case 'logout':
-        _confirmLogout(context);
-    }
-  }
-
-  void _confirmLogout(BuildContext context) {
-    final notifier = ref.read(authNotifierProvider.notifier);
-    showDialog<void>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Log Out',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await notifier.logout();
-            },
-            child: const Text('Log Out'),
           ),
         ],
       ),
@@ -1311,21 +1371,23 @@ class _AnnouncementCard extends StatelessWidget {
   }
 }
 
-// ─── Menu tile used inside the avatar popup dropdown ─────────────────────────
+// ─── Dropdown item for the avatar overlay menu ───────────────────────────────
 
-class _MenuTile extends StatelessWidget {
+class _DropdownItem extends StatelessWidget {
   final IconData icon;
   final Color iconBg;
   final Color iconColor;
   final String label;
   final Color? labelColor;
   final bool showChevron;
+  final VoidCallback onTap;
 
-  const _MenuTile({
+  const _DropdownItem({
     required this.icon,
     required this.iconBg,
     required this.iconColor,
     required this.label,
+    required this.onTap,
     this.labelColor,
     this.showChevron = true,
   });
@@ -1333,34 +1395,61 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lc = labelColor ?? Theme.of(context).colorScheme.onSurface;
-    return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: iconBg,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: iconColor, size: 16),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconColor, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600, color: lc),
+              ),
+            ),
+            if (showChevron)
+              Icon(Icons.chevron_right_rounded,
+                  size: 15,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withAlpha(120)),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w600, color: lc),
-          ),
-        ),
-        if (showChevron)
-          Icon(Icons.chevron_right_rounded,
-              size: 15,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withAlpha(120)),
-      ],
+      ),
     );
   }
+}
+
+// ─── Upward-pointing caret painted above the dropdown card ───────────────────
+
+class _CaretPainter extends CustomPainter {
+  final Color color;
+  const _CaretPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_CaretPainter old) => old.color != color;
 }
 
