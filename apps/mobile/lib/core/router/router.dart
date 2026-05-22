@@ -96,8 +96,6 @@ GoRouter router(RouterRef ref) {
       }
       // Prevent skipping the forced password change on first login.
       if (isLoggedIn && mustChange && !isAuthRoute) return '/change-password';
-      // Once password is changed, don't let the user navigate back to that screen.
-      if (isLoggedIn && !mustChange && loc == '/change-password') return '/dashboard';
       return null;
     },
     routes: [

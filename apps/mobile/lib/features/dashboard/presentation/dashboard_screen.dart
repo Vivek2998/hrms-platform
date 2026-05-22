@@ -227,7 +227,16 @@ class _HeroHeader extends StatelessWidget {
               ),
               _NotificationBell(unreadAsync: unreadAsync),
               const SizedBox(width: 8),
-              _Avatar(avatarUrl: avatarUrl, firstName: firstName),
+              GestureDetector(
+                onTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  useSafeArea: true,
+                  builder: (_) => const _ProfileSheet(),
+                ),
+                child: _Avatar(avatarUrl: avatarUrl, firstName: firstName),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1185,6 +1194,204 @@ class _AnnouncementCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Profile Bottom Sheet ────────────────────────────────────────────────────
+
+class _ProfileSheet extends ConsumerWidget {
+  const _ProfileSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authNotifierProvider).valueOrNull;
+    final user = auth?.user;
+    final scheme = Theme.of(context).colorScheme;
+    final bottomPad = MediaQuery.paddingOf(context).bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPad + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: scheme.onSurfaceVariant.withAlpha(60),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Avatar
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary.withAlpha(80), width: 3),
+            ),
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: AppColors.primaryLight,
+              backgroundImage: user?.avatarUrl != null
+                  ? NetworkImage(user!.avatarUrl!)
+                  : null,
+              child: user?.avatarUrl == null
+                  ? Text(
+                      (user?.firstName.isNotEmpty == true)
+                          ? user!.firstName[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Full name
+          Text(
+            '${user?.firstName ?? ''} ${user?.lastName ?? ''}'.trim(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          // Work email
+          Text(
+            user?.workEmail ?? '',
+            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+          // Role badge
+          if (user?.role.isNotEmpty == true)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _formatRole(user!.role),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          const SizedBox(height: 28),
+          Divider(color: scheme.outlineVariant),
+          _SheetTile(
+            icon: Icons.person_outline_rounded,
+            label: 'My Profile',
+            onTap: () {
+              final router = GoRouter.of(context);
+              Navigator.pop(context);
+              router.go('/profile');
+            },
+          ),
+          _SheetTile(
+            icon: Icons.lock_outline_rounded,
+            label: 'Change Password',
+            onTap: () {
+              final router = GoRouter.of(context);
+              Navigator.pop(context);
+              router.push('/change-password');
+            },
+          ),
+          Divider(color: scheme.outlineVariant),
+          _SheetTile(
+            icon: Icons.logout_rounded,
+            label: 'Log Out',
+            color: AppColors.error,
+            onTap: () => _confirmLogout(context, ref),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRole(String role) {
+    return role
+        .split('_')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .join(' ');
+  }
+
+  void _confirmLogout(BuildContext context, WidgetRef ref) {
+    // Capture both before any pops so they stay valid after widget unmount.
+    final notifier = ref.read(authNotifierProvider.notifier);
+    final nav = Navigator.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () async {
+              Navigator.pop(dialogCtx); // close dialog
+              nav.pop();               // close sheet
+              await notifier.logout(); // router auto-redirects to /login
+            },
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  final VoidCallback onTap;
+  const _SheetTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? Theme.of(context).colorScheme.onSurface;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: c, size: 22),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: c),
+            ),
+            const Spacer(),
+            if (color == null)
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+          ],
+        ),
       ),
     );
   }
