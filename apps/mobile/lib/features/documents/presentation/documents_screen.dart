@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/models/document_model.dart';
 import '../providers/document_provider.dart';
 import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 import '../../../core/theme/app_theme.dart';
 
 class DocumentsScreen extends ConsumerWidget {
@@ -39,21 +40,8 @@ class DocumentsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: List.generate(5, (_) => const ShimmerCard(height: 72)),
         ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 12),
-              Text('Failed to load documents\n$err',
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(myDocumentsProvider),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        error: (err, _) => AppErrorWidget(
+          onRetry: () => ref.invalidate(myDocumentsProvider),
         ),
       ),
     );

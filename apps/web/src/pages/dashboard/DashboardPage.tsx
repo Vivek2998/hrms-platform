@@ -16,6 +16,7 @@ import { useAttendance } from '@/hooks/useAttendance';
 import { useLeaves } from '@/hooks/useLeaves';
 import { usePayrollRuns } from '@/hooks/usePayroll';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
+import { ErrorState } from '@/components/ui/error-state';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SetupGuide } from '@/components/onboarding/SetupGuide';
@@ -430,7 +431,7 @@ export default function DashboardPage() {
 
   const { data: empData, isLoading: empLoading } = useEmployees({ limit: 1 });
   const { data: attData, isLoading: attLoading } = useAttendance({ limit: 1, from, to, status: 'PRESENT' });
-  const { data: leaveData, isLoading: leaveLoading } = useLeaves({ limit: 5, status: 'PENDING' });
+  const { data: leaveData, isLoading: leaveLoading, isError: leaveError, refetch: refetchLeaves } = useLeaves({ limit: 5, status: 'PENDING' });
   const { data: payrollData, isLoading: payrollLoading } = usePayrollRuns({ limit: 1 });
   const { data: widgets, isLoading: widgetsLoading } = useDashboardWidgets();
 
@@ -539,6 +540,8 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
+            ) : leaveError ? (
+              <ErrorState onRetry={() => void refetchLeaves()} />
             ) : leaveData?.data.length === 0 ? (
               <p className="text-muted-foreground py-6 text-center text-sm">
                 No pending leave requests — all clear!

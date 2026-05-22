@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import {
   Dialog,
   DialogContent,
@@ -342,7 +343,7 @@ export default function AttendancePage() {
   const from = new Date(year, month - 1, 1).toISOString();
   const to   = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
 
-  const { data, isLoading } = useAttendance({
+  const { data, isLoading, isError, refetch } = useAttendance({
     from,
     to,
     ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
@@ -442,6 +443,8 @@ export default function AttendancePage() {
             <Skeleton key={i} className={viewMode === 'calendar' ? 'h-24 w-full' : 'h-10 w-full'} />
           ))}
         </div>
+      ) : isError ? (
+        <ErrorState onRetry={() => void refetch()} />
       ) : viewMode === 'calendar' ? (
         <Card>
           <CardContent className="pt-6">

@@ -7,6 +7,8 @@ import '../data/models/leave_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../comp_off/providers/comp_off_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class LeavesScreen extends ConsumerWidget {
   const LeavesScreen({super.key});
@@ -142,10 +144,12 @@ class LeavesScreen extends ConsumerWidget {
                 );
               },
               loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: ShimmerList(),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: Center(child: Text('Error: $e')),
+                child: AppErrorWidget(
+                  onRetry: () => ref.invalidate(leaveListProvider),
+                ),
               ),
             ),
 

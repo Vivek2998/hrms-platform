@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../data/models/approval_inbox_model.dart';
 import '../providers/approval_inbox_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class ApprovalInboxScreen extends ConsumerStatefulWidget {
   const ApprovalInboxScreen({super.key});
@@ -83,21 +85,9 @@ class _ApprovalInboxScreenState extends ConsumerState<ApprovalInboxScreen> {
           // ── Items list ─────────────────────────────────────
           Expanded(
             child: itemsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
-                    const SizedBox(height: 12),
-                    const Text('Failed to load inbox'),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => ref.invalidate(approvalInboxItemsProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+              loading: () => const ShimmerList(),
+              error: (e, _) => AppErrorWidget(
+                onRetry: () => ref.invalidate(approvalInboxItemsProvider),
               ),
               data: (items) {
                 if (items.isEmpty) {

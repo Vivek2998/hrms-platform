@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../data/models/expense_model.dart';
 import '../providers/expense_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class ExpensesScreen extends ConsumerStatefulWidget {
   const ExpensesScreen({super.key});
@@ -38,18 +40,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
         label: const Text('New Claim'),
       ),
       body: expensesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
-              const SizedBox(height: 12),
-              Text('Failed to load expenses', style: TextStyle(color: scheme.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              TextButton(onPressed: () => ref.invalidate(myExpensesProvider), child: const Text('Retry')),
-            ],
-          ),
+        loading: () => const ShimmerList(),
+        error: (e, _) => AppErrorWidget(
+          onRetry: () => ref.invalidate(myExpensesProvider),
         ),
         data: (claims) {
           if (claims.isEmpty) return _EmptyState(onAdd: () => _showCreateDialog(context));

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../providers/regularisation_provider.dart';
 import '../data/models/regularisation_model.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class RegularisationScreen extends ConsumerWidget {
   const RegularisationScreen({super.key});
@@ -40,9 +42,10 @@ class RegularisationScreen extends ConsumerWidget {
                   _RequestCard(request: requests[i]),
             );
           },
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          loading: () => const ShimmerList(),
+          error: (e, _) => AppErrorWidget(
+            onRetry: () => ref.invalidate(regularisationListProvider),
+          ),
         ),
       ),
     );

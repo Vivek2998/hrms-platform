@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/attendance_provider.dart';
 import '../data/models/attendance_model.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class AttendanceScreen extends ConsumerWidget {
   const AttendanceScreen({super.key});
@@ -66,9 +68,12 @@ class AttendanceScreen extends ConsumerWidget {
             itemBuilder: (_, i) => _AttendanceTile(record: records[i]),
           );
         },
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const ShimmerList(),
+        error: (e, _) => AppErrorWidget(
+          onRetry: () => ref.invalidate(
+            attendanceListProvider(month: now.month, year: now.year),
+          ),
+        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/comp_off_provider.dart';
 import '../data/models/comp_off_model.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class CompOffScreen extends ConsumerWidget {
   const CompOffScreen({super.key});
@@ -21,25 +23,11 @@ class CompOffScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
             sliver: listAsync.when(
               loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: ShimmerList(),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.error_outline,
-                          color: AppColors.error, size: 48),
-                      const SizedBox(height: 12),
-                      Text('Failed to load requests',
-                          style: TextStyle(color: AppColors.error)),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () => ref.invalidate(compOffListProvider),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
+                child: AppErrorWidget(
+                  onRetry: () => ref.invalidate(compOffListProvider),
                 ),
               ),
               data: (requests) => requests.isEmpty

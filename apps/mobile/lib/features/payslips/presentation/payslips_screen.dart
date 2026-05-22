@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/payslip_provider.dart';
 import '../data/models/payslip_model.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class PayslipsScreen extends ConsumerWidget {
   const PayslipsScreen({super.key});
@@ -36,8 +38,10 @@ class PayslipsScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const ShimmerList(),
+        error: (e, _) => AppErrorWidget(
+          onRetry: () => ref.invalidate(payslipListProvider),
+        ),
       ),
     );
   }

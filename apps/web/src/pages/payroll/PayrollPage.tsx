@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/error-state';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -253,7 +254,7 @@ function PayslipListDialog({
 export default function PayrollPage() {
   const [showNew, setShowNew] = useState(false);
   const [viewingRun, setViewingRun] = useState<PayrollRun | null>(null);
-  const { data, isLoading, error } = usePayrollRuns({ limit: 20 });
+  const { data, isLoading, isError, error, refetch } = usePayrollRuns({ limit: 20 });
   const processMutation = useProcessPayrollRun();
   const markPaidMutation = useMarkPayrollPaid();
 
@@ -288,6 +289,10 @@ export default function PayrollPage() {
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
+            </div>
+          ) : isError ? (
+            <div className="p-6">
+              <ErrorState onRetry={() => void refetch()} />
             </div>
           ) : data?.data.length === 0 ? (
             <p className="text-muted-foreground py-12 text-center text-sm">

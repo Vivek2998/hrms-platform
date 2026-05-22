@@ -10,12 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEmployees } from '@/hooks/useEmployees';
 import { AddEmployeeDialog } from '@/components/employees/AddEmployeeDialog';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
 
 export default function EmployeesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const { data, isLoading } = useEmployees({ search, limit: 20 });
+  const { data, isLoading, isError, refetch } = useEmployees({ search, limit: 20 });
 
   return (
     <div className="space-y-6">
@@ -61,6 +62,8 @@ export default function EmployeesPage() {
                 </div>
               ))}
             </div>
+          ) : isError ? (
+            <ErrorState onRetry={() => void refetch()} />
           ) : data?.employees.length === 0 ? (
             <EmptyState
               illustration={search ? 'search' : 'employees'}

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../providers/helpdesk_provider.dart';
 import '../data/models/helpdesk_model.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class HelpdeskScreen extends ConsumerWidget {
   const HelpdeskScreen({super.key});
@@ -40,28 +42,9 @@ class HelpdeskScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.error_outline,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.error),
-                const SizedBox(height: 12),
-                Text('Could not load tickets',
-                    style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.error)),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () =>
-                      ref.invalidate(helpdeskTicketsProvider),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
+          loading: () => const ShimmerList(),
+          error: (e, _) => AppErrorWidget(
+            onRetry: () => ref.invalidate(helpdeskTicketsProvider),
           ),
         ),
       ),

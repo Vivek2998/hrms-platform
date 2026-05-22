@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../data/models/notification_model.dart';
 import '../providers/notifications_provider.dart';
+import '../../../core/widgets/shimmer_box.dart';
+import '../../../core/widgets/app_error_widget.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -46,23 +48,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ],
       ),
       body: state.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: scheme.error),
-              const SizedBox(height: 12),
-              Text('Failed to load notifications',
-                  style: TextStyle(color: scheme.error)),
-              const SizedBox(height: 12),
-              FilledButton.tonal(
-                onPressed: () =>
-                    ref.read(notificationsNotifierProvider.notifier).load(),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        loading: () => const ShimmerList(),
+        error: (e, _) => AppErrorWidget(
+          onRetry: () =>
+              ref.read(notificationsNotifierProvider.notifier).load(),
         ),
         data: (notifications) {
           if (notifications.isEmpty) {

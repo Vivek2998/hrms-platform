@@ -19,6 +19,7 @@ import { downloadCsv } from '@/lib/downloadCsv';
 import { toast } from 'sonner';
 import type { LeaveRecord } from '@/hooks/useLeaves';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
 import { LeaveTypesPanel } from './LeaveTypesPage';
 import {
   useLeaveBalances,
@@ -428,7 +429,7 @@ export default function LeavesPage() {
     }
   }
 
-  const { data, isLoading } = useLeaves({
+  const { data, isLoading, isError, refetch } = useLeaves({
     limit: 50,
     ...(tab !== 'ALL' ? { status: tab } : {}),
   });
@@ -516,6 +517,10 @@ export default function LeavesPage() {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
+                </div>
+              ) : isError ? (
+                <div className="p-6">
+                  <ErrorState onRetry={() => void refetch()} />
                 </div>
               ) : data?.data.length === 0 ? (
                 <EmptyState
