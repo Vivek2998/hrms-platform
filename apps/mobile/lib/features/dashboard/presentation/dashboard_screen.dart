@@ -478,11 +478,13 @@ class _QuickActionsGridState extends State<_QuickActionsGrid> {
       children: [
         SizedBox(
           height: gridHeight,
-          child: Scrollbar(
+          child: RawScrollbar(
             controller: _scrollController,
             thumbVisibility: true,
             thickness: 3,
             radius: const Radius.circular(2),
+            padding: EdgeInsets.zero,
+            thumbColor: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(110),
             child: GridView.builder(
               controller: _scrollController,
               physics: const ClampingScrollPhysics(),
