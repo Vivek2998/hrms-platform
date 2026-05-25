@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/chat_provider.dart';
 import '../data/models/chat_model.dart';
+
+Widget _botIcon({required double size, required String stroke}) =>
+    SvgPicture.string(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="$stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
+      width: size,
+      height: size,
+    );
 
 class ChatScreen extends ConsumerWidget {
   const ChatScreen({super.key});
@@ -95,10 +103,9 @@ class _SessionTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
         onTap: onTap,
-        leading: const CircleAvatar(
+        leading: CircleAvatar(
           backgroundColor: AppColors.primaryLight,
-          child: Icon(Icons.smart_toy_outlined,
-              color: AppColors.primary, size: 20),
+          child: _botIcon(size: 20, stroke: '#4F46E5'),
         ),
         title: Text(
           session.lastMessage ?? 'New conversation',
@@ -144,11 +151,11 @@ class _ChatWindowState extends ConsumerState<_ChatWindow> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.smart_toy_outlined, size: 20),
-            SizedBox(width: 8),
-            Text('HR Assistant'),
+            _botIcon(size: 20, stroke: '#4F46E5'),
+            const SizedBox(width: 8),
+            const Text('HR Assistant'),
           ],
         ),
         backgroundColor: AppColors.white,
@@ -180,14 +187,13 @@ class _ChatWindowState extends ConsumerState<_ChatWindow> {
                   }
                 });
                 if (messages.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.smart_toy_outlined,
-                            size: 48, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text('Ask me anything about HR!',
+                        _botIcon(size: 48, stroke: '#9E9E9E'),
+                        const SizedBox(height: 12),
+                        const Text('Ask me anything about HR!',
                             style: TextStyle(color: Colors.grey)),
                       ],
                     ),
@@ -204,15 +210,14 @@ class _ChatWindowState extends ConsumerState<_ChatWindow> {
             ),
           ),
           if (_sending)
-            const Padding(
-              padding: EdgeInsets.only(left: 16, bottom: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 16, bottom: 4),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 12,
                     backgroundColor: AppColors.primaryLight,
-                    child: Icon(Icons.smart_toy_outlined,
-                        size: 14, color: AppColors.primary),
+                    child: _botIcon(size: 14, stroke: '#4F46E5'),
                   ),
                   SizedBox(width: 8),
                   Text('Thinking...',
@@ -366,8 +371,7 @@ class _EmptySessionState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.smart_toy_outlined,
-              size: 64, color: Colors.grey),
+          _botIcon(size: 64, stroke: '#9E9E9E'),
           const SizedBox(height: 16),
           const Text('No conversations yet',
               style: TextStyle(
