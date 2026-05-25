@@ -48,7 +48,7 @@ class DashboardScreen extends ConsumerWidget {
           Text(
             'Assistant',
             style: TextStyle(
-              color: AppColors.primary,
+              color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
