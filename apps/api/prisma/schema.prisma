@@ -368,10 +368,13 @@ model Organization {
   ptState     String?
   plan        SubscriptionPlan @default(FREE)
   maxEmployees     Int             @default(10)
-  // BUG-06 FIX: atomic sequence counter for employee codes (never decrements,
-  // never has race conditions).  Updated via { increment: 1 } in employee.service.ts.
-  // Run migration: prisma migrate dev --name "add_org_employee_sequence"
-  employeeSequence Int             @default(0)
+  // BUG-06 FIX: atomic sequence counter for employee codes.
+  // Incremented via { increment: 1 } — no race condition possible.
+  employeeSequence    Int    @default(0)
+  // Org-specific employee code prefix (e.g. "SSI" → SSI-1, SSI-2, SSI-473).
+  // Auto-derived from org name at registration if not explicitly set.
+  // Run migration: prisma migrate dev --name "add_org_employee_code_prefix"
+  employeeCodePrefix  String @default("EMP")
   trialEndsAt      DateTime?
   isActive    Boolean  @default(true)
   deletedAt   DateTime?

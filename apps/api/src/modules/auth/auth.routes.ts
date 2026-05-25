@@ -49,6 +49,13 @@ const registerSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
       'Password must contain uppercase, lowercase, number and special character',
     ),
+  // Optional employee code prefix — 2 to 5 uppercase letters.
+  // Examples: "SSI" → SSI-1, SSI-473 | "TCS" → TCS-1001 | "INFY" → INFY-42
+  // If omitted, auto-derived from the organisation name at provisioning time.
+  employeeCodePrefix: z
+    .string()
+    .regex(/^[A-Z]{2,5}$/, 'Employee code prefix must be 2–5 uppercase letters (e.g. SSI, TCS, INFY)')
+    .optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -88,6 +95,8 @@ export function authRoutes(app: FastifyInstance) {
       adminLastName: input.adminLastName,
       adminEmail: input.adminEmail,
       passwordHash,
+      // Passed if the admin explicitly provided it; otherwise auto-derived from name
+      employeeCodePrefix: input.employeeCodePrefix,
     });
 
     const jwtPayload = { sub: admin.id, orgId: org.id, role: admin.role, orgPlan: org.plan };

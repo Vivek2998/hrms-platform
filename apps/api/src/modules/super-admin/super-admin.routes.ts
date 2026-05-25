@@ -100,6 +100,12 @@ export function superAdminRoutes(app: FastifyInstance) {
         adminLastName: z.string().min(1),
         adminEmail: z.string().email(),
         adminPassword: z.string().min(8),
+        // Optional employee code prefix — 2–5 uppercase letters (e.g. "SSI", "TCS", "INFY")
+        // Auto-derived from org name if omitted.
+        employeeCodePrefix: z
+          .string()
+          .regex(/^[A-Z]{2,5}$/, 'Employee code prefix must be 2–5 uppercase letters')
+          .optional(),
       })
       .parse(req.body);
 
@@ -119,6 +125,7 @@ export function superAdminRoutes(app: FastifyInstance) {
       adminLastName: input.adminLastName,
       adminEmail: input.adminEmail,
       passwordHash,
+      employeeCodePrefix: input.employeeCodePrefix,
     });
 
     return reply.status(201).send(ok({ id: org.id, name: org.name, slug: org.slug }));

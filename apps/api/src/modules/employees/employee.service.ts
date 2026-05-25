@@ -56,21 +56,25 @@ const EMPLOYEE_SELECT = {
   officeLocation: { select: { id: true, name: true } },
 } satisfies Prisma.EmployeeSelect;
 
-// BUG-06 FIX: Atomic employee code generation — replaces the count-based
-// approach which had a race condition.  Two concurrent creates in the same
-// org both read count N and both try to claim EMP{N+1}, producing either a
-// duplicate-key error or silently overwriting the first employee's code.
+// BUG-06 FIX: Atomic employee code generation.
 //
-// The fix uses a DB-level atomic increment on Organization.employeeSequence
-// (added to the schema).  The UPDATE...RETURNING is serialised by the DB row
-// lock, so concurrent requests always get different sequence numbers.
+// Old approach: count employees, add 1 → race condition when two requests
+// arrive simultaneously (both read N, both try to claim EMP{N+1}).
+//
+// New approach: DB-level atomic increment on Organization.employeeSequence.
+// The UPDATE is serialised by the row lock so concurrent requests always
+// get different sequence numbers — no duplicates possible.
+//
+// Format: {employeeCodePrefix}-{sequence}  e.g. SSI-1, SSI-473, TCS-1001
+// The prefix is set per-organisation at registration time (or auto-derived
+// from the org name).  No zero-padding — real companies don't use EMP0001.
 async function generateEmployeeCode(prisma: PrismaClient, organizationId: string): Promise<string> {
-  const { employeeSequence } = await prisma.organization.update({
+  const { employeeSequence, employeeCodePrefix } = await prisma.organization.update({
     where: { id: organizationId },
-    data: { employeeSequence: { increment: 1 } },
-    select: { employeeSequence: true },
+    data:   { employeeSequence: { increment: 1 } },
+    select: { employeeSequence: true, employeeCodePrefix: true },
   });
-  return `EMP${String(employeeSequence).padStart(4, '0')}`;
+  return `${employeeCodePrefix}-${employeeSequence}`;
 }
 
 export async function listEmployees(orgId: string, query: EmployeeListQuery, prisma: PrismaClient) {
