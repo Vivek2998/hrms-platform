@@ -74,6 +74,7 @@ import { resumeParseRoutes } from './modules/resume-parse/resume-parse.routes.js
 import { contractorsRoutes } from './modules/contractors/contractors.routes.js';
 import { esopRoutes } from './modules/esop/esop.routes.js';
 import { eapRoutes } from './modules/eap/eap.routes.js';
+import { orgSettingsRoutes } from './modules/organizations/org-settings.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -169,6 +170,7 @@ export async function buildApp() {
   await app.register(contractorsRoutes, { prefix });
   await app.register(esopRoutes, { prefix });
   await app.register(eapRoutes, { prefix });
+  await app.register(orgSettingsRoutes, { prefix });
 
   await app.ready();
   return app;

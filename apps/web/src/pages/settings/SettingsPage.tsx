@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Camera, CreditCard, Home, Loader2, MapPin, Pencil, Phone, User, X } from 'lucide-react';
+import { Building2, Camera, CreditCard, Home, Loader2, MapPin, Pencil, Phone, User, X } from 'lucide-react';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMyProfile, useUpdateMyProfile, type MyProfile } from '@/hooks/useProfile';
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { EmployeeCodeCard } from '@/components/settings/EmployeeCodeCard';
 
 interface FormState {
   phone: string;
@@ -116,6 +117,8 @@ function SectionCard({
   );
 }
 
+type SettingsTab = 'profile' | 'organisation';
+
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -125,6 +128,7 @@ export default function SettingsPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(blankForm());
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
@@ -193,13 +197,48 @@ export default function SettingsPage() {
     profile?.officeLocation?.name ? { label: 'Office Location', value: profile.officeLocation.name } : null,
   ].filter((s): s is { label: string; value: string } => s != null);
 
+  const isAdmin = user?.role === 'ORG_ADMIN';
+
   return (
     <div className="max-w-5xl space-y-6">
 
       <div>
-        <h1 className="text-2xl font-bold">My Profile</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Manage your personal information and account settings</p>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Manage your profile and organisation settings</p>
       </div>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b">
+        {([
+          { key: 'profile', label: 'My Profile', icon: User },
+          ...(isAdmin ? [{ key: 'organisation', label: 'Organisation', icon: Building2 }] : []),
+        ] as { key: SettingsTab; label: string; icon: React.ElementType }[]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
+              activeTab === tab.key
+                ? 'border-slate-800 text-slate-800'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <tab.icon className="h-3.5 w-3.5" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Organisation tab */}
+      {activeTab === 'organisation' && (
+        <div className="space-y-4">
+          <EmployeeCodeCard />
+        </div>
+      )}
+
+      {/* Profile tab */}
+      {activeTab !== 'organisation' && (
+        <>
 
       {/* ── Profile hero ── */}
       <div className="relative overflow-hidden rounded-xl bg-linear-to-br from-slate-800 via-slate-800 to-slate-900 shadow-lg">
@@ -453,6 +492,10 @@ export default function SettingsPage() {
 
         </>
       )}
+
+      {/* end profile tab conditional */}
+      </>)}
+
     </div>
   );
 }

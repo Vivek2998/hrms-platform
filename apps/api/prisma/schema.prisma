@@ -293,6 +293,12 @@ enum POSHCaseStatus {
   CLOSED
 }
 
+enum EmpCodeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum TimesheetStatus {
   DRAFT
   SUBMITTED
@@ -438,6 +444,7 @@ model Organization {
   contractors             Contractor[]
   esopGrants              EsopGrant[]
   eapResources            EapResource[]
+  employeeCodeRequests    EmployeeCodeChangeRequest[]
 
   @@map("organizations")
 }
@@ -455,6 +462,33 @@ model SuperAdmin {
   updatedAt    DateTime @updatedAt
 
   @@map("super_admins")
+}
+
+// ─────────────────────────────────────────────────────────────
+// EMPLOYEE CODE CHANGE REQUESTS
+// Org admin requests a prefix change; super admin approves/rejects.
+// ─────────────────────────────────────────────────────────────
+
+model EmployeeCodeChangeRequest {
+  id               String               @id @default(uuid())
+  organizationId   String
+  requestedById    String               // employee (org admin) who submitted the request
+  currentPrefix    String               // snapshot of prefix at request time
+  requestedPrefix  String               // what they want e.g. "SSIPL"
+  applyToExisting  Boolean              @default(false) // true = retroactively rename all existing codes
+  reason           String?              // optional — "company rebranded to SSIPL"
+  status           EmpCodeRequestStatus @default(PENDING)
+  superAdminNote   String?              // approval message or rejection reason
+  resolvedAt       DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  requestedBy  Employee     @relation(fields: [requestedById], references: [id])
+
+  @@index([organizationId, status])
+  @@index([status])
+  @@map("employee_code_change_requests")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -638,6 +672,7 @@ model Employee {
   ewaRequests              EwaRequest[]
   attritionScore           AttritionScore?
   esopGrants               EsopGrant[]
+  employeeCodeRequests     EmployeeCodeChangeRequest[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])

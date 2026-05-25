@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { signAccessToken } from '../../lib/jwt.js';
 import { ok, fail } from '../../lib/response.js';
 import { provisionOrganization } from '../../lib/provision-org.js';
+import { sendEmail, empCodeDecisionEmail } from '../../lib/email.js';
 
 const PLAN_LIMITS: Record<string, number> = {
   FREE: 10,
@@ -129,6 +130,137 @@ export function superAdminRoutes(app: FastifyInstance) {
     });
 
     return reply.status(201).send(ok({ id: org.id, name: org.name, slug: org.slug }));
+  });
+
+  // GET /super-admin/employee-code-requests — list all requests (default: PENDING only)
+  app.get('/super-admin/employee-code-requests', auth, async (req, reply) => {
+    const { status } = z
+      .object({ status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'ALL']).default('PENDING') })
+      .parse(req.query);
+
+    const requests = await app.prisma.employeeCodeChangeRequest.findMany({
+      where: status === 'ALL' ? {} : { status },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        currentPrefix: true,
+        requestedPrefix: true,
+        applyToExisting: true,
+        reason: true,
+        status: true,
+        superAdminNote: true,
+        resolvedAt: true,
+        createdAt: true,
+        organization: { select: { id: true, name: true, slug: true } },
+        requestedBy: { select: { id: true, firstName: true, lastName: true, workEmail: true } },
+      },
+    });
+
+    return reply.send(ok(requests));
+  });
+
+  // PATCH /super-admin/employee-code-requests/:id — approve or reject
+  app.patch('/super-admin/employee-code-requests/:id', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = z
+      .object({
+        action: z.enum(['APPROVE', 'REJECT']),
+        superAdminNote: z.string().max(500).optional(),
+      })
+      .parse(req.body);
+
+    const codeRequest = await app.prisma.employeeCodeChangeRequest.findUnique({
+      where: { id },
+      include: {
+        organization: { select: { id: true, name: true, employeeCodePrefix: true } },
+        requestedBy: { select: { workEmail: true, firstName: true } },
+      },
+    });
+
+    if (!codeRequest) throw fail('Request not found', 404);
+    if (codeRequest.status !== 'PENDING') throw fail('This request has already been resolved', 409);
+
+    if (input.action === 'APPROVE') {
+      await app.prisma.$transaction(async (tx) => {
+        // 1. Update the request status
+        await tx.employeeCodeChangeRequest.update({
+          where: { id },
+          data: {
+            status: 'APPROVED',
+            superAdminNote: input.superAdminNote,
+            resolvedAt: new Date(),
+          },
+        });
+
+        // 2. Update the org prefix
+        await tx.organization.update({
+          where: { id: codeRequest.organizationId },
+          data: { employeeCodePrefix: codeRequest.requestedPrefix },
+        });
+
+        // 3. If retroactive: rename all existing employee codes in this org
+        //    Old format: {oldPrefix}-{seq}  →  New format: {newPrefix}-{seq}
+        //    We replace only the prefix portion, keeping the sequence number intact.
+        if (codeRequest.applyToExisting) {
+          const employees = await tx.employee.findMany({
+            where: { organizationId: codeRequest.organizationId, deletedAt: null },
+            select: { id: true, employeeCode: true },
+          });
+
+          const updates = employees.map((emp) => {
+            // Extract the numeric suffix after the last '-'
+            const parts = emp.employeeCode.split('-');
+            const suffix = parts[parts.length - 1] ?? emp.employeeCode;
+            const newCode = `${codeRequest.requestedPrefix}-${suffix}`;
+            return tx.employee.update({
+              where: { id: emp.id },
+              data: { employeeCode: newCode },
+            });
+          });
+
+          await Promise.all(updates);
+        }
+      });
+
+      // Email the org admin (fire-and-forget)
+      void sendEmail(
+        codeRequest.requestedBy.workEmail,
+        `Your Employee Code Change Request Has Been Approved — ${codeRequest.organization.name}`,
+        empCodeDecisionEmail({
+          adminName: codeRequest.requestedBy.firstName,
+          orgName: codeRequest.organization.name,
+          requestedPrefix: codeRequest.requestedPrefix,
+          applyToExisting: codeRequest.applyToExisting,
+          status: 'APPROVED',
+          superAdminNote: input.superAdminNote,
+        }),
+      );
+    } else {
+      // REJECT
+      await app.prisma.employeeCodeChangeRequest.update({
+        where: { id },
+        data: {
+          status: 'REJECTED',
+          superAdminNote: input.superAdminNote,
+          resolvedAt: new Date(),
+        },
+      });
+
+      void sendEmail(
+        codeRequest.requestedBy.workEmail,
+        `Your Employee Code Change Request Was Not Approved — ${codeRequest.organization.name}`,
+        empCodeDecisionEmail({
+          adminName: codeRequest.requestedBy.firstName,
+          orgName: codeRequest.organization.name,
+          requestedPrefix: codeRequest.requestedPrefix,
+          applyToExisting: codeRequest.applyToExisting,
+          status: 'REJECTED',
+          superAdminNote: input.superAdminNote,
+        }),
+      );
+    }
+
+    return reply.send(ok({ message: `Request ${input.action === 'APPROVE' ? 'approved' : 'rejected'} successfully` }));
   });
 
   // PATCH /super-admin/organizations/:id — update plan or status
