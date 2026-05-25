@@ -11,10 +11,11 @@ interface SuperAdminGuardProps {
  * Also validates that the stored access token has not expired.
  */
 export function SuperAdminGuard({ children }: SuperAdminGuardProps) {
-  const { isAuthenticated, accessToken } = useSuperAdminAuthStore((s) => ({
-    isAuthenticated: s.isAuthenticated,
-    accessToken: s.accessToken,
-  }));
+  // Each selector returns a primitive so Zustand's Object.is comparison is
+  // stable across renders — avoids the infinite-loop that inline object
+  // selectors cause with useSyncExternalStore in React 18.
+  const isAuthenticated = useSuperAdminAuthStore((s) => s.isAuthenticated);
+  const accessToken     = useSuperAdminAuthStore((s) => s.accessToken);
 
   if (!isAuthenticated || !accessToken) {
     return <Navigate to="/super-admin/login" replace />;

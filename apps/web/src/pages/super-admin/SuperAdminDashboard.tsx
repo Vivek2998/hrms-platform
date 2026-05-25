@@ -521,7 +521,9 @@ function CodeRequestsTab() {
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
-  const { admin, logout } = useSuperAdminAuthStore();
+  // Separate selectors → primitives/stable refs → no infinite re-render loop
+  const admin  = useSuperAdminAuthStore((s) => s.admin);
+  const logout = useSuperAdminAuthStore((s) => s.logout);
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('organizations');
   const [showCreate, setShowCreate] = useState(false);
