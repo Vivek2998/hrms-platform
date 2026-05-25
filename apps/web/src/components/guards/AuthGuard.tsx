@@ -14,10 +14,10 @@ interface AuthGuardProps {
  * immediately on navigation.
  */
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, accessToken } = useAuthStore((s) => ({
-    isAuthenticated: s.isAuthenticated,
-    accessToken: s.accessToken,
-  }));
+  // One selector per primitive — avoids inline object selector anti-pattern
+  // where Object.is({}, {}) is always false → Zustand infinite re-render loop.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const accessToken     = useAuthStore((s) => s.accessToken);
   const location = useLocation();
 
   if (!isAuthenticated || !accessToken) {
