@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -284,14 +285,21 @@ class _MessageBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          message.content,
-          style: TextStyle(
-            fontSize: 14,
-            color: isUser ? Colors.white : Colors.black87,
-            height: 1.4,
-          ),
-        ),
+        child: isUser
+            ? Text(
+                message.content,
+                style: const TextStyle(fontSize: 14, color: Colors.white, height: 1.4),
+              )
+            : MarkdownBody(
+                data: message.content,
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
+                  strong: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w600),
+                  listBullet: const TextStyle(fontSize: 14, color: Colors.black87),
+                  code: TextStyle(fontSize: 12, color: Colors.black87, backgroundColor: Colors.grey[200], fontFamily: 'monospace'),
+                  codeblockDecoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
       ),
     );
   }

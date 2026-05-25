@@ -656,4 +656,114 @@ export async function chatRoutes(app: FastifyInstance) {
 
     return reply.send(ok({ role: 'assistant', content: finalText, id: assistantMsg.id }));
   });
+
+  // ── Streaming endpoint (SSE) ───────────────────────────────────────────────
+  app.post('/chat/sessions/:id/messages/stream', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { content } = z.object({ content: z.string().min(1).max(4000) }).parse(req.body);
+    const employeeId = req.user.sub;
+    const orgId = req.user.orgId;
+
+    const session = await app.prisma.chatSession.findFirst({
+      where: { id, organizationId: orgId, employeeId },
+    });
+    if (!session) throw fail('Session not found', 404);
+
+    const history = await app.prisma.chatMessage.findMany({
+      where: { sessionId: id },
+      orderBy: { createdAt: 'asc' },
+      take: 30,
+    });
+
+    await app.prisma.chatMessage.create({ data: { sessionId: id, role: 'user', content } });
+
+    const messages: Anthropic.MessageParam[] = [
+      ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      { role: 'user', content },
+    ];
+
+    // SSE headers
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache');
+    reply.raw.setHeader('Connection', 'keep-alive');
+    reply.raw.setHeader('X-Accel-Buffering', 'no');
+
+    const send = (data: object) => reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+
+    let finalText = '';
+
+    // Tool rounds: use create() to detect and execute tools quickly
+    for (let round = 0; round < MAX_TOOL_ROUNDS - 1; round++) {
+      const response = await client.messages.create({
+        model: MODEL,
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        tools: TOOLS,
+        messages,
+      });
+
+      const toolUseBlocks = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use');
+
+      if (toolUseBlocks.length === 0) {
+        // No tools — got final text from create(); stream it word-by-word
+        const text = response.content
+          .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+          .map((b) => b.text).join('');
+        finalText = text;
+        // Emit in ~4-char chunks to simulate progressive rendering
+        const words = text.match(/.{1,4}/gs) ?? [];
+        for (const chunk of words) {
+          send({ type: 'delta', text: chunk });
+          await new Promise((r) => setTimeout(r, 10));
+        }
+        break;
+      }
+
+      // Notify client which tool is being called
+      send({ type: 'tool_call', tool: toolUseBlocks.map((b) => b.name).join(', ') });
+
+      messages.push({ role: 'assistant', content: response.content });
+
+      const toolResults = await Promise.all(
+        toolUseBlocks.map(async (block) => ({
+          type: 'tool_result' as const,
+          tool_use_id: block.id,
+          content: await executeTool(block.name, block.input as Record<string, unknown>, app.prisma, employeeId, orgId),
+        })),
+      );
+      messages.push({ role: 'user', content: toolResults });
+    }
+
+    // If all tool rounds exhausted and we still have no text, do a final streaming call
+    if (!finalText) {
+      const stream = client.messages.stream({
+        model: MODEL,
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        tools: TOOLS,
+        messages,
+      });
+
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          finalText += event.delta.text;
+          send({ type: 'delta', text: event.delta.text });
+        }
+      }
+    }
+
+    if (!finalText) {
+      finalText = "I've completed the requested action. Let me know if there's anything else I can help with!";
+      send({ type: 'delta', text: finalText });
+    }
+
+    // Persist assistant message
+    const [assistantMsg] = await app.prisma.$transaction([
+      app.prisma.chatMessage.create({ data: { sessionId: id, role: 'assistant', content: finalText } }),
+      app.prisma.chatSession.update({ where: { id }, data: { updatedAt: new Date() } }),
+    ]);
+
+    send({ type: 'done', id: assistantMsg.id });
+    reply.raw.end();
+  });
 }

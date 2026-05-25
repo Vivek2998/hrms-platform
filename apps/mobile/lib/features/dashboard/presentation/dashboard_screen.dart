@@ -60,7 +60,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(attendanceListProvider);
           ref.invalidate(announcementsListProvider);
           ref.invalidate(unreadCountProvider);
-          ref.invalidate(todayBirthdaysProvider);
+          ref.invalidate(dashboardWidgetsProvider);
         },
         child: CustomScrollView(
           slivers: [
@@ -133,6 +133,10 @@ class DashboardScreen extends ConsumerWidget {
                   ),
 
                   _BirthdaySection(),
+
+                  _NewJoineeSection(),
+
+                  _AnniversarySection(),
 
                   // Latest announcements
                   announcementsAsync.maybeWhen(
@@ -950,6 +954,136 @@ class _BirthdaySectionState extends ConsumerState<_BirthdaySection> {
           ],
         );
       },
+    );
+  }
+}
+
+// ─── New Joinee Section ──────────────────────────────────────────────────────
+
+class _NewJoineeSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final widgetsAsync = ref.watch(dashboardWidgetsProvider);
+    return widgetsAsync.maybeWhen(
+      data: (w) {
+        if (w.newJoinees.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            _SectionLabel('New Joinees 👋'),
+            const SizedBox(height: 12),
+            ...w.newJoinees.take(5).map((e) => _PersonRow(
+                  id: e.id,
+                  fullName: e.fullName,
+                  initials: e.initials,
+                  avatarUrl: e.avatarUrl,
+                  subtitle: e.designation != null
+                      ? '${e.designation} · Joined ${_fmtDate(e.dateOfJoining)}'
+                      : 'Joined ${_fmtDate(e.dateOfJoining)}',
+                  accentColor: AppColors.info,
+                  accentBg: AppColors.infoLight,
+                )),
+          ],
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+// ─── Work Anniversary Section ─────────────────────────────────────────────────
+
+class _AnniversarySection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final widgetsAsync = ref.watch(dashboardWidgetsProvider);
+    return widgetsAsync.maybeWhen(
+      data: (w) {
+        if (w.workAnniversaries.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            _SectionLabel('Work Anniversaries 🏆'),
+            const SizedBox(height: 12),
+            ...w.workAnniversaries.take(5).map((e) => _PersonRow(
+                  id: e.id,
+                  fullName: e.fullName,
+                  initials: e.initials,
+                  avatarUrl: e.avatarUrl,
+                  subtitle: e.designation ?? '',
+                  accentColor: AppColors.warning,
+                  accentBg: AppColors.warningLight,
+                  badge: '${e.years} yr${e.years != 1 ? 's' : ''}',
+                )),
+          ],
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+String _fmtDate(DateTime d) =>
+    '${d.day} ${const ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month]}';
+
+// ─── Shared person row card ───────────────────────────────────────────────────
+
+class _PersonRow extends StatelessWidget {
+  final String id;
+  final String fullName;
+  final String initials;
+  final String? avatarUrl;
+  final String subtitle;
+  final Color accentColor;
+  final Color accentBg;
+  final String? badge;
+
+  const _PersonRow({
+    required this.id,
+    required this.fullName,
+    required this.initials,
+    required this.avatarUrl,
+    required this.subtitle,
+    required this.accentColor,
+    required this.accentBg,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: accentBg,
+            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+            child: avatarUrl == null
+                ? Text(initials, style: TextStyle(color: accentColor, fontWeight: FontWeight.w700, fontSize: 13))
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(fullName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                if (subtitle.isNotEmpty)
+                  Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          if (badge != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: accentBg, borderRadius: BorderRadius.circular(10)),
+              child: Text(badge!, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: accentColor)),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -19,7 +19,6 @@ class BirthdayEmployee {
   });
 
   factory BirthdayEmployee.fromJson(Map<String, dynamic> json) {
-    // Parse dateOfBirth from API (ISO string or legacy daysUntil fallback)
     int dobM = 0;
     int dobD = 0;
     final dobRaw = json['dateOfBirth'];
@@ -28,7 +27,6 @@ class BirthdayEmployee {
       dobM = dob.month;
       dobD = dob.day;
     } else {
-      // Fallback: reconstruct approximate DOB month/day from daysUntil
       final days = (json['daysUntil'] as num?)?.toInt() ?? 0;
       final approxDate = DateTime.now().add(Duration(days: days));
       dobM = approxDate.month;
@@ -45,7 +43,6 @@ class BirthdayEmployee {
     );
   }
 
-  // Always computed live so stale cache never shows wrong date
   int get daysUntil {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -69,4 +66,80 @@ class BirthdayEmployee {
   String get initials =>
       '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
           .toUpperCase();
+}
+
+class NewJoinee {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? designation;
+  final String? avatarUrl;
+  final DateTime dateOfJoining;
+
+  const NewJoinee({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.dateOfJoining,
+    this.designation,
+    this.avatarUrl,
+  });
+
+  factory NewJoinee.fromJson(Map<String, dynamic> json) => NewJoinee(
+        id: json['id'] as String,
+        firstName: json['firstName'] as String,
+        lastName: json['lastName'] as String,
+        dateOfJoining: DateTime.parse(json['dateOfJoining'] as String),
+        designation: json['designation'] as String?,
+        avatarUrl: json['avatarUrl'] as String?,
+      );
+
+  String get fullName => '$firstName $lastName';
+  String get initials =>
+      '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
+          .toUpperCase();
+}
+
+class WorkAnniversary {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? designation;
+  final String? avatarUrl;
+  final int years;
+
+  const WorkAnniversary({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.years,
+    this.designation,
+    this.avatarUrl,
+  });
+
+  factory WorkAnniversary.fromJson(Map<String, dynamic> json) => WorkAnniversary(
+        id: json['id'] as String,
+        firstName: json['firstName'] as String,
+        lastName: json['lastName'] as String,
+        years: (json['years'] as num).toInt(),
+        designation: json['designation'] as String?,
+        avatarUrl: json['avatarUrl'] as String?,
+      );
+
+  String get fullName => '$firstName $lastName';
+  String get initials =>
+      '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
+          .toUpperCase();
+}
+
+class DashboardWidgets {
+  final List<BirthdayEmployee> birthdays;
+  final List<NewJoinee> newJoinees;
+  final List<WorkAnniversary> workAnniversaries;
+
+  const DashboardWidgets({
+    required this.birthdays,
+    required this.newJoinees,
+    required this.workAnniversaries,
+  });
 }

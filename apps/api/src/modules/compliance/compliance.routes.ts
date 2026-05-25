@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { ok } from '../../lib/response.js';
+import { ok, fail } from '../../lib/response.js';
 
 interface ComplianceEvent {
   id: string;
@@ -69,7 +69,7 @@ export async function complianceRoutes(app: FastifyInstance) {
       where: { id: req.user.orgId },
       select: { pfEnabled: true, esiEnabled: true, ptEnabled: true },
     });
-    if (!org) throw new Error('Organization not found');
+    if (!org) throw fail('Organization not found', 404);
 
     const today = new Date();
     const events = getDeadlines(today.getFullYear(), today.getMonth() + 1, org);

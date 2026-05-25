@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -16,8 +17,8 @@ import { useAttendance } from '@/hooks/useAttendance';
 import { useLeaves } from '@/hooks/useLeaves';
 import { usePayrollRuns } from '@/hooks/usePayroll';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
+import { useGiveKudos } from '@/hooks/useKudos';
 import { ErrorState } from '@/components/ui/error-state';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SetupGuide } from '@/components/onboarding/SetupGuide';
 import { AutoTour, useProductTour } from '@/components/onboarding/ProductTour';
@@ -61,37 +62,86 @@ function statusVariant(status: string): 'default' | 'secondary' | 'warning' | 'd
 
 // ── Thought of the Day ───────────────────────────────────────────
 
-const QUOTES = [
-  'Success is not the key to happiness. Happiness is the key to success.',
-  'The only way to do great work is to love what you do.',
-  'Believe you can and you\'re halfway there.',
-  'Great things never come from comfort zones.',
-  'Push yourself, because no one else is going to do it for you.',
-  'Dream it. Wish it. Do it.',
-  'The harder you work for something, the greater you\'ll feel when you achieve it.',
-  'Don\'t stop when you\'re tired. Stop when you\'re done.',
-  'Wake up with determination. Go to bed with satisfaction.',
-  'Do something today that your future self will thank you for.',
-  'It\'s going to be hard, but hard is not impossible.',
-  'Don\'t wait for opportunity. Create it.',
-  'The key to success is to focus on goals, not obstacles.',
-  'Small daily improvements lead to staggering long-term results.',
-  'Your attitude determines your direction.',
-  'Excellence is not a destination but a continuous journey.',
-  'Strive not to be a success, but rather to be of value.',
-  'The secret of getting ahead is getting started.',
-  'Talent is cheaper than table salt. What separates the talented individual from the successful one is a lot of hard work.',
-  'Be so good they can\'t ignore you.',
+const QUOTES: { text: string; author: string }[] = [
+  { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
+  { text: 'It always seems impossible until it is done.', author: 'Nelson Mandela' },
+  { text: 'In the middle of every difficulty lies opportunity.', author: 'Albert Einstein' },
+  { text: 'Well done is better than well said.', author: 'Benjamin Franklin' },
+  { text: 'Act as if what you do makes a difference. It does.', author: 'William James' },
+  { text: 'Quality is not an act, it is a habit.', author: 'Aristotle' },
+  { text: 'What we think, we become.', author: 'Gautama Buddha' },
+  { text: 'The mind is everything. What you think you become.', author: 'Gautama Buddha' },
+  { text: 'Knowing yourself is the beginning of all wisdom.', author: 'Aristotle' },
+  { text: 'He who has a why to live can bear almost any how.', author: 'Friedrich Nietzsche' },
+  { text: 'Life is what happens when you are busy making other plans.', author: 'Allen Saunders' },
+  { text: 'Spread love everywhere you go. Let no one ever come to you without leaving happier.', author: 'Mother Teresa' },
+  { text: 'When you reach the end of your rope, tie a knot in it and hang on.', author: 'Franklin D. Roosevelt' },
+  { text: 'Always remember that you are absolutely unique. Just like everyone else.', author: 'Margaret Mead' },
+  { text: 'Do not go where the path may lead; go instead where there is no path and leave a trail.', author: 'Ralph Waldo Emerson' },
+  { text: 'You will face many defeats in life, but never let yourself be defeated.', author: 'Maya Angelou' },
+  { text: 'In the end, it is not the years in your life that count. It is the life in your years.', author: 'Abraham Lincoln' },
+  { text: 'Never let the fear of striking out keep you from playing the game.', author: 'Babe Ruth' },
+  { text: 'Life is either a daring adventure or nothing at all.', author: 'Helen Keller' },
+  { text: 'The only impossible journey is the one you never begin.', author: 'Tony Robbins' },
+  { text: 'In this life we cannot do great things. We can only do small things with great love.', author: 'Mother Teresa' },
+  { text: 'It is during our darkest moments that we must focus to see the light.', author: 'Aristotle' },
+  { text: 'Try to be a rainbow in someone else\'s cloud.', author: 'Maya Angelou' },
+  { text: 'Do not judge each day by the harvest you reap but by the seeds that you plant.', author: 'Robert Louis Stevenson' },
+  { text: 'Spread kindness like confetti.', author: 'Anonymous' },
+  { text: 'Yesterday is history, tomorrow is a mystery, today is a gift.', author: 'Eleanor Roosevelt' },
+  { text: 'You must be the change you wish to see in the world.', author: 'Mahatma Gandhi' },
+  { text: 'Darkness cannot drive out darkness; only light can do that.', author: 'Martin Luther King Jr.' },
+  { text: 'Shoot for the moon. Even if you miss, you\'ll land among the stars.', author: 'Les Brown' },
+  { text: 'No one can make you feel inferior without your consent.', author: 'Eleanor Roosevelt' },
+  { text: 'I have learned over the years that when one\'s mind is made up, this diminishes fear.', author: 'Rosa Parks' },
+  { text: 'I alone cannot change the world, but I can cast a stone across the waters to create many ripples.', author: 'Mother Teresa' },
+  { text: 'Nothing is impossible, the word itself says "I\'m possible"!', author: 'Audrey Hepburn' },
+  { text: 'The question is not who is going to let me; it\'s who is going to stop me.', author: 'Ayn Rand' },
+  { text: 'Every moment is a fresh beginning.', author: 'T.S. Eliot' },
+  { text: 'Without courage, wisdom bears no fruit.', author: 'Baltasar Gracian' },
+  { text: 'The best time to plant a tree was 20 years ago. The second best time is now.', author: 'Chinese Proverb' },
+  { text: 'All our dreams can come true, if we have the courage to pursue them.', author: 'Walt Disney' },
+  { text: 'First, have a definite, clear practical ideal — a goal, an objective.', author: 'Aristotle' },
+  { text: 'Believe you can and you\'re halfway there.', author: 'Theodore Roosevelt' },
+  { text: 'It does not matter how slowly you go as long as you do not stop.', author: 'Confucius' },
+  { text: 'Everything you\'ve ever wanted is on the other side of fear.', author: 'George Addair' },
+  { text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.', author: 'Winston Churchill' },
+  { text: 'Hardships often prepare ordinary people for an extraordinary destiny.', author: 'C.S. Lewis' },
+  { text: 'You are never too old to set another goal or to dream a new dream.', author: 'C.S. Lewis' },
+  { text: 'Limitations live only in our minds. But if we use our imaginations, possibilities are limitless.', author: 'Jamie Paolinetti' },
+  { text: 'If you hear a voice within you say "you cannot paint," then by all means paint and that voice will be silenced.', author: 'Vincent Van Gogh' },
+  { text: 'There is only one way to avoid criticism: do nothing, say nothing, and be nothing.', author: 'Aristotle' },
+  { text: 'Ask and it will be given to you; search and you will find; knock and the door will be opened for you.', author: 'Jesus of Nazareth' },
+  { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+  { text: 'If you can dream it, you can achieve it.', author: 'Zig Ziglar' },
+  { text: 'The journey of a thousand miles begins with one step.', author: 'Lao Tzu' },
+  { text: 'I attribute my success to this: I never gave or took any excuse.', author: 'Florence Nightingale' },
+  { text: 'You miss 100% of the shots you don\'t take.', author: 'Wayne Gretzky' },
+  { text: 'I have not failed. I\'ve just found 10,000 ways that won\'t work.', author: 'Thomas Edison' },
+  { text: 'The most common way people give up their power is by thinking they don\'t have any.', author: 'Alice Walker' },
+  { text: 'The mind is not a vessel to be filled but a fire to be ignited.', author: 'Plutarch' },
+  { text: 'You become what you believe.', author: 'Oprah Winfrey' },
+  { text: 'The best revenge is massive success.', author: 'Frank Sinatra' },
+  { text: 'People who are crazy enough to think they can change the world, are the ones who do.', author: 'Rob Siltanen' },
+  { text: 'Failure will never overtake me if my determination to succeed is strong enough.', author: 'Og Mandino' },
+  { text: 'Entrepreneurs are great at dealing with uncertainty and also very good at minimizing risk.', author: 'Mohnish Pabrai' },
+  { text: 'We may encounter many defeats but we must not be defeated.', author: 'Maya Angelou' },
+  { text: 'Knowing is not enough; we must apply. Wishing is not enough; we must do.', author: 'Johann Wolfgang von Goethe' },
+  { text: 'Imagine your life is perfect in every respect; what would it look like?', author: 'Brian Tracy' },
+  { text: 'We generate fears while we sit. We overcome them by action.', author: 'Dr. Henry Link' },
 ];
 
 function ThoughtOfTheDay() {
-  const idx = new Date().getDate() % QUOTES.length;
+  const now = new Date();
+  const idx = (now.getFullYear() * 1000 + (now.getMonth() + 1) * 31 + now.getDate()) % QUOTES.length;
+  const quote = QUOTES[idx];
   return (
     <div className="rounded-xl border bg-muted/30 px-4 py-3 text-center">
       <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-widest">
         Thought of the Day
       </p>
-      <p className="text-foreground mt-1 text-sm italic">&ldquo;{QUOTES[idx]}&rdquo;</p>
+      <p className="text-foreground mt-1 text-sm italic">&ldquo;{quote.text}&rdquo;</p>
+      <p className="text-muted-foreground mt-1 text-[11px] font-medium">— {quote.author}</p>
     </div>
   );
 }
@@ -240,6 +290,17 @@ function PersonAvatar({ name, url }: { name: string; url?: string | null | undef
 // ── Celebration Widgets ──────────────────────────────────────────
 
 function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loading: boolean }) {
+  const giveKudos = useGiveKudos();
+  const [wished, setWished] = React.useState<Set<string>>(new Set());
+
+  function handleWish(e: BirthdayEntry) {
+    if (wished.has(e.id) || giveKudos.isPending) return;
+    giveKudos.mutate(
+      { toEmployeeId: e.id, category: 'OTHER', message: `Happy Birthday ${e.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
+      { onSuccess: () => setWished((prev) => new Set(prev).add(e.id)) },
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center gap-2 pb-2">
@@ -267,10 +328,11 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 shrink-0 border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:hover:bg-pink-950"
-                  onClick={() => toast.success(`Wishes sent to ${e.firstName}!`)}
+                  disabled={wished.has(e.id) || giveKudos.isPending}
+                  className="h-7 shrink-0 border-pink-200 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:hover:bg-pink-950 disabled:opacity-60"
+                  onClick={() => handleWish(e)}
                 >
-                  Wish
+                  {wished.has(e.id) ? '🎂 Wished!' : 'Wish'}
                 </Button>
               </div>
             ))}

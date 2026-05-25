@@ -1,7 +1,7 @@
 import axios, { type AxiosError } from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
 
-const BASE_URL: string =
+export const BASE_URL: string =
   (import.meta.env['VITE_API_URL'] as string | undefined) ??
   (import.meta.env.PROD
     ? 'https://hrms-platform-production.up.railway.app'
