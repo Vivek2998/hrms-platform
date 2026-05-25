@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Circle, X, ChevronRight, ChevronDown, ChevronUp, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +8,8 @@ import { cn } from '@/lib/utils';
 export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
   const navigate = useNavigate();
   const role = useAuthStore((s) => s.user?.role);
-  const { state, markStepDone, dismiss } = useSetupGuide();
-  const [collapsed, setCollapsed] = useState(false);
+  const { state, markStepDone, dismiss, collapseGuide, expandGuide } = useSetupGuide();
+  const collapsed = state.guideCollapsed;
 
   const steps = getGuideSteps(role);
   const done = steps.filter((s) => state.completedSteps.includes(s.id)).length;
@@ -24,7 +23,7 @@ export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       {/* Header — always visible, clicking it toggles collapse */}
       <button
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={() => collapsed ? expandGuide() : collapseGuide()}
         className="flex w-full items-center gap-3 px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
@@ -45,7 +44,7 @@ export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
             </Button>
           )}
           <button
-            onClick={(e) => { e.stopPropagation(); setCollapsed((c) => !c); }}
+            onClick={(e) => { e.stopPropagation(); collapsed ? expandGuide() : collapseGuide(); }}
             aria-label={collapsed ? 'Expand setup guide' : 'Collapse setup guide'}
             className="text-muted-foreground hover:text-foreground transition-colors rounded p-1"
           >
@@ -61,9 +60,15 @@ export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
         </div>
       </button>
 
-      {/* Collapsible body */}
-      {!collapsed && (
-        <>
+      {/* Collapsible body — grid-template-rows trick gives a true smooth height animation */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: collapsed ? '0fr' : '1fr',
+          transition: 'grid-template-rows 0.35s ease-in-out',
+        }}
+      >
+        <div className="overflow-hidden">
           {/* Progress bar */}
           <div className="h-1 bg-muted">
             <div
@@ -108,8 +113,8 @@ export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
               </p>
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -53,10 +53,11 @@ export function getGuideSteps(role: UserRole | undefined): GuideStep[] {
 interface GuideState {
   tourDone: boolean;
   dismissed: boolean;
+  guideCollapsed: boolean;
   completedSteps: GuideStepId[];
 }
 
-const DEFAULT: GuideState = { tourDone: false, dismissed: false, completedSteps: [] };
+const DEFAULT: GuideState = { tourDone: false, dismissed: false, guideCollapsed: false, completedSteps: [] };
 
 function key(userId: string) { return `hrms_setup_guide_${userId}`; }
 
@@ -71,6 +72,13 @@ function persist(userId: string, state: GuideState) {
   localStorage.setItem(key(userId), JSON.stringify(state));
 }
 
+// Module-level listeners so all hook instances stay in sync within the same tab.
+const listeners = new Set<() => void>();
+
+function notifyListeners() {
+  listeners.forEach((fn) => fn());
+}
+
 export function useSetupGuide() {
   const userId = useAuthStore((s) => s.user?.id);
   const [state, setState] = useState<GuideState>(() => (userId ? load(userId) : DEFAULT));
@@ -79,12 +87,20 @@ export function useSetupGuide() {
     if (userId) setState(load(userId));
   }, [userId]);
 
+  // Re-sync whenever another hook instance writes a change.
+  useEffect(() => {
+    const sync = () => { if (userId) setState(load(userId)); };
+    listeners.add(sync);
+    return () => { listeners.delete(sync); };
+  }, [userId]);
+
   const update = useCallback(
     (patch: Partial<GuideState>) => {
       if (!userId) return;
       setState((prev) => {
         const next = { ...prev, ...patch };
         persist(userId, next);
+        notifyListeners();
         return next;
       });
     },
@@ -98,15 +114,18 @@ export function useSetupGuide() {
         if (prev.completedSteps.includes(stepId)) return prev;
         const next = { ...prev, completedSteps: [...prev.completedSteps, stepId] };
         persist(userId, next);
+        notifyListeners();
         return next;
       });
     },
     [userId],
   );
 
-  const markTourDone = useCallback(() => update({ tourDone: true }), [update]);
-  const dismiss      = useCallback(() => update({ dismissed: true }), [update]);
-  const reopen       = useCallback(() => update({ dismissed: false }), [update]);
+  const markTourDone  = useCallback(() => update({ tourDone: true }), [update]);
+  const dismiss       = useCallback(() => update({ dismissed: true }), [update]);
+  const reopen        = useCallback(() => update({ dismissed: false }), [update]);
+  const collapseGuide = useCallback(() => update({ guideCollapsed: true }), [update]);
+  const expandGuide   = useCallback(() => update({ guideCollapsed: false }), [update]);
 
-  return { state, markStepDone, markTourDone, dismiss, reopen };
+  return { state, markStepDone, markTourDone, dismiss, reopen, collapseGuide, expandGuide };
 }

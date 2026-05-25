@@ -5,6 +5,7 @@ import { AuthGuard } from '@/components/guards/AuthGuard';
 import { RoleGuard } from '@/components/guards/RoleGuard';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageLoader } from '@/components/ui/page-loader';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
@@ -79,7 +80,11 @@ const ESOPPage = lazy(() => import('@/pages/esop/ESOPPage'));
 const EAPPage = lazy(() => import('@/pages/eap/EAPPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
 }
 
 export const router = createBrowserRouter([

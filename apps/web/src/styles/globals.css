@@ -163,16 +163,6 @@
 }
 
 /* ── driver.js tour popover overrides ─────────────────────────── */
-.hrms-tour-popover .driver-popover-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--foreground);
-}
-.hrms-tour-popover .driver-popover-description {
-  font-size: 0.8125rem;
-  color: var(--muted-foreground);
-  line-height: 1.5;
-}
 .hrms-tour-popover {
   background: var(--background);
   border: 1px solid var(--border);
@@ -181,34 +171,104 @@
   padding: 1rem;
   min-width: 260px;
   max-width: 320px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.hrms-tour-popover .driver-popover-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+.hrms-tour-popover .driver-popover-description {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 .hrms-tour-popover .driver-popover-footer button {
-  border-radius: calc(var(--radius) - 2px);
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.3rem 0.75rem;
+  border-radius: calc(var(--radius) - 2px) !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  font-family: Inter, system-ui, -apple-system, sans-serif !important;
+  letter-spacing: 0 !important;
+  padding: 0.3rem 0.75rem !important;
   transition: opacity 0.15s;
+  text-shadow: none !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
 }
 .hrms-tour-popover .driver-popover-footer button:hover { opacity: 0.8; }
 .hrms-tour-popover .driver-popover-next-btn {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border: none;
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+  font-weight: 500 !important;
 }
-.hrms-tour-popover .driver-popover-prev-btn,
-.hrms-tour-popover .driver-popover-close-btn {
+.hrms-tour-popover .driver-popover-prev-btn {
   background: transparent;
   color: var(--muted-foreground);
   border: 1px solid var(--border);
 }
+/* Close button: inset from corner so it doesn't cover the rounded corner */
+.hrms-tour-popover .driver-popover-close-btn {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 14px !important;
+  background: transparent !important;
+  color: var(--muted-foreground) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
 .hrms-tour-popover .driver-popover-progress-text {
   font-size: 0.7rem;
   color: var(--muted-foreground);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
-/* Tidy up the arrow */
+/* Arrow — per-direction rules so color and overlap are correct */
 .hrms-tour-popover .driver-popover-arrow {
-  border-color: var(--border) transparent transparent transparent;
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.06));
+  filter: none;
+  border-width: 8px !important;
+}
+/* Popover below element → ▲ upward arrow sits above popover */
+.hrms-tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--background) !important;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  bottom: calc(100% - 2px) !important;
+}
+/* Popover above element → ▼ downward arrow sits below popover */
+.hrms-tour-popover .driver-popover-arrow-side-top {
+  border-top-color: var(--background) !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  top: calc(100% - 1px) !important;
+}
+/* Popover right of element → ◄ left-pointing arrow */
+.hrms-tour-popover .driver-popover-arrow-side-right {
+  border-right-color: var(--background) !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  right: calc(100% - 1px) !important;
+}
+/* Popover left of element → ► right-pointing arrow */
+.hrms-tour-popover .driver-popover-arrow-side-left {
+  border-left-color: var(--background) !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-right-color: transparent !important;
+  left: calc(100% - 1px) !important;
 }
 /* Hide arrow entirely on fixed-position header elements */
 .hrms-tour-no-arrow .driver-popover-arrow { display: none !important; }

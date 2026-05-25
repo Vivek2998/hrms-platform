@@ -78,12 +78,16 @@ const EMPLOYEE_STEPS = HR_STEPS.filter((s) =>
 ]);
 
 export function useProductTour() {
-  const { state, markTourDone } = useSetupGuide();
+  const { state, markTourDone, collapseGuide } = useSetupGuide();
   const role = useAuthStore((s) => s.user?.role);
 
   const start = useCallback(() => {
     const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role);
     const steps = isHR ? HR_STEPS : EMPLOYEE_STEPS;
+
+    // Only set true when the Next/Done button is clicked on the very last step.
+    // X-button clicks never set this, so closing early never triggers completion.
+    let completedByDone = false;
 
     const driverObj = driver({
       showProgress: true,
@@ -96,27 +100,59 @@ export function useProductTour() {
       prevBtnText: '← Back',
       doneBtnText: 'Done',
       steps: steps.filter((s) => document.querySelector(s.element) !== null),
+      onNextClick: () => {
+        if (!driverObj.hasNextStep()) completedByDone = true;
+        driverObj.moveNext();
+      },
+      onPopoverRender: (popover) => {
+        const el = popover.wrapper as HTMLElement;
+        requestAnimationFrame(() => {
+          const rect = el.getBoundingClientRect();
+          const gap = 8;
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          if (rect.right  > vw - gap) el.style.left = `${parseFloat(el.style.left || '0') - (rect.right  - vw + gap)}px`;
+          if (rect.bottom > vh - gap) el.style.top  = `${parseFloat(el.style.top  || '0') - (rect.bottom - vh + gap)}px`;
+          if (rect.left   < gap)      el.style.left = `${gap}px`;
+          if (rect.top    < gap)      el.style.top  = `${gap}px`;
+        });
+      },
       onDestroyStarted: () => {
-        markTourDone();
+        if (completedByDone) {
+          markTourDone();
+          collapseGuide();
+          // Let the collapse animation start, then scroll the main content area
+          // (not window — the sidebar layout scrolls inside <main>) back to top.
+          setTimeout(() => {
+            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 50);
+        }
         driverObj.destroy();
       },
     });
 
     driverObj.drive();
-  }, [role, markTourDone]);
+  }, [role, markTourDone, collapseGuide]);
 
   return { start, tourDone: state.tourDone };
 }
 
 export function AutoTour() {
-  const { state } = useSetupGuide();
-  const { start } = useProductTour();
+  const { start, tourDone } = useProductTour();
 
   useEffect(() => {
-    if (state.tourDone) return;
-    const timer = setTimeout(start, 800);
-    return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (tourDone) return;
+    let id: number;
+    if (typeof requestIdleCallback !== 'undefined') {
+      id = requestIdleCallback(start, { timeout: 3000 });
+    } else {
+      id = window.setTimeout(start, 0);
+    }
+    return () => {
+      if (typeof requestIdleCallback !== 'undefined') cancelIdleCallback(id);
+      else window.clearTimeout(id);
+    };
+  }, [tourDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }
