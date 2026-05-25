@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 
 import { AuthGuard } from '@/components/guards/AuthGuard';
 import { RoleGuard } from '@/components/guards/RoleGuard';
+import { SuperAdminGuard } from '@/components/guards/SuperAdminGuard';
 import { AppShell } from '@/components/layout/AppShell';
 import { PageLoader } from '@/components/ui/page-loader';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
@@ -568,9 +569,11 @@ export const router = createBrowserRouter([
   {
     path: '/super-admin/dashboard',
     element: (
-      <Lazy>
-        <SuperAdminDashboard />
-      </Lazy>
+      <SuperAdminGuard>
+        <Lazy>
+          <SuperAdminDashboard />
+        </Lazy>
+      </SuperAdminGuard>
     ),
   },
   {

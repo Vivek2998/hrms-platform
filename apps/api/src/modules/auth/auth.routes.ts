@@ -1,5 +1,5 @@
-import type { FastifyInstance } from 'fastify';
-import { randomBytes } from 'node:crypto';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { randomBytes, createHash } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { loginSchema, refreshSchema, changePasswordSchema } from './auth.schema.js';
@@ -12,8 +12,25 @@ import {
 import { ok, fail } from '../../lib/response.js';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt.js';
 import { provisionOrganization } from '../../lib/provision-org.js';
+import { sendEmail, passwordResetEmail } from '../../lib/email.js';
+import { env } from '../../config/env.js';
 
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
+
+// ── Per-route rate limit config for sensitive auth endpoints ──────────────────
+// 5 attempts per 15 minutes, keyed by IP + email to prevent per-account brute force
+const authRateLimit = {
+  config: {
+    rateLimit: {
+      max: 5,
+      timeWindow: '15 minutes',
+      keyGenerator: (req: FastifyRequest) => {
+        const email = (req.body as Record<string, unknown>)?.['email'] as string | undefined;
+        return email ? `auth:${req.ip}:${email.toLowerCase()}` : `auth:${req.ip}`;
+      },
+    },
+  },
+};
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -25,7 +42,13 @@ const registerSchema = z.object({
   adminFirstName: z.string().min(1),
   adminLastName: z.string().min(1),
   adminEmail: z.string().email(),
-  adminPassword: z.string().min(8),
+  adminPassword: z
+    .string()
+    .min(8)
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+      'Password must contain uppercase, lowercase, number and special character',
+    ),
 });
 
 const forgotPasswordSchema = z.object({
@@ -34,12 +57,19 @@ const forgotPasswordSchema = z.object({
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  password: z.string().min(8),
+  password: z
+    .string()
+    .min(8)
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+      'Password must contain uppercase, lowercase, number and special character',
+    ),
 });
 
 export function authRoutes(app: FastifyInstance) {
   // POST /auth/register — public self-serve organisation registration
-  app.post('/auth/register', async (req, reply) => {
+  // Rate-limited: 5 attempts / 15 min per IP+email
+  app.post('/auth/register', authRateLimit, async (req, reply) => {
     const input = registerSchema.parse(req.body);
 
     const [slugTaken, emailTaken] = await Promise.all([
@@ -88,7 +118,8 @@ export function authRoutes(app: FastifyInstance) {
   });
 
   // POST /auth/login
-  app.post('/auth/login', async (req, reply) => {
+  // Rate-limited: 5 attempts / 15 min per IP+email
+  app.post('/auth/login', authRateLimit, async (req, reply) => {
     const input = loginSchema.parse(req.body);
     const data = await loginService(input, app.prisma, app.redis);
     return reply.status(200).send(ok(data));
@@ -114,39 +145,65 @@ export function authRoutes(app: FastifyInstance) {
     return reply.status(200).send(ok({ message: 'Password changed successfully' }));
   });
 
-  // POST /auth/forgot-password — generate reset token
-  app.post('/auth/forgot-password', async (req, reply) => {
+  // POST /auth/forgot-password — generate reset token + send email
+  // Rate-limited: 5 attempts / 15 min per IP+email to prevent abuse
+  app.post('/auth/forgot-password', authRateLimit, async (req, reply) => {
     const { email } = forgotPasswordSchema.parse(req.body);
     const employee = await app.prisma.employee.findFirst({
       where: { workEmail: email, deletedAt: null },
     });
-    // Always return 200 to avoid email enumeration
-    if (!employee) return reply.status(200).send(ok({ message: 'If that email exists, a reset link has been sent.' }));
 
-    // Invalidate any existing unused tokens
+    // Always return 200 to avoid email enumeration — do NOT leak whether email exists
+    if (!employee) {
+      return reply
+        .status(200)
+        .send(ok({ message: 'If that email exists, a reset link has been sent.' }));
+    }
+
+    // Invalidate any existing unused tokens for this employee
     await app.prisma.passwordResetToken.updateMany({
       where: { employeeId: employee.id, usedAt: null },
       data: { usedAt: new Date() },
     });
 
-    const token = randomBytes(32).toString('hex');
+    // Generate a secure random token; store only the SHA-256 hash in DB (SEC-06)
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
     await app.prisma.passwordResetToken.create({
-      data: { employeeId: employee.id, token, expiresAt },
+      data: { employeeId: employee.id, token: tokenHash, expiresAt },
     });
 
-    // In production: send email with reset link
-    // For development: return the token directly
-    return reply.status(200).send(ok({ message: 'Reset link generated.', token }));
+    // Build the reset URL with the RAW token (not the hash) — user needs the raw token
+    const resetUrl = `${env.APP_URL}/reset-password?token=${rawToken}`;
+    void sendEmail(
+      employee.workEmail,
+      'Reset Your HRMS Password',
+      passwordResetEmail(employee.firstName, resetUrl),
+    );
+
+    // NEVER include the token in the response — SEC-01 fix
+    return reply
+      .status(200)
+      .send(ok({ message: 'If that email exists, a reset link has been sent.' }));
   });
 
   // POST /auth/reset-password — consume token and update password
-  app.post('/auth/reset-password', async (req, reply) => {
+  // Rate-limited: 5 attempts / 15 min per IP to prevent token guessing
+  app.post('/auth/reset-password', authRateLimit, async (req, reply) => {
     const { token, password } = resetPasswordSchema.parse(req.body);
-    const record = await app.prisma.passwordResetToken.findUnique({ where: { token } });
+
+    // Hash the incoming raw token and look up the hash in DB (SEC-06 fix)
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const record = await app.prisma.passwordResetToken.findUnique({
+      where: { token: tokenHash },
+    });
+
     if (!record || record.usedAt || record.expiresAt < new Date()) {
       throw fail('Invalid or expired reset token', 400);
     }
+
     const passwordHash = await bcrypt.hash(password, 12);
     await app.prisma.$transaction([
       app.prisma.employee.update({
@@ -158,6 +215,7 @@ export function authRoutes(app: FastifyInstance) {
         data: { usedAt: new Date() },
       }),
     ]);
+
     return reply.status(200).send(ok({ message: 'Password reset successfully.' }));
   });
 

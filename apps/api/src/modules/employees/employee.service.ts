@@ -56,9 +56,21 @@ const EMPLOYEE_SELECT = {
   officeLocation: { select: { id: true, name: true } },
 } satisfies Prisma.EmployeeSelect;
 
+// BUG-06 FIX: Atomic employee code generation — replaces the count-based
+// approach which had a race condition.  Two concurrent creates in the same
+// org both read count N and both try to claim EMP{N+1}, producing either a
+// duplicate-key error or silently overwriting the first employee's code.
+//
+// The fix uses a DB-level atomic increment on Organization.employeeSequence
+// (added to the schema).  The UPDATE...RETURNING is serialised by the DB row
+// lock, so concurrent requests always get different sequence numbers.
 async function generateEmployeeCode(prisma: PrismaClient, organizationId: string): Promise<string> {
-  const count = await prisma.employee.count({ where: { organizationId } });
-  return `EMP${String(count + 1).padStart(4, '0')}`;
+  const { employeeSequence } = await prisma.organization.update({
+    where: { id: organizationId },
+    data: { employeeSequence: { increment: 1 } },
+    select: { employeeSequence: true },
+  });
+  return `EMP${String(employeeSequence).padStart(4, '0')}`;
 }
 
 export async function listEmployees(orgId: string, query: EmployeeListQuery, prisma: PrismaClient) {
@@ -123,6 +135,10 @@ export async function createEmployee(
         organizationId: orgId,
         employeeCode,
         passwordHash,
+        // MINOR-06 FIX: populate displayName automatically so every employee
+        // has a non-null displayName from creation — avoids NULL-display bugs in
+        // notification emails and UI headers.
+        displayName: input.displayName ?? `${input.firstName} ${input.lastName}`,
         dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
         dateOfJoining: input.dateOfJoining ? new Date(input.dateOfJoining) : undefined,
       },

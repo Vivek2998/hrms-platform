@@ -22,6 +22,8 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('noreply@hrmsplatform.com'),
+  // Public URL for generating links in emails (e.g. password reset)
+  APP_URL: z.string().url().default('http://localhost:3000'),
 });
 
 const parsed = envSchema.safeParse(process.env);

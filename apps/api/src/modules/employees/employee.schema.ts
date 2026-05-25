@@ -47,7 +47,11 @@ export const createEmployeeSchema = z.object({
     .string()
     .optional()
     .refine((v) => !v || isValidPhone(v), { message: 'Invalid phone number — use international format, e.g. +91 98765 43210' }),
-  dateOfBirth: z.string().datetime().optional(),
+  // BUG-10 FIX: Mobile sends "YYYY-MM-DD" (date-only strings), not ISO-8601
+  // datetime strings with time+timezone.  z.string().datetime() rejects these,
+  // causing all mobile date-of-birth / joining-date submissions to fail with a
+  // cryptic 400.  Regex accepts any valid ISO date without requiring the time part.
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   bloodGroup: z.string().optional(),
   maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']).optional(),
@@ -60,7 +64,7 @@ export const createEmployeeSchema = z.object({
   departmentId: z.string().uuid().optional(),
   teamId: z.string().uuid().optional(),
   managerId: z.string().uuid().optional(),
-  dateOfJoining: z.string().datetime().optional(),
+  dateOfJoining: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
   noticePeriodDays: z.number().int().min(0).default(30),
   // Address & Emergency
   presentAddress: addressSchema,
@@ -116,6 +120,10 @@ export const employeeListSchema = paginationSchema.extend({
   status: z.enum(['ACTIVE', 'INACTIVE', 'ON_NOTICE', 'TERMINATED', 'ABSCONDED']).optional(),
   departmentId: z.string().uuid().optional(),
   employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT']).optional(),
+  // MINOR-05 FIX: Add search parameter so employees can be filtered by name /
+  // email / code from the list endpoint.  Max 100 chars prevents oversized query
+  // strings; already used in listEmployees() service function.
+  search: z.string().max(100).optional(),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;

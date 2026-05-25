@@ -147,8 +147,15 @@ export function attendanceRoutes(app: FastifyInstance) {
     return reply.send(ok(record));
   });
 
-  // PATCH /attendance/:id  (HR manual edit)
+  // PATCH /attendance/:id  (HR/Admin manual edit — role-restricted)
   app.patch('/attendance/:id', auth, async (req, reply) => {
+    // SEC-04: Only HR, ORG_ADMIN, and SUPER_ADMIN may manually edit attendance.
+    // A plain EMPLOYEE or MANAGER editing their own record = payroll fraud vector.
+    const allowedRoles: string[] = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'];
+    if (!allowedRoles.includes(req.user.role)) {
+      throw fail('Forbidden — only HR can manually edit attendance records', 403);
+    }
+
     const { id } = req.params as { id: string };
     const input = manualEditSchema.parse(req.body);
 
@@ -160,9 +167,9 @@ export function attendanceRoutes(app: FastifyInstance) {
     const updated = await app.prisma.attendanceRecord.update({
       where: { id },
       data: {
-        ...(input.punchIn && { punchIn: new Date(input.punchIn) }),
+        ...(input.punchIn  && { punchIn:  new Date(input.punchIn) }),
         ...(input.punchOut && { punchOut: new Date(input.punchOut) }),
-        ...(input.status && { status: input.status }),
+        ...(input.status   && { status:   input.status }),
         isManuallyEdited: true,
         editReason: input.editReason,
         editedBy: req.user.sub,
@@ -201,6 +208,14 @@ export function attendanceRoutes(app: FastifyInstance) {
   // GET /attendance/summary/:employeeId  (monthly summary for dashboards)
   app.get('/attendance/summary/:employeeId', auth, async (req, reply) => {
     const { employeeId } = req.params as { employeeId: string };
+
+    // SEC-05 IDOR fix: employees may only view their own summary.
+    // HR / Admin / Manager can view anyone in the org.
+    const canViewOthers = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(req.user.role);
+    if (!canViewOthers && req.user.sub !== employeeId) {
+      throw fail('Forbidden — you can only view your own attendance summary', 403);
+    }
+
     const { month, year } = z
       .object({
         month: z.coerce.number().int().min(1).max(12),

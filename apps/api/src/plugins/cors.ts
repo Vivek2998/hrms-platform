@@ -8,16 +8,27 @@ export const corsPlugin = fp(async (app: FastifyInstance) => {
 
   await app.register(fastifyCors, {
     origin: (origin, cb) => {
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
-        (env.NODE_ENV === 'development' && /^https?:\/\/localhost(:\d+)?$/.test(origin))
-      ) {
+      // Allow same-origin / non-browser (curl, mobile) requests
+      if (!origin) {
         cb(null, true);
-      } else {
-        cb(new Error('Not allowed by CORS'), false);
+        return;
       }
+
+      // Allow only explicitly listed origins — never wildcard subdomains
+      // Add your Vercel URL to ALLOWED_ORIGINS env var:
+      //   e.g. ALLOWED_ORIGINS=https://hrms-app.vercel.app,https://hrms.yourdomain.com
+      if (allowedOrigins.includes(origin)) {
+        cb(null, true);
+        return;
+      }
+
+      // Localhost only in development — never in production
+      if (env.NODE_ENV === 'development' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        cb(null, true);
+        return;
+      }
+
+      cb(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -367,8 +367,12 @@ model Organization {
   ptEnabled   Boolean  @default(false)
   ptState     String?
   plan        SubscriptionPlan @default(FREE)
-  maxEmployees Int             @default(10)
-  trialEndsAt DateTime?
+  maxEmployees     Int             @default(10)
+  // BUG-06 FIX: atomic sequence counter for employee codes (never decrements,
+  // never has race conditions).  Updated via { increment: 1 } in employee.service.ts.
+  // Run migration: prisma migrate dev --name "add_org_employee_sequence"
+  employeeSequence Int             @default(0)
+  trialEndsAt      DateTime?
   isActive    Boolean  @default(true)
   deletedAt   DateTime?
   createdAt   DateTime @default(now())
@@ -884,6 +888,9 @@ model SalaryRevision {
 
   // Immutable — never updated, only new rows
   @@index([organizationId, employeeId])
+  // PERF-01: Payroll bulk fetch filters by (organizationId, effectiveFrom <=) —
+  // this index makes the scan fast even when an org has thousands of revisions.
+  @@index([organizationId, effectiveFrom])
   @@map("salary_revisions")
 }
 
@@ -939,6 +946,10 @@ model Payslip {
 
   @@unique([organizationId, payrollRunId, employeeId])
   @@index([organizationId, employeeId])
+  // PERF-01: Payroll run detail page queries payslips by (orgId, payrollRunId) —
+  // PostgreSQL can use the unique constraint as a prefix scan but an explicit
+  // index keeps query plans predictable without relying on constraint internals.
+  @@index([organizationId, payrollRunId])
   @@map("payslips")
 }
 

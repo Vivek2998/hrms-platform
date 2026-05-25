@@ -136,7 +136,9 @@ export function payrollRoutes(app: FastifyInstance) {
         },
         ...paginationArgs(query),
       }),
-      app.prisma.payslip.count({ where: { payrollRunId: id } }),
+      // BUG-09 FIX: add organizationId scope — without it any authed user
+      // could count payslips from any org's payroll run via a guessed UUID.
+      app.prisma.payslip.count({ where: { payrollRunId: id, organizationId: req.user.orgId } }),
     ]);
 
     return reply.send(paginated(payslips, query.page, query.limit, total));
