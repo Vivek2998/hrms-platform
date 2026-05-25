@@ -58,6 +58,7 @@ export interface DashboardWidgets {
     regularisations: MyRegularisationEntry[];
     compOffs: MyCompOffEntry[];
   } | null;
+  quoteCategory: string;
 }
 
 export function useDashboardWidgets() {

@@ -1,6 +1,50 @@
 import type { FastifyInstance } from 'fastify';
 import { ok } from '../../lib/response.js';
 
+// ─── Quote category resolution ────────────────────────────────────────────────
+
+type QuoteCategory =
+  | 'pip' | 'chief' | 'intern' | 'hr' | 'manager'
+  | 'engineering' | 'sales' | 'finance' | 'marketing'
+  | 'operations' | 'customer' | 'legal' | 'default';
+
+function resolveQuoteCategory(params: {
+  designation: string | null;
+  departmentName: string | null;
+  employmentType: string;
+  role: string;
+  hasPip: boolean;
+}): QuoteCategory {
+  const { designation, departmentName, employmentType, role, hasPip } = params;
+  const des = (designation ?? '').toLowerCase();
+  const dept = (departmentName ?? '').toLowerCase();
+
+  if (hasPip) return 'pip';
+
+  const chiefKeys = ['ceo', 'cto', 'cfo', 'coo', 'cxo', 'chief ', 'president', 'vice president', 'vp ', ' vp', ' vp,', 'director', 'head of'];
+  if (chiefKeys.some((k) => des.includes(k))) return 'chief';
+
+  const internKeys = ['intern', 'trainee', 'apprentice', 'graduate trainee', 'fresher'];
+  if (employmentType === 'INTERN' || internKeys.some((k) => des.includes(k))) return 'intern';
+
+  if (role === 'HR' || ['human resource', ' hr', 'hr ', 'people ops', 'talent'].some((k) => dept.includes(k))) return 'hr';
+
+  const managerKeys = ['manager', 'team lead', 'team leader', 'supervisor', 'principal', 'scrum master'];
+  if (role === 'MANAGER' || managerKeys.some((k) => des.includes(k))) return 'manager';
+
+  if (['engineering', 'software', 'tech', ' it', 'it ', 'development', 'devops', 'data', 'product', 'qa', 'quality', 'infrastructure'].some((k) => dept.includes(k))) return 'engineering';
+  if (['sales', 'business development', 'revenue', 'pre-sales', 'presales', 'inside sales'].some((k) => dept.includes(k))) return 'sales';
+  if (['finance', 'accounts', 'accounting', 'payroll', 'treasury', 'tax', 'audit', 'controller'].some((k) => dept.includes(k))) return 'finance';
+  if (['marketing', 'brand', 'growth', 'content', 'digital', 'communications', ' pr', 'pr '].some((k) => dept.includes(k))) return 'marketing';
+  if (['operations', 'logistics', 'supply chain', 'procurement', 'admin', 'facilities', 'office'].some((k) => dept.includes(k))) return 'operations';
+  if (['customer', 'support', 'service', 'cx ', 'client success', 'helpdesk', 'success'].some((k) => dept.includes(k))) return 'customer';
+  if (['legal', 'compliance', 'risk', 'governance', 'secretarial'].some((k) => dept.includes(k))) return 'legal';
+
+  return 'default';
+}
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+
 export function dashboardRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
 
@@ -22,7 +66,6 @@ export function dashboardRoutes(app: FastifyInstance) {
     const birthdays = empWithDob
       .map((e) => {
         const dob = new Date(e.dateOfBirth!);
-        // Build this year's birthday; if it already passed, use next year
         let nextBday = new Date(Date.UTC(todayYear, dob.getUTCMonth(), dob.getUTCDate()));
         if (nextBday < today00) {
           nextBday = new Date(Date.UTC(todayYear + 1, dob.getUTCMonth(), dob.getUTCDate()));
@@ -95,8 +138,34 @@ export function dashboardRoutes(app: FastifyInstance) {
       myPendingRequests = { leaves, regularisations, compOffs };
     }
 
+    // ── Quote category for the current employee ─────────────────
+    const emp = await app.prisma.employee.findUnique({
+      where: { id: userId },
+      select: {
+        designation: true,
+        employmentType: true,
+        department: { select: { name: true } },
+      },
+    });
+
+    const hasPip = emp
+      ? (await app.prisma.pIPPlan.count({
+          where: { organizationId: orgId, employeeId: userId, status: { in: ['ACTIVE', 'IN_PROGRESS'] } },
+        })) > 0
+      : false;
+
+    const quoteCategory: QuoteCategory = emp
+      ? resolveQuoteCategory({
+          designation: emp.designation ?? null,
+          departmentName: emp.department?.name ?? null,
+          employmentType: emp.employmentType,
+          role,
+          hasPip,
+        })
+      : 'default';
+
     return reply.send(
-      ok({ birthdays, newJoinees, workAnniversaries, myPendingRequests }),
+      ok({ birthdays, newJoinees, workAnniversaries, myPendingRequests, quoteCategory }),
     );
   });
 }

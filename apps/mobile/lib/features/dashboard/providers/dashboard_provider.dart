@@ -26,6 +26,7 @@ final dashboardWidgetsProvider = FutureProvider<DashboardWidgets>((ref) async {
     birthdays: birthdays,
     newJoinees: newJoinees,
     workAnniversaries: workAnniversaries,
+    quoteCategory: (data['quoteCategory'] as String?) ?? 'default',
   );
 });
 

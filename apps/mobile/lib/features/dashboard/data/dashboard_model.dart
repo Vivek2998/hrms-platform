@@ -136,10 +136,12 @@ class DashboardWidgets {
   final List<BirthdayEmployee> birthdays;
   final List<NewJoinee> newJoinees;
   final List<WorkAnniversary> workAnniversaries;
+  final String quoteCategory;
 
   const DashboardWidgets({
     required this.birthdays,
     required this.newJoinees,
     required this.workAnniversaries,
+    this.quoteCategory = 'default',
   });
 }
