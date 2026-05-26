@@ -611,7 +611,7 @@ function ReviewOrgChartDialog({ request, onClose }: { request: OrgChartRequest; 
           </div>
           {error && <p className="text-destructive text-sm">{error}</p>}
         </div>
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex gap-3 sm:gap-3">
           <Button variant="outline" onClick={onClose} disabled={resolve.isPending}>Cancel</Button>
           <Button variant="destructive" onClick={() => resolve.mutate('REJECT')} disabled={resolve.isPending}>
             Reject
