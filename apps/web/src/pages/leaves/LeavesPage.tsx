@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
-import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, Pencil, Zap, Download, ArrowRightLeft } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, ChevronDown, Pencil, Zap, Download, ArrowRightLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -261,10 +261,26 @@ function EditBalanceDialog({
   );
 }
 
+// Deterministic avatar colour from employee name
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
+];
+function avatarColor(seed: string) {
+  let h = 0;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function initials(first: string, last: string) {
+  return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+}
+
 function LeaveBalancesPanel() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [editTarget, setEditTarget] = useState<EditBalanceTarget | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useLeaveBalances(year);
   const { data: leaveTypes = [] } = useLeaveTypes();
@@ -273,10 +289,25 @@ function LeaveBalancesPanel() {
 
   const employees = data?.data ?? [];
 
+  const filtered = search.trim()
+    ? employees.filter((e) =>
+        `${e.firstName} ${e.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
+        e.employeeCode.toLowerCase().includes(search.toLowerCase()),
+      )
+    : employees;
+
+  function toggle(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        {/* Year nav */}
+      {/* Year nav + bulk actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <Button variant="outline" size="icon" onClick={() => { setYear((y) => y - 1); }}>
             <ChevronLeft className="h-4 w-4" />
@@ -291,8 +322,7 @@ function LeaveBalancesPanel() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -315,94 +345,212 @@ function LeaveBalancesPanel() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Leave Balances — {year}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="space-y-3 p-6">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : employees.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12">
-              <p className="text-muted-foreground text-sm">No balance records for {year}.</p>
-              <Button variant="outline" size="sm" onClick={() => { initMutation.mutate(year); }}>
-                <Zap className="mr-2 h-4 w-4" />
-                Initialize for all employees
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-muted/50 text-muted-foreground border-b text-left text-xs font-medium">
-                    <th className="px-4 py-3">Employee</th>
-                    <th className="px-4 py-3">Leave Type</th>
-                    <th className="px-4 py-3">Allocated</th>
-                    <th className="px-4 py-3">Used</th>
-                    <th className="px-4 py-3">Pending</th>
-                    <th className="px-4 py-3">Remaining</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {employees.flatMap((emp) => {
-                    const rows = emp.leaveBalances.length > 0
-                      ? emp.leaveBalances
-                      : leaveTypes.map((lt) => ({
-                          id: '',
-                          leaveTypeId: lt.id,
-                          leaveType: { id: lt.id, name: lt.name, code: lt.code },
-                          year,
-                          allocated: 0,
-                          used: 0,
-                          pending: 0,
-                          carried: 0,
-                        }));
+      {/* Search + expand/collapse controls */}
+      {!isLoading && employees.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <input
+              className="flex h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="Search by name or code…"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); }}
+            />
+          </div>
+          <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+            <span>{filtered.length} employee{filtered.length !== 1 ? 's' : ''}</span>
+            <span className="mx-1.5 opacity-40">·</span>
+            <button
+              className="hover:text-foreground transition-colors underline-offset-2 hover:underline"
+              onClick={() => { setExpandedIds(new Set(filtered.map((e) => e.id))); }}
+            >
+              Expand all
+            </button>
+            <span className="mx-1.5 opacity-40">·</span>
+            <button
+              className="hover:text-foreground transition-colors underline-offset-2 hover:underline"
+              onClick={() => { setExpandedIds(new Set()); }}
+            >
+              Collapse all
+            </button>
+          </div>
+        </div>
+      )}
 
-                    return rows.map((bal, idx) => (
-                      <tr key={`${emp.id}-${bal.leaveTypeId}`} className="hover:bg-muted/30">
-                        {idx === 0 ? (
-                          <td className="px-4 py-3" rowSpan={rows.length}>
-                            <p className="font-medium">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-muted-foreground text-xs">{emp.employeeCode}</p>
-                          </td>
-                        ) : null}
-                        <td className="px-4 py-3">{bal.leaveType.name}</td>
-                        <td className="px-4 py-3 font-medium">{bal.allocated}</td>
-                        <td className="text-muted-foreground px-4 py-3">{bal.used}</td>
-                        <td className="text-muted-foreground px-4 py-3">{bal.pending}</td>
-                        <td className="px-4 py-3 font-medium text-green-700">
-                          {Math.max(0, bal.allocated - bal.used - bal.pending)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => {
-                              setEditTarget({
-                                employee:       emp,
-                                balance:        bal.id ? bal : null,
-                                leaveTypeId:    bal.leaveTypeId,
-                                leaveTypeName:  bal.leaveType.name,
-                                year,
-                              });
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ));
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Accordion list */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : employees.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-lg border py-14">
+          <p className="text-muted-foreground text-sm">No balance records for {year}.</p>
+          <Button variant="outline" size="sm" onClick={() => { initMutation.mutate(year); }}>
+            <Zap className="mr-2 h-4 w-4" />
+            Initialize for all employees
+          </Button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-lg border py-10 text-center">
+          <p className="text-muted-foreground text-sm">No employees match &ldquo;{search}&rdquo;</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((emp) => {
+            const isOpen = expandedIds.has(emp.id);
+            const rows =
+              emp.leaveBalances.length > 0
+                ? emp.leaveBalances
+                : leaveTypes.map((lt) => ({
+                    id: '',
+                    leaveTypeId: lt.id,
+                    leaveType: { id: lt.id, name: lt.name, code: lt.code },
+                    year,
+                    allocated: 0,
+                    used: 0,
+                    pending: 0,
+                    carried: 0,
+                  }));
+
+            const totalAlloc   = rows.reduce((s, r) => s + r.allocated, 0);
+            const totalUsed    = rows.reduce((s, r) => s + r.used, 0);
+            const totalPending = rows.reduce((s, r) => s + r.pending, 0);
+            const totalLeft    = Math.max(0, totalAlloc - totalUsed - totalPending);
+            const color        = avatarColor(`${emp.firstName}${emp.lastName}`);
+
+            return (
+              <div key={emp.id} className="rounded-lg border bg-card overflow-hidden">
+                {/* ── Collapsed header ── */}
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+                  onClick={() => { toggle(emp.id); }}
+                >
+                  {/* Avatar */}
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${color}`}>
+                    {initials(emp.firstName, emp.lastName)}
+                  </div>
+
+                  {/* Name + code */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {emp.firstName} {emp.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{emp.employeeCode}</p>
+                  </div>
+
+                  {/* Summary stats — hidden on mobile */}
+                  <div className="hidden sm:flex items-center gap-5 mr-2 text-xs">
+                    <div className="text-center min-w-12">
+                      <p className="font-semibold">{totalAlloc}</p>
+                      <p className="text-muted-foreground">Allocated</p>
+                    </div>
+                    <div className="text-center min-w-12">
+                      <p className={`font-semibold ${totalUsed > 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                        {totalUsed}
+                      </p>
+                      <p className="text-muted-foreground">Used</p>
+                    </div>
+                    <div className="text-center min-w-12">
+                      <p className={`font-semibold ${totalPending > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                        {totalPending}
+                      </p>
+                      <p className="text-muted-foreground">Pending</p>
+                    </div>
+                    <div className="text-center min-w-12">
+                      <p className={`font-semibold ${totalLeft === 0 && totalAlloc > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                        {totalLeft}
+                      </p>
+                      <p className="text-muted-foreground">Remaining</p>
+                    </div>
+                    <div className="text-center min-w-8">
+                      <p className="font-semibold text-muted-foreground">{rows.length}</p>
+                      <p className="text-muted-foreground">Types</p>
+                    </div>
+                  </div>
+
+                  {/* Expand chevron */}
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`}
+                  />
+                </button>
+
+                {/* ── Expanded detail table ── */}
+                {isOpen && (
+                  <div className="border-t">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/30 text-xs font-medium text-muted-foreground">
+                            <th className="px-4 py-2 text-left">Leave Type</th>
+                            <th className="px-4 py-2 text-right">Allocated</th>
+                            <th className="px-4 py-2 text-right">Used</th>
+                            <th className="px-4 py-2 text-right">Pending</th>
+                            <th className="px-4 py-2 text-right">Remaining</th>
+                            <th className="w-10 px-2 py-2" />
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {rows.map((bal) => {
+                            const rem = Math.max(0, bal.allocated - bal.used - bal.pending);
+                            return (
+                              <tr key={bal.leaveTypeId} className="hover:bg-muted/20">
+                                <td className="px-4 py-2.5 font-medium">{bal.leaveType.name}</td>
+                                <td className="px-4 py-2.5 text-right">{bal.allocated}</td>
+                                <td className={`px-4 py-2.5 text-right ${bal.used > 0 ? 'text-orange-500 font-medium' : 'text-muted-foreground'}`}>
+                                  {bal.used}
+                                </td>
+                                <td className={`px-4 py-2.5 text-right ${bal.pending > 0 ? 'text-amber-500 font-medium' : 'text-muted-foreground'}`}>
+                                  {bal.pending}
+                                </td>
+                                <td className={`px-4 py-2.5 text-right font-semibold ${rem === 0 && bal.allocated > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                  {rem}
+                                </td>
+                                <td className="px-2 py-2.5">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => {
+                                      setEditTarget({
+                                        employee:      emp,
+                                        balance:       bal.id ? bal : null,
+                                        leaveTypeId:   bal.leaveTypeId,
+                                        leaveTypeName: bal.leaveType.name,
+                                        year,
+                                      });
+                                    }}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        {/* Totals footer */}
+                        {rows.length > 1 && (
+                          <tfoot>
+                            <tr className="border-t bg-muted/20 text-xs font-semibold">
+                              <td className="px-4 py-2 text-muted-foreground uppercase tracking-wide">Total</td>
+                              <td className="px-4 py-2 text-right">{totalAlloc}</td>
+                              <td className={`px-4 py-2 text-right ${totalUsed > 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>{totalUsed}</td>
+                              <td className={`px-4 py-2 text-right ${totalPending > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>{totalPending}</td>
+                              <td className={`px-4 py-2 text-right ${totalLeft === 0 && totalAlloc > 0 ? 'text-red-500' : 'text-green-600'}`}>{totalLeft}</td>
+                              <td />
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <EditBalanceDialog target={editTarget} onClose={() => { setEditTarget(null); }} />
     </div>
