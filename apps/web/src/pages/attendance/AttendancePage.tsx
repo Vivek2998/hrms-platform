@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -305,8 +306,8 @@ export default function AttendancePage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear]   = useState(now.getFullYear());
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL');
-  const [viewMode, setViewMode]         = useState<ViewMode>('list');
+  const [statusFilter, setStatusFilter] = useSessionStorageState<AttendanceStatus | 'ALL'>('attendance_status', 'ALL');
+  const [viewMode, setViewMode]         = useSessionStorageState<ViewMode>('attendance_view', 'list');
   const [editing, setEditing]           = useState<AttendanceRecord | null>(null);
 
   const role = useAuthStore((s) => s.user?.role);

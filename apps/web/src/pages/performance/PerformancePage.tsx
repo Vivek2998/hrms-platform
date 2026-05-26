@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1442,7 +1443,7 @@ export default function PerformancePage() {
   const isEmployee = !isManagerRole;
 
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(isEmployee ? 'scorecard' : 'overview');
+  const [activeTab, setActiveTab] = useSessionStorageState<string>('performance_tab', isEmployee ? 'scorecard' : 'overview');
   const { data: cycles } = useCycles();
 
   // Auto-select active cycle on load

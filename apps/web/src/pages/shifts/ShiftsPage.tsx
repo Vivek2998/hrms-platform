@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Plus, Pencil, Trash2, Moon, UserPlus } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -519,7 +520,7 @@ function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
 type ShiftTab = 'shifts' | 'assignments';
 
 export default function ShiftsPage() {
-  const [tab, setTab] = useState<ShiftTab>('shifts');
+  const [tab, setTab] = useSessionStorageState<ShiftTab>('shifts_tab', 'shifts');
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Shift | undefined>();
   const [deleting, setDeleting] = useState<Shift | undefined>();

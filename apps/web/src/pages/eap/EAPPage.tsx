@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Heart, DollarSign, Scale, Leaf, AlertTriangle, Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +63,7 @@ export default function EAPPage() {
   const user = useAuthStore((s) => s.user);
   const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(user?.role ?? '');
 
-  const [activeCategory, setActiveCategory] = useState<Category>('ALL');
+  const [activeCategory, setActiveCategory] = useSessionStorageState<Category>('eap_category', 'ALL');
   const { data: resources = [], isLoading } = useEAPResources(
     activeCategory === 'ALL' ? undefined : activeCategory
   );

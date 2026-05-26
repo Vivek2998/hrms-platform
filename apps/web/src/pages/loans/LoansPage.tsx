@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -79,7 +80,7 @@ export default function LoansPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<LoanRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useSessionStorageState<string>('loans_status', 'ALL');
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),

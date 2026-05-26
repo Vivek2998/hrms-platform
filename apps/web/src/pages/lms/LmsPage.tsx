@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { BookOpen, Plus, Play, CheckCircle, Clock, Users, ExternalLink, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ function formatDuration(mins: number) {
 }
 
 export default function LmsPage() {
-  const [tab, setTab] = useState<Tab>('catalog');
+  const [tab, setTab] = useSessionStorageState<Tab>('lms_tab', 'catalog');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const user = useAuthStore((s) => s.user);

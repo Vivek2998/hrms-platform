@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { cn } from '@/lib/utils';
 import { Building2, Camera, CreditCard, Home, Loader2, MapPin, Pencil, Phone, User, X } from 'lucide-react';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
@@ -128,7 +129,7 @@ export default function SettingsPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(blankForm());
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useSessionStorageState<SettingsTab>('settings_tab', 'profile');
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()

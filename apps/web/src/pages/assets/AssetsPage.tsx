@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -57,7 +58,7 @@ export default function AssetsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [assignTarget, setAssignTarget] = useState<Asset | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useSessionStorageState<string>('assets_status', 'ALL');
   const [search, setSearch] = useState('');
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(createSchema) });

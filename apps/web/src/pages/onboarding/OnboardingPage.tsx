@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -357,7 +358,7 @@ type Tab = 'assignments' | 'templates';
 export default function OnboardingPage() {
   const role = useAuthStore((s) => s.user?.role);
   const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role ?? '');
-  const [tab, setTab] = useState<Tab>('assignments');
+  const [tab, setTab] = useSessionStorageState<Tab>('onboarding_tab', 'assignments');
   const [showCreate, setShowCreate] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { FileSignature, Send, Check, X, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +36,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 };
 
 export default function ESignaturePage() {
-  const [tab, setTab] = useState<Tab>('pending');
+  const [tab, setTab] = useSessionStorageState<Tab>('esignature_tab', 'pending');
   const [showRequest, setShowRequest] = useState(false);
   const [signTarget, setSignTarget] = useState<ESignatureRequest | null>(null);
 

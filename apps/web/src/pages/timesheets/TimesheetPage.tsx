@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Clock, Plus, Send, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +26,7 @@ function getWeekStart(date: Date) {
 }
 
 export default function TimesheetPage() {
-  const [tab, setTab] = useState<'my' | 'all'>('my');
+  const [tab, setTab] = useSessionStorageState<'my' | 'all'>('timesheet_tab', 'my');
   const [weekDate, setWeekDate] = useState(new Date());
   const [showNewProject, setShowNewProject] = useState(false);
   const weekStart = getWeekStart(weekDate);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -81,7 +82,7 @@ export default function TravelPage() {
   const [rejectTarget, setRejectTarget] = useState<TravelRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [cancelTarget, setCancelTarget] = useState<TravelRequest | null>(null);
-  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useSessionStorageState<string>('travel_status', 'ALL');
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),

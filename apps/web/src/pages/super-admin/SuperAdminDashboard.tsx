@@ -390,7 +390,7 @@ function ReviewDialog({ request, onClose }: ReviewDialogProps) {
 
 function CodeRequestsTab() {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<'PENDING' | 'ALL'>('PENDING');
+  const [filter, setFilter] = useSessionStorageState<'PENDING' | 'ALL'>('super_admin_code_filter', 'PENDING');
   const [reviewing, setReviewing] = useState<CodeRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<CodeRequest[]>({
@@ -629,7 +629,7 @@ function ReviewOrgChartDialog({ request, onClose }: { request: OrgChartRequest; 
 
 function OrgChartRequestsTab() {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<'PENDING' | 'ALL'>('PENDING');
+  const [filter, setFilter] = useSessionStorageState<'PENDING' | 'ALL'>('super_admin_chart_filter', 'PENDING');
   const [reviewing, setReviewing] = useState<OrgChartRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<OrgChartRequest[]>({

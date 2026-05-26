@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import {
   ChevronDown, Network, Printer, Users, Building2, RefreshCw,
   Plus, ZoomIn, ZoomOut, Maximize2, UserPlus, CheckCircle2, XCircle, Clock,
@@ -539,7 +540,7 @@ export default function OrgChartPage() {
   const { mutateAsync: approveRequest, isPending: approving } = useApproveOrgChartChangeRequest();
   const { mutateAsync: rejectRequest,  isPending: rejecting  } = useRejectOrgChartChangeRequest();
 
-  const [activeTab,         setActiveTab]         = useState<'reporting' | 'positions'>('positions');
+  const [activeTab,         setActiveTab]         = useSessionStorageState<'reporting' | 'positions'>('org_chart_tab', 'positions');
   const [showIndustryModal, setShowIndustryModal] = useState(false);
   const [selectedIndustry,  setSelectedIndustry]  = useState<IndustryType>('IT_SOFTWARE');
   // ORG_ADMIN request form state

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Users, Plus, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +26,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 };
 
 export default function HeadcountPage() {
-  const [tab, setTab] = useState<'plans' | 'positions'>('plans');
+  const [tab, setTab] = useSessionStorageState<'plans' | 'positions'>('headcount_tab', 'plans');
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [showPositionDialog, setShowPositionDialog] = useState(false);
   const { data: plans, isLoading: plansLoading } = useHeadcountPlans();

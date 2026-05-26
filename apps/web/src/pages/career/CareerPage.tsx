@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Map, Plus, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,7 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 
 export default function CareerPage() {
-  const [tab, setTab] = useState<'map' | 'designations'>('map');
+  const [tab, setTab] = useSessionStorageState<'map' | 'designations'>('career_tab', 'map');
   const [showNewDesignation, setShowNewDesignation] = useState(false);
   const [showNewPath, setShowNewPath] = useState(false);
   const { data: designations, isLoading: desLoading } = useDesignations();

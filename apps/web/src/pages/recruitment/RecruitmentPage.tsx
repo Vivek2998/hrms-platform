@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -234,7 +235,7 @@ function JobOpeningsTab() {
 }
 
 function ApplicationsTab() {
-  const [stageFilter, setStageFilter] = useState<ApplicationStage | 'ALL'>('ALL');
+  const [stageFilter, setStageFilter] = useSessionStorageState<ApplicationStage | 'ALL'>('recruitment_stage', 'ALL');
   const { data: applications, isLoading } = useApplications(undefined, stageFilter === 'ALL' ? undefined : stageFilter);
   const { mutateAsync: updateStage } = useUpdateApplicationStage();
 
