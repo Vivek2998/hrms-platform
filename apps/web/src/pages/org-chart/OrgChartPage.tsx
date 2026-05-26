@@ -704,18 +704,16 @@ export default function OrgChartPage() {
 
         {/* ── Pending request status (Org Admin only) ── */}
         {isOrgAdmin && !pendingLoading && pendingRequest && (
-          <Card className="no-print border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
-            <CardContent className="flex items-center gap-3 py-3">
-              <Clock className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                Your request to switch to{' '}
-                <span className="font-semibold">
-                  {INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry}
-                </span>
-                {' '}is awaiting Super Admin approval.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="no-print flex items-center gap-3 rounded-lg border border-indigo-300 bg-indigo-100 px-4 py-3 dark:border-indigo-700 dark:bg-indigo-900/50">
+            <Clock className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" />
+            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+              Your request to switch to{' '}
+              <span className="font-semibold underline decoration-dotted">
+                {INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry}
+              </span>
+              {' '}is awaiting Super Admin approval.
+            </p>
+          </div>
         )}
 
         {/* Tabs */}
