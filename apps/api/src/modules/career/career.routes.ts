@@ -23,6 +23,51 @@ const pathSchema = z.object({
   notes: z.string().optional(),
 });
 
+// ─────────────────────────────────────────────────────────────
+// AUTO-MATCH HELPER
+// Fuzzy-matches an employee's free-text designation string against
+// the list of seeded positions.  Returns the best matching position
+// ID, or null if nothing is close enough.
+//
+// Algorithm:
+//   1. Exact case-insensitive match → instant win
+//   2. Token-level F1 score (precision × recall harmonic mean)
+//      Tiebreaker: prefer the position with the higher `level`
+//      value (more junior/specific role) so e.g. "Engineer" maps
+//      to "Software Engineer" (level 7) rather than a broad lead.
+//   Minimum threshold: F1 ≥ 0.35
+// ─────────────────────────────────────────────────────────────
+function autoMatchDesignation(
+  empDesig: string,
+  positions: { id: string; name: string; level: number }[],
+): string | null {
+  const emp = empDesig.toLowerCase().trim();
+  if (!emp) return null;
+
+  // Step 1: exact match
+  const exact = positions.find((p) => p.name.toLowerCase().trim() === emp);
+  if (exact) return exact.id;
+
+  // Step 2: token F1
+  const empTokens = emp.split(/\W+/).filter((w) => w.length > 1);
+  if (empTokens.length === 0) return null;
+
+  let best: { id: string; score: number; level: number } | null = null;
+  for (const pos of positions) {
+    const posTokens = pos.name.toLowerCase().split(/\W+/).filter((w) => w.length > 1);
+    if (posTokens.length === 0) continue;
+    const hits = empTokens.filter((t) => posTokens.includes(t)).length;
+    if (hits === 0) continue;
+    const prec = hits / posTokens.length;
+    const rec  = hits / empTokens.length;
+    const f1   = (2 * prec * rec) / (prec + rec);
+    if (!best || f1 > best.score || (f1 === best.score && pos.level > best.level)) {
+      best = { id: pos.id, score: f1, level: pos.level };
+    }
+  }
+  return best && best.score >= 0.35 ? best.id : null;
+}
+
 export async function careerRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
 
@@ -160,12 +205,48 @@ export async function careerRoutes(app: FastifyInstance) {
     }
 
     const count = keyToId.size;
-    return reply.send(ok({ seeded: count, industry, template: industry }));
+
+    // ── Auto-link pass ──────────────────────────────────────────
+    // After seeding, find all active employees whose designationId is
+    // not yet set and try to match their free-text designation against
+    // the now-known position list.  This covers employees hired before
+    // the chart was initialised, as well as the "Integration Engineer"
+    // → "Software Engineer" fuzzy-match case.
+    const allPositions = await app.prisma.designation.findMany({
+      where: { organizationId: req.user.orgId },
+      select: { id: true, name: true, level: true },
+    });
+
+    const unlinkedEmps = await app.prisma.employee.findMany({
+      where: {
+        organizationId: req.user.orgId,
+        designationId: null,
+        designation: { not: null },
+      },
+      select: { id: true, designation: true },
+    });
+
+    let linked = 0;
+    for (const emp of unlinkedEmps) {
+      if (!emp.designation) continue;
+      const matchId = autoMatchDesignation(emp.designation, allPositions);
+      if (matchId) {
+        await app.prisma.employee.update({ where: { id: emp.id }, data: { designationId: matchId } });
+        linked++;
+      }
+    }
+
+    return reply.send(ok({ seeded: count, linked, industry, template: industry }));
   });
 
   // ── GET /designations/with-employees ──────────────────────
   // Full position chart: designations + which employees fill them.
-  // Used exclusively by the org chart page.
+  // Employees linked via FK (designationId) are always included.
+  // Employees with no FK but a free-text designation that fuzzy-matches
+  // a position are soft-matched and included automatically — this handles
+  // employees hired before the chart was initialised (e.g. "Integration
+  // Engineer" → "Software Engineer") and newly hired employees before
+  // the nightly FK sync runs.
   app.get('/designations/with-employees', auth, async (req, reply) => {
     const designations = await app.prisma.designation.findMany({
       where: { organizationId: req.user.orgId },
@@ -180,7 +261,43 @@ export async function careerRoutes(app: FastifyInstance) {
       },
       orderBy: [{ level: 'asc' }, { name: 'asc' }],
     });
-    return reply.send(ok(designations));
+
+    // Soft-match: pick up employees that have free-text designation but no FK
+    const positionList = designations.map((d) => ({ id: d.id, name: d.name, level: d.level }));
+
+    const unlinked = await app.prisma.employee.findMany({
+      where: {
+        organizationId: req.user.orgId,
+        status: 'ACTIVE',
+        deletedAt: null,
+        designationId: null,
+        designation: { not: null },
+      },
+      select: {
+        id: true, firstName: true, lastName: true,
+        avatarUrl: true, employeeCode: true, designation: true,
+      },
+    });
+
+    // Build designationId → soft-matched employees map
+    const softMap = new Map<string, { id: string; firstName: string; lastName: string; avatarUrl: string | null; employeeCode: string }[]>();
+    for (const emp of unlinked) {
+      if (!emp.designation) continue;
+      const matchId = autoMatchDesignation(emp.designation, positionList);
+      if (!matchId) continue;
+      if (!softMap.has(matchId)) softMap.set(matchId, []);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { designation: _d, ...rest } = emp;
+      softMap.get(matchId)!.push(rest);
+    }
+
+    // Merge into result (FK-linked first, then soft-matched)
+    const result = designations.map((d) => ({
+      ...d,
+      employees: [...d.employees, ...(softMap.get(d.id) ?? [])],
+    }));
+
+    return reply.send(ok(result));
   });
 
   // ── Career Paths ───────────────────────────────────────────

@@ -155,7 +155,7 @@ function ChartCanvas({ children, contentKey }: { children: React.ReactNode; cont
     <div
       ref={containerRef}
       className={cn(
-        'relative h-[72vh] overflow-hidden rounded-xl border bg-muted/10',
+        'relative h-[calc(100vh-22rem)] min-h-105 overflow-hidden rounded-xl border bg-muted/10',
         dragging ? 'cursor-grabbing' : 'cursor-grab',
       )}
       onMouseDown={onMouseDown}
