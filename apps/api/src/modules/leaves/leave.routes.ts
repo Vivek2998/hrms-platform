@@ -621,7 +621,16 @@ export function leaveRoutes(app: FastifyInstance) {
           designation: true,
           leaveBalances: {
             where: { year },
-            include: { leaveType: { select: { id: true, name: true, code: true } } },
+            select: {
+              id:          true,
+              leaveTypeId: true,
+              year:        true,
+              allocated:   true,
+              used:        true,
+              pending:     true,
+              carried:     true,
+              leaveType:   { select: { id: true, name: true, code: true } },
+            },
           },
         },
         orderBy: { firstName: 'asc' },

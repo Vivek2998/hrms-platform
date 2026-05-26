@@ -673,6 +673,7 @@ model Employee {
   attritionScore           AttritionScore?
   esopGrants               EsopGrant[]
   employeeCodeRequests     EmployeeCodeChangeRequest[]
+  leaveBalances            LeaveBalance[]
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -832,6 +833,7 @@ model LeaveBalance {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  employee  Employee  @relation(fields: [employeeId],  references: [id])
   leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
 
   @@unique([organizationId, employeeId, leaveTypeId, year])
