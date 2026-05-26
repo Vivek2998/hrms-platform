@@ -440,34 +440,30 @@ function LeaveBalancesPanel() {
                     <p className="text-xs text-muted-foreground">{emp.employeeCode}</p>
                   </div>
 
-                  {/* Summary stats — hidden on mobile */}
-                  <div className="hidden sm:flex items-center gap-5 mr-2 text-xs">
-                    <div className="text-center min-w-12">
-                      <p className="font-semibold">{totalAlloc}</p>
-                      <p className="text-muted-foreground">Allocated</p>
-                    </div>
-                    <div className="text-center min-w-12">
-                      <p className={`font-semibold ${totalUsed > 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                        {totalUsed}
-                      </p>
-                      <p className="text-muted-foreground">Used</p>
-                    </div>
-                    <div className="text-center min-w-12">
-                      <p className={`font-semibold ${totalPending > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                        {totalPending}
-                      </p>
-                      <p className="text-muted-foreground">Pending</p>
-                    </div>
-                    <div className="text-center min-w-12">
-                      <p className={`font-semibold ${totalLeft === 0 && totalAlloc > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                        {totalLeft}
-                      </p>
-                      <p className="text-muted-foreground">Remaining</p>
-                    </div>
-                    <div className="text-center min-w-8">
-                      <p className="font-semibold text-muted-foreground">{rows.length}</p>
-                      <p className="text-muted-foreground">Types</p>
-                    </div>
+                  {/* Per-type chips — each shows code + remaining days */}
+                  <div className="hidden sm:flex flex-wrap items-center gap-1.5 mr-2">
+                    {rows.map((bal) => {
+                      const rem = Math.max(0, bal.allocated - bal.used - bal.pending);
+                      const exhausted = rem === 0 && bal.allocated > 0;
+                      const hasActivity = bal.used > 0 || bal.pending > 0;
+                      return (
+                        <span
+                          key={bal.leaveTypeId}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium
+                            ${exhausted
+                              ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400'
+                              : hasActivity
+                                ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                                : 'border-border bg-muted/40 text-muted-foreground'
+                            }`}
+                        >
+                          <span>{bal.leaveType.code}</span>
+                          <span className={`font-bold ${exhausted ? 'text-red-600 dark:text-red-400' : hasActivity ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>
+                            {rem}
+                          </span>
+                        </span>
+                      );
+                    })}
                   </div>
 
                   {/* Expand chevron */}
