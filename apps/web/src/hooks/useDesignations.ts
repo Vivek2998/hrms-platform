@@ -26,6 +26,16 @@ export interface DesignationWithEmployees extends Designation {
   }[];
 }
 
+export interface PendingOrgChartRequest {
+  id: string;
+  currentIndustry: string;
+  requestedIndustry: string;
+  reason: string | null;
+  status: string;
+  createdAt: string;
+  requestedBy: { firstName: string; lastName: string };
+}
+
 export interface OrgSettings {
   id: string;
   name: string;
@@ -38,6 +48,7 @@ const keys = {
   list: ['designations'] as const,
   withEmployees: ['designations', 'with-employees'] as const,
   settings: ['org-settings', 'general'] as const,
+  changeRequest: ['designations', 'change-request', 'pending'] as const,
 };
 
 export function useDesignations() {
@@ -103,6 +114,60 @@ export function useSeedDesignations() {
       void qc.invalidateQueries({ queryKey: keys.list });
       void qc.invalidateQueries({ queryKey: keys.withEmployees });
     },
+  });
+}
+
+// ── Org Chart Change Requests ──────────────────────────────────────────────
+
+export function useOrgChartPendingRequest() {
+  return useQuery({
+    queryKey: keys.changeRequest,
+    queryFn: async () => {
+      const res = await apiClient.get<ApiResponse<PendingOrgChartRequest | null>>(
+        '/designations/change-request/pending',
+      );
+      return res.data.data;
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useSubmitOrgChartChangeRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { industryType: string; reason?: string }) => {
+      const res = await apiClient.post<ApiResponse<PendingOrgChartRequest>>(
+        '/designations/change-request',
+        data,
+      );
+      return res.data.data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.changeRequest }),
+  });
+}
+
+export function useApproveOrgChartChangeRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, superAdminNote }: { id: string; superAdminNote?: string }) => {
+      await apiClient.post(`/designations/change-request/${id}/approve`, { superAdminNote });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.changeRequest });
+      void qc.invalidateQueries({ queryKey: keys.settings });
+      void qc.invalidateQueries({ queryKey: keys.list });
+      void qc.invalidateQueries({ queryKey: keys.withEmployees });
+    },
+  });
+}
+
+export function useRejectOrgChartChangeRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, superAdminNote }: { id: string; superAdminNote?: string }) => {
+      await apiClient.post(`/designations/change-request/${id}/reject`, { superAdminNote });
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.changeRequest }),
   });
 }
 

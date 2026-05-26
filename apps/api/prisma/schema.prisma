@@ -449,6 +449,7 @@ model Organization {
   esopGrants              EsopGrant[]
   eapResources            EapResource[]
   employeeCodeRequests    EmployeeCodeChangeRequest[]
+  orgChartChangeRequests  OrgChartChangeRequest[]
 
   @@map("organizations")
 }
@@ -493,6 +494,32 @@ model EmployeeCodeChangeRequest {
   @@index([organizationId, status])
   @@index([status])
   @@map("employee_code_change_requests")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORG CHART CHANGE REQUESTS
+// Org admin requests a position template change; super admin approves/rejects.
+// ─────────────────────────────────────────────────────────────
+
+model OrgChartChangeRequest {
+  id                String               @id @default(uuid())
+  organizationId    String
+  requestedById     String
+  currentIndustry   String
+  requestedIndustry String
+  reason            String?
+  status            EmpCodeRequestStatus @default(PENDING)
+  superAdminNote    String?
+  resolvedAt        DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  requestedBy  Employee     @relation(fields: [requestedById], references: [id])
+
+  @@index([organizationId, status])
+  @@index([status])
+  @@map("org_chart_change_requests")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -680,6 +707,7 @@ model Employee {
   attritionScore           AttritionScore?
   esopGrants               EsopGrant[]
   employeeCodeRequests     EmployeeCodeChangeRequest[]
+  orgChartChangeRequests   OrgChartChangeRequest[]
   leaveBalances            LeaveBalance[]
   designationRef           Designation? @relation("EmployeeDesignation", fields: [designationId], references: [id], onDelete: SetNull)
 

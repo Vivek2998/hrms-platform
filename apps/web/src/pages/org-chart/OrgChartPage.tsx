@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronDown, Network, Printer, Users, Building2, RefreshCw,
-  Plus, ZoomIn, ZoomOut, Maximize2, UserPlus,
+  Plus, ZoomIn, ZoomOut, Maximize2, UserPlus, CheckCircle2, XCircle, Clock,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,12 +10,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
 import { useOrgChart } from '@/hooks/useDirectory';
 import type { OrgChartEmployee } from '@/hooks/useDirectory';
 import {
   useDesignationsWithEmployees, useOrgSettings, useUpdateOrgSettings,
   useSeedDesignations, useAssignEmployeeToDesignation,
-  type DesignationWithEmployees,
+  useOrgChartPendingRequest, useSubmitOrgChartChangeRequest,
+  useApproveOrgChartChangeRequest, useRejectOrgChartChangeRequest,
+  type DesignationWithEmployees, type PendingOrgChartRequest,
 } from '@/hooks/useDesignations';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/stores/auth.store';
@@ -526,15 +529,25 @@ export default function OrgChartPage() {
   const isOrgAdmin   = role === 'ORG_ADMIN';
   const canManageChart = isSuperAdmin || isOrgAdmin;
 
-  const { data: employees,           isLoading: empLoading  } = useOrgChart();
-  const { data: positionDesignations, isLoading: posLoading  } = useDesignationsWithEmployees();
+  const { data: employees,            isLoading: empLoading } = useOrgChart();
+  const { data: positionDesignations, isLoading: posLoading } = useDesignationsWithEmployees();
   const { data: orgSettings } = useOrgSettings();
   const { mutateAsync: updateSettings } = useUpdateOrgSettings();
   const { mutateAsync: seed, isPending: seeding } = useSeedDesignations();
+  const { data: pendingRequest, isLoading: pendingLoading } = useOrgChartPendingRequest();
+  const { mutateAsync: submitRequest, isPending: submitting } = useSubmitOrgChartChangeRequest();
+  const { mutateAsync: approveRequest, isPending: approving } = useApproveOrgChartChangeRequest();
+  const { mutateAsync: rejectRequest,  isPending: rejecting  } = useRejectOrgChartChangeRequest();
 
   const [activeTab,         setActiveTab]         = useState<'reporting' | 'positions'>('positions');
   const [showIndustryModal, setShowIndustryModal] = useState(false);
   const [selectedIndustry,  setSelectedIndustry]  = useState<IndustryType>('IT_SOFTWARE');
+  // ORG_ADMIN request form state
+  const [requestReason,    setRequestReason]     = useState('');
+  // SUPER_ADMIN approval note state
+  const [approvalNote,     setApprovalNote]      = useState('');
+  const [showApproveModal, setShowApproveModal]  = useState(false);
+  const [showRejectModal,  setShowRejectModal]   = useState(false);
 
   const reportingRoots = useMemo(() => (employees ? buildTree(employees) : []), [employees]);
   const positionRoots  = useMemo(
@@ -547,6 +560,7 @@ export default function OrgChartPage() {
   const vacantCount   = (positionDesignations ?? []).filter((d) => d.employees.length === 0).length;
   const occupiedCount = (positionDesignations ?? []).filter((d) => d.employees.length > 0).length;
 
+  // Super Admin: direct re-init
   async function handleConfirmReinit() {
     try {
       await updateSettings({ industryType: selectedIndustry });
@@ -554,6 +568,41 @@ export default function OrgChartPage() {
       toast.success(`Re-initialized with ${result.seeded} positions`);
       setShowIndustryModal(false);
     } catch { toast.error('Failed to re-initialize'); }
+  }
+
+  // Org Admin: submit change request
+  async function handleSubmitRequest() {
+    try {
+      await submitRequest({ industryType: selectedIndustry, reason: requestReason || undefined });
+      toast.success('Request submitted — awaiting Super Admin approval');
+      setShowIndustryModal(false);
+      setRequestReason('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit request';
+      toast.error(msg);
+    }
+  }
+
+  // Super Admin: approve pending request
+  async function handleApprove() {
+    if (!pendingRequest) return;
+    try {
+      await approveRequest({ id: pendingRequest.id, superAdminNote: approvalNote || undefined });
+      toast.success('Request approved — chart updated');
+      setShowApproveModal(false);
+      setApprovalNote('');
+    } catch { toast.error('Failed to approve request'); }
+  }
+
+  // Super Admin: reject pending request
+  async function handleReject() {
+    if (!pendingRequest) return;
+    try {
+      await rejectRequest({ id: pendingRequest.id, superAdminNote: approvalNote || undefined });
+      toast.success('Request rejected');
+      setShowRejectModal(false);
+      setApprovalNote('');
+    } catch { toast.error('Failed to reject request'); }
   }
 
   return (
@@ -583,8 +632,11 @@ export default function OrgChartPage() {
           <div className="flex flex-wrap items-center gap-2">
             {canManageChart && hasPositions && (
               <Button size="sm" variant="outline" className="gap-2"
+                disabled={isOrgAdmin && !!pendingRequest}
+                title={isOrgAdmin && !!pendingRequest ? 'A request is already pending approval' : undefined}
                 onClick={() => {
                   setSelectedIndustry((orgSettings?.industryType as IndustryType) ?? 'IT_SOFTWARE');
+                  setRequestReason('');
                   setShowIndustryModal(true);
                 }}
               >
@@ -610,6 +662,60 @@ export default function OrgChartPage() {
               <span className="text-muted-foreground">{vacantCount} vacant</span>
             </div>
           </div>
+        )}
+
+        {/* ── Pending change-request banner (Super Admin only) ── */}
+        {isSuperAdmin && !pendingLoading && pendingRequest && (
+          <Card className="no-print border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+            <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                    Pending template change request
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                    <span className="font-medium">{pendingRequest.requestedBy.firstName} {pendingRequest.requestedBy.lastName}</span>
+                    {' '}has requested to switch from{' '}
+                    <span className="font-medium">{INDUSTRY_LABELS[pendingRequest.currentIndustry as IndustryType] ?? pendingRequest.currentIndustry}</span>
+                    {' '}→{' '}
+                    <span className="font-medium text-amber-900 dark:text-amber-200">
+                      {INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry}
+                    </span>
+                    {pendingRequest.reason && <><br />Reason: <em>"{pendingRequest.reason}"</em></>}
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button size="sm" variant="outline"
+                  className="gap-1.5 border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400"
+                  onClick={() => { setApprovalNote(''); setShowRejectModal(true); }}>
+                  <XCircle className="h-3.5 w-3.5" />Reject
+                </Button>
+                <Button size="sm"
+                  className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => { setApprovalNote(''); setShowApproveModal(true); }}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />Approve
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Pending request status (Org Admin only) ── */}
+        {isOrgAdmin && !pendingLoading && pendingRequest && (
+          <Card className="no-print border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+            <CardContent className="flex items-center gap-3 py-3">
+              <Clock className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                Your request to switch to{' '}
+                <span className="font-semibold">
+                  {INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry}
+                </span>
+                {' '}is awaiting Super Admin approval.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Tabs */}
@@ -706,20 +812,15 @@ export default function OrgChartPage() {
         </div>
       </div>
 
-      {/* Re-initialize / request-change modal (super admin + org admin) */}
-      {canManageChart && (
+      {/* ── Super Admin: Re-initialize modal ── */}
+      {isSuperAdmin && (
         <Dialog open={showIndustryModal} onOpenChange={setShowIndustryModal}>
           <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {isSuperAdmin ? 'Re-initialize Position Template' : 'Request Template Change'}
-              </DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Re-initialize Position Template</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                {isSuperAdmin
-                  ? "Select the organization type to re-seed the hierarchy. Existing positions won't be deleted — only missing ones from the template will be added."
-                  : 'Select the organization type you want applied. Existing positions will be kept and any missing template positions will be added automatically.'}
+                Select the organisation type to re-seed the hierarchy. Existing positions won't be
+                deleted — only missing ones from the template will be added.
               </p>
               <Select value={selectedIndustry} onValueChange={(v) => setSelectedIndustry(v as IndustryType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -733,8 +834,106 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowIndustryModal(false)}>Cancel</Button>
               <Button disabled={seeding} onClick={handleConfirmReinit}>
-                {seeding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isSuperAdmin ? 'Initialize' : 'Submit Request'}
+                {seeding && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}Initialize
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ── Org Admin: Submit change-request modal ── */}
+      {isOrgAdmin && (
+        <Dialog open={showIndustryModal} onOpenChange={setShowIndustryModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>Request Template Change</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Select the organisation type you'd like to switch to. Your Super Admin will
+                receive a notification and must approve before the chart is updated.
+              </p>
+              <Select value={selectedIndustry} onValueChange={(v) => setSelectedIndustry(v as IndustryType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(INDUSTRY_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Textarea
+                placeholder="Reason for change (optional)"
+                value={requestReason}
+                onChange={(e) => setRequestReason(e.target.value)}
+                maxLength={500}
+                rows={3}
+                className="resize-none text-sm"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowIndustryModal(false)}>Cancel</Button>
+              <Button disabled={submitting} onClick={handleSubmitRequest}>
+                {submitting && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}Submit Request
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ── Super Admin: Approve modal ── */}
+      {isSuperAdmin && (
+        <Dialog open={showApproveModal} onOpenChange={setShowApproveModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>Approve Template Change</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                This will immediately update the organisation chart to{' '}
+                <span className="font-semibold text-foreground">
+                  {pendingRequest ? (INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry) : ''}
+                </span>.
+                Existing positions are preserved; missing template positions will be added.
+              </p>
+              <Textarea
+                placeholder="Optional note to the Org Admin"
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+                maxLength={500}
+                rows={2}
+                className="resize-none text-sm"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowApproveModal(false)}>Cancel</Button>
+              <Button disabled={approving} className="bg-green-600 hover:bg-green-700 text-white" onClick={handleApprove}>
+                {approving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />Approve
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ── Super Admin: Reject modal ── */}
+      {isSuperAdmin && (
+        <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>Reject Template Change</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                The Org Admin will be notified that their request was not approved.
+              </p>
+              <Textarea
+                placeholder="Reason for rejection (recommended)"
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+                maxLength={500}
+                rows={3}
+                className="resize-none text-sm"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
+              <Button variant="destructive" disabled={rejecting} onClick={handleReject}>
+                {rejecting && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                <XCircle className="mr-1.5 h-4 w-4" />Reject Request
               </Button>
             </DialogFooter>
           </DialogContent>

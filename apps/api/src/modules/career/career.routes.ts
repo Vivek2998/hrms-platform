@@ -2,6 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ok, fail } from '../../lib/response.js';
 import { INDUSTRY_TEMPLATES, type IndustryType } from '../../lib/industry-templates.js';
+import { sendEmail, orgChartRequestToSuperAdminEmail, orgChartDecisionEmail } from '../../lib/email.js';
+
+const INDUSTRY_TYPES = [
+  'IT_SOFTWARE', 'MANUFACTURING', 'HEALTHCARE', 'FINANCIAL_SERVICES',
+  'RETAIL', 'EDUCATIONAL', 'SERVICE_BASED', 'GENERAL',
+] as const;
 
 const HR_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] as const;
 
@@ -298,6 +304,202 @@ export async function careerRoutes(app: FastifyInstance) {
     }));
 
     return reply.send(ok(result));
+  });
+
+  // ── Org Chart Change Requests ─────────────────────────────────────────────
+
+  // POST /designations/change-request — ORG_ADMIN submits a template change request
+  app.post('/designations/change-request', auth, async (req, reply) => {
+    if (req.user.role !== 'ORG_ADMIN') throw fail('Only Organisation Admins can request template changes', 403);
+
+    const input = z.object({
+      industryType: z.enum(INDUSTRY_TYPES),
+      reason: z.string().max(500).optional(),
+    }).parse(req.body);
+
+    const org = await app.prisma.organization.findUnique({
+      where: { id: req.user.orgId },
+      select: { id: true, name: true, industryType: true },
+    });
+    if (!org) throw fail('Organization not found', 404);
+    if (input.industryType === org.industryType) {
+      throw fail('The requested template is the same as the current one — no change needed', 400);
+    }
+
+    const existing = await app.prisma.orgChartChangeRequest.findFirst({
+      where: { organizationId: org.id, status: 'PENDING' },
+    });
+    if (existing) throw fail('A pending request already exists. Wait for the Super Admin to review it first.', 409);
+
+    const requester = await app.prisma.employee.findUnique({
+      where: { id: req.user.sub },
+      select: { firstName: true, lastName: true, workEmail: true },
+    });
+
+    const request = await app.prisma.orgChartChangeRequest.create({
+      data: {
+        organizationId: org.id,
+        requestedById: req.user.sub,
+        currentIndustry: org.industryType,
+        requestedIndustry: input.industryType,
+        reason: input.reason,
+      },
+    });
+
+    // Notify super admins by email (fire-and-forget)
+    const superAdmins = await app.prisma.superAdmin.findMany({ select: { email: true, name: true } });
+    for (const sa of superAdmins) {
+      void sendEmail(
+        sa.email,
+        `[Action Required] Org Chart Template Change Request — ${org.name}`,
+        orgChartRequestToSuperAdminEmail({
+          superAdminName: sa.name,
+          orgName: org.name,
+          adminName: requester ? `${requester.firstName} ${requester.lastName}` : 'Org Admin',
+          currentIndustry: org.industryType,
+          requestedIndustry: input.industryType,
+          reason: input.reason,
+        }),
+      );
+    }
+
+    return reply.status(201).send(ok(request));
+  });
+
+  // GET /designations/change-request/pending — returns this org's pending request (if any)
+  app.get('/designations/change-request/pending', auth, async (req, reply) => {
+    const request = await app.prisma.orgChartChangeRequest.findFirst({
+      where: { organizationId: req.user.orgId, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, currentIndustry: true, requestedIndustry: true,
+        reason: true, status: true, createdAt: true,
+        requestedBy: { select: { firstName: true, lastName: true } },
+      },
+    });
+    return reply.send(ok(request ?? null));
+  });
+
+  // POST /designations/change-request/:id/approve — SUPER_ADMIN approves + seeds new template
+  app.post('/designations/change-request/:id/approve', auth, async (req, reply) => {
+    if (req.user.role !== 'SUPER_ADMIN') throw fail('Forbidden', 403);
+
+    const { id } = req.params as { id: string };
+    const input = z.object({ superAdminNote: z.string().max(500).optional() }).parse(req.body ?? {});
+
+    const changeReq = await app.prisma.orgChartChangeRequest.findFirst({
+      where: { id, organizationId: req.user.orgId },
+      include: {
+        requestedBy: { select: { firstName: true, lastName: true, workEmail: true } },
+      },
+    });
+    if (!changeReq) throw fail('Request not found', 404);
+    if (changeReq.status !== 'PENDING') throw fail('Request is no longer pending', 409);
+
+    const org = await app.prisma.organization.findUnique({
+      where: { id: req.user.orgId },
+      select: { name: true },
+    });
+
+    // 1. Update org industry type
+    await app.prisma.organization.update({
+      where: { id: req.user.orgId },
+      data: { industryType: changeReq.requestedIndustry },
+    });
+
+    // 2. Seed the new template (same logic as /designations/seed)
+    const template = INDUSTRY_TEMPLATES[changeReq.requestedIndustry as IndustryType];
+    if (template) {
+      const keyToId = new Map<string, string>();
+      for (const pos of template) {
+        const existing = await app.prisma.designation.findFirst({
+          where: { organizationId: req.user.orgId, templateKey: pos.key },
+          select: { id: true },
+        });
+        if (existing) { keyToId.set(pos.key, existing.id); continue; }
+        const byName = await app.prisma.designation.findFirst({
+          where: { organizationId: req.user.orgId, name: pos.title },
+          select: { id: true },
+        });
+        if (byName) {
+          await app.prisma.designation.update({ where: { id: byName.id }, data: { templateKey: pos.key, level: pos.level, department: pos.department ?? undefined } });
+          keyToId.set(pos.key, byName.id);
+          continue;
+        }
+        const created = await app.prisma.designation.create({
+          data: { organizationId: req.user.orgId, name: pos.title, level: pos.level, department: pos.department, templateKey: pos.key },
+        });
+        keyToId.set(pos.key, created.id);
+      }
+      for (const pos of template) {
+        if (!pos.parentKey) continue;
+        const pid = keyToId.get(pos.key);
+        const parentId = keyToId.get(pos.parentKey);
+        if (pid && parentId) await app.prisma.designation.update({ where: { id: pid }, data: { parentId } });
+      }
+    }
+
+    // 3. Mark request resolved
+    await app.prisma.orgChartChangeRequest.update({
+      where: { id },
+      data: { status: 'APPROVED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+    });
+
+    // 4. Notify org admin by email
+    if (changeReq.requestedBy.workEmail) {
+      void sendEmail(
+        changeReq.requestedBy.workEmail,
+        `Your Org Chart Template Change Request has been Approved`,
+        orgChartDecisionEmail({
+          adminName: `${changeReq.requestedBy.firstName} ${changeReq.requestedBy.lastName}`,
+          orgName: org?.name ?? '',
+          requestedIndustry: changeReq.requestedIndustry,
+          status: 'APPROVED',
+          superAdminNote: input.superAdminNote,
+        }),
+      );
+    }
+
+    return reply.send(ok({ approved: true }));
+  });
+
+  // POST /designations/change-request/:id/reject — SUPER_ADMIN rejects
+  app.post('/designations/change-request/:id/reject', auth, async (req, reply) => {
+    if (req.user.role !== 'SUPER_ADMIN') throw fail('Forbidden', 403);
+
+    const { id } = req.params as { id: string };
+    const input = z.object({ superAdminNote: z.string().max(500).optional() }).parse(req.body ?? {});
+
+    const changeReq = await app.prisma.orgChartChangeRequest.findFirst({
+      where: { id, organizationId: req.user.orgId },
+      include: {
+        requestedBy: { select: { firstName: true, lastName: true, workEmail: true } },
+        organization: { select: { name: true } },
+      },
+    });
+    if (!changeReq) throw fail('Request not found', 404);
+    if (changeReq.status !== 'PENDING') throw fail('Request is no longer pending', 409);
+
+    await app.prisma.orgChartChangeRequest.update({
+      where: { id },
+      data: { status: 'REJECTED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+    });
+
+    if (changeReq.requestedBy.workEmail) {
+      void sendEmail(
+        changeReq.requestedBy.workEmail,
+        `Your Org Chart Template Change Request was Not Approved`,
+        orgChartDecisionEmail({
+          adminName: `${changeReq.requestedBy.firstName} ${changeReq.requestedBy.lastName}`,
+          orgName: changeReq.organization.name,
+          requestedIndustry: changeReq.requestedIndustry,
+          status: 'REJECTED',
+          superAdminNote: input.superAdminNote,
+        }),
+      );
+    }
+
+    return reply.send(ok({ rejected: true }));
   });
 
   // ── Career Paths ───────────────────────────────────────────

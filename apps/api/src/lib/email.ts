@@ -179,6 +179,101 @@ export function empCodeDecisionEmail(p: EmpCodeDecisionParams): string {
   `;
 }
 
+// ── Org Chart Template Change: notification to super admin ───────────────────
+
+interface OrgChartRequestParams {
+  superAdminName: string;
+  orgName: string;
+  adminName: string;
+  currentIndustry: string;
+  requestedIndustry: string;
+  reason?: string;
+}
+
+export function orgChartRequestToSuperAdminEmail(p: OrgChartRequestParams): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
+      <h2 style="margin:0 0 16px;color:#4f46e5">Org Chart Template Change Request</h2>
+      <p style="color:#374151">Hi ${p.superAdminName},</p>
+      <p style="color:#374151">
+        <strong>${p.adminName}</strong> from <strong>${p.orgName}</strong> has submitted a
+        request to change their organisation chart template.
+      </p>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;width:160px">Organisation</td>
+            <td style="padding:6px 0;color:#111827;font-weight:600">${p.orgName}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280">Current Template</td>
+            <td style="padding:6px 0;color:#111827;font-weight:600">${p.currentIndustry}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#6b7280">Requested Template</td>
+            <td style="padding:6px 0;color:#4f46e5;font-weight:700">${p.requestedIndustry}</td>
+          </tr>
+          ${p.reason
+            ? `<tr>
+                <td style="padding:6px 0;color:#6b7280;vertical-align:top">Reason</td>
+                <td style="padding:6px 0;color:#374151;font-style:italic">"${p.reason}"</td>
+               </tr>`
+            : ''}
+        </table>
+      </div>
+      <p style="color:#374151">
+        Please log in to the HRMS platform to <strong>Approve</strong> or <strong>Reject</strong> this request.
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
+      <p style="color:#9ca3af;font-size:12px">— HRMS Platform</p>
+    </div>
+  `;
+}
+
+// ── Org Chart Template Change: decision notification to org admin ─────────────
+
+interface OrgChartDecisionParams {
+  adminName: string;
+  orgName: string;
+  requestedIndustry: string;
+  status: 'APPROVED' | 'REJECTED';
+  superAdminNote?: string;
+}
+
+export function orgChartDecisionEmail(p: OrgChartDecisionParams): string {
+  const approved = p.status === 'APPROVED';
+  const color = approved ? '#16a34a' : '#dc2626';
+  const label = approved ? 'Approved' : 'Not Approved';
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
+      <h2 style="margin:0 0 16px;color:${color}">Org Chart Template Change — ${label}</h2>
+      <p style="color:#374151">Hi ${p.adminName},</p>
+      <p style="color:#374151">
+        Your request to change the organisation chart template for <strong>${p.orgName}</strong>
+        has been <strong style="color:${color}">${label.toLowerCase()}</strong>.
+      </p>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0;font-size:14px">
+        <p style="margin:0 0 6px;color:#6b7280">Requested Template</p>
+        <p style="margin:0;font-size:16px;font-weight:700;color:#111827">${p.requestedIndustry}</p>
+      </div>
+      ${p.superAdminNote
+        ? `<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px;margin:16px 0">
+            <p style="margin:0;color:#854d0e;font-size:14px">
+              <strong>Note from administrator:</strong><br/>${p.superAdminNote}
+            </p>
+           </div>`
+        : ''}
+      <p style="color:#374151;font-size:13px;margin-top:24px">
+        ${approved
+          ? 'Your organisation chart has been updated. Positions fill automatically as employees are hired.'
+          : 'If you have questions, please contact your platform administrator.'}
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
+      <p style="color:#9ca3af;font-size:12px">— HRMS Platform</p>
+    </div>
+  `;
+}
+
 export function leaveDecisionEmail(
   firstName: string,
   action: 'APPROVED' | 'REJECTED',
