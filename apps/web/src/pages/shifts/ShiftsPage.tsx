@@ -40,9 +40,11 @@ import {
   useDeleteShift,
   useShiftAssignments,
   useAssignShift,
+  useUpdateShiftAssignment,
   useRemoveShiftAssignment,
   type Shift,
   type ShiftPayload,
+  type ShiftAssignment,
 } from '@/hooks/useShifts';
 import { useEmployees } from '@/hooks/useEmployees';
 
@@ -300,10 +302,118 @@ function AssignShiftDialog({ open, onClose, shifts }: { open: boolean; onClose: 
   );
 }
 
+// ─── Edit Assignment Dialog ───────────────────────────────────────────────────
+
+function toDateInput(iso: string) {
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+function EditAssignmentDialog({
+  open,
+  assignment,
+  shifts,
+  onClose,
+}: {
+  open: boolean;
+  assignment: ShiftAssignment;
+  shifts: Shift[];
+  onClose: () => void;
+}) {
+  const updateMutation = useUpdateShiftAssignment();
+
+  const [form, setForm] = useState({
+    shiftId: assignment.shiftId,
+    effectiveFrom: toDateInput(assignment.effectiveFrom),
+    effectiveTo: assignment.effectiveTo ? toDateInput(assignment.effectiveTo) : '',
+  });
+
+  function handleSubmit() {
+    updateMutation.mutate(
+      {
+        id: assignment.id,
+        shiftId: form.shiftId,
+        effectiveFrom: new Date(form.effectiveFrom + 'T00:00:00.000Z').toISOString(),
+        effectiveTo: form.effectiveTo
+          ? new Date(form.effectiveTo + 'T00:00:00.000Z').toISOString()
+          : null,
+      },
+      { onSuccess: onClose },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Shift Assignment</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {/* Employee info — read-only */}
+          <div className="bg-muted/50 rounded-lg px-4 py-2.5">
+            <p className="text-sm font-medium">
+              {assignment.employee.firstName} {assignment.employee.lastName}
+            </p>
+            <p className="text-muted-foreground text-xs">{assignment.employee.employeeCode}</p>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Shift</Label>
+            <Select
+              value={form.shiftId}
+              onValueChange={(v) => { setForm((f) => ({ ...f, shiftId: v })); }}
+            >
+              <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+              <SelectContent>
+                {shifts.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} ({s.startTime} – {s.endTime})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Effective From</Label>
+            <Input
+              type="date"
+              value={form.effectiveFrom}
+              onChange={(e) => { setForm((f) => ({ ...f, effectiveFrom: e.target.value })); }}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>
+              Effective To{' '}
+              <span className="text-muted-foreground text-xs font-normal">(leave blank = ongoing)</span>
+            </Label>
+            <Input
+              type="date"
+              value={form.effectiveTo}
+              onChange={(e) => { setForm((f) => ({ ...f, effectiveTo: e.target.value })); }}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={updateMutation.isPending || !form.shiftId || !form.effectiveFrom}
+          >
+            {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Assignments Panel ────────────────────────────────────────────────────────
 
 function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
   const [showAssign, setShowAssign] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<ShiftAssignment | undefined>();
   const { data: assignments = [], isLoading } = useShiftAssignments();
   const removeMutation = useRemoveShiftAssignment();
 
@@ -361,15 +471,25 @@ function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
                         {a.effectiveTo ? fmtDate(a.effectiveTo) : 'Ongoing'}
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive h-7 w-7"
-                          disabled={removeMutation.isPending}
-                          onClick={() => { removeMutation.mutate(a.id); }}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => { setEditingAssignment(a); }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive h-7 w-7"
+                            disabled={removeMutation.isPending}
+                            onClick={() => { removeMutation.mutate(a.id); }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -381,6 +501,15 @@ function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
       </Card>
 
       <AssignShiftDialog open={showAssign} onClose={() => { setShowAssign(false); }} shifts={shifts} />
+
+      {editingAssignment && (
+        <EditAssignmentDialog
+          open={true}
+          assignment={editingAssignment}
+          shifts={shifts}
+          onClose={() => { setEditingAssignment(undefined); }}
+        />
+      )}
     </div>
   );
 }

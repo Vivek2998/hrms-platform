@@ -137,6 +137,33 @@ export function useAssignShift() {
   });
 }
 
+export interface UpdateShiftAssignmentInput {
+  id: string;
+  shiftId?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string | null;
+}
+
+export function useUpdateShiftAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: UpdateShiftAssignmentInput) => {
+      const res = await apiClient.patch<ApiResponse<ShiftAssignment>>(
+        `/shifts/assignments/${id}`,
+        data,
+      );
+      return res.data.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: shiftKeys.assignments() });
+      toast.success('Assignment updated');
+    },
+    onError: () => {
+      toast.error('Failed to update assignment');
+    },
+  });
+}
+
 export function useRemoveShiftAssignment() {
   const qc = useQueryClient();
   return useMutation({

@@ -107,6 +107,36 @@ export function shiftRoutes(app: FastifyInstance) {
     return reply.send(paginated(assignments, query.page, query.limit, total));
   });
 
+  // PATCH /shifts/assignments/:id  — edit an existing assignment (change shift / dates)
+  app.patch('/shifts/assignments/:id', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = z
+      .object({
+        shiftId:       z.string().uuid().optional(),
+        effectiveFrom: z.string().datetime().optional(),
+        effectiveTo:   z.string().datetime().nullable().optional(),
+      })
+      .parse(req.body);
+
+    const patch: {
+      shiftId?:       string;
+      effectiveFrom?: Date;
+      effectiveTo?:   Date | null;
+    } = {};
+    if (input.shiftId       !== undefined) patch.shiftId       = input.shiftId;
+    if (input.effectiveFrom !== undefined) patch.effectiveFrom = new Date(input.effectiveFrom);
+    if ('effectiveTo' in input)            patch.effectiveTo   = input.effectiveTo
+      ? new Date(input.effectiveTo)
+      : null;
+
+    const result = await app.prisma.shiftAssignment.updateMany({
+      where: { id, organizationId: req.user.orgId },
+      data: patch,
+    });
+    if (result.count === 0) throw fail('Assignment not found', 404);
+    return reply.send(ok({ message: 'Updated' }));
+  });
+
   // DELETE /shifts/assignments/:id  — remove a shift assignment
   app.delete('/shifts/assignments/:id', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
