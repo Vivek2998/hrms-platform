@@ -385,7 +385,7 @@ function PositionNodeCard({ node, depth = 0, printMode = false }: {
             </span>
           </div>
         )}
-        <div className="px-3 pb-3 pt-1.5">
+        <div className={cn('px-3 pt-1.5', hasKids && !printMode ? 'pb-1' : 'pb-3')}>
           {isEmpty ? (
             <>
               <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted">
@@ -422,8 +422,11 @@ function PositionNodeCard({ node, depth = 0, printMode = false }: {
             </>
           )}
         </div>
+        {/* Chevron centered at card bottom — not floating over content */}
         {hasKids && !printMode && (
-          <ChevronDown className={cn('absolute bottom-1.5 right-1.5 h-3 w-3 text-muted-foreground transition-transform', !open && '-rotate-90')} />
+          <div className="flex justify-center pb-1.5">
+            <ChevronDown className={cn('h-3 w-3 text-muted-foreground/50 transition-transform', !open && '-rotate-90')} />
+          </div>
         )}
       </div>
 
