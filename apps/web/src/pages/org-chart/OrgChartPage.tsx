@@ -243,7 +243,7 @@ function ReportingNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) 
     <div className="flex flex-col items-center">
       <div
         className={cn(
-          'relative w-44 rounded-xl border bg-card p-3 text-center shadow-sm transition-shadow print:border-gray-300 print:shadow-none',
+          'relative w-44 rounded-xl border bg-card p-3 text-center shadow-sm transition-shadow print:border-gray-300 print:shadow-none cursor-default',
           hasKids && 'cursor-pointer hover:shadow-md',
         )}
         onClick={() => { if (hasKids) setOpen((v) => !v); }}
@@ -372,9 +372,9 @@ function PositionNodeCard({ node, depth = 0, printMode = false }: {
     <div className="flex flex-col items-center">
       <div
         className={cn(
-          'relative w-48 rounded-xl border bg-card text-center shadow-sm transition-shadow print:border-gray-300 print:shadow-none',
+          'relative w-48 rounded-xl border bg-card text-center shadow-sm transition-shadow print:border-gray-300 print:shadow-none cursor-default',
           isEmpty ? 'border-dashed border-muted-foreground/30 bg-muted/10' : 'border-solid',
-          hasKids && !printMode && 'hover:shadow-md',
+          hasKids && !printMode && 'cursor-pointer hover:shadow-md',
         )}
         onClick={() => { if (hasKids && !printMode) setOpen((v) => !v); }}
       >
