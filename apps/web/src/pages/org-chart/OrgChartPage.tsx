@@ -704,11 +704,11 @@ export default function OrgChartPage() {
 
         {/* ── Pending request status (Org Admin only) ── */}
         {isOrgAdmin && !pendingLoading && pendingRequest && (
-          <div className="no-print flex items-center gap-3 rounded-lg border border-indigo-300 bg-indigo-100 px-4 py-3 dark:border-indigo-700 dark:bg-indigo-900/50">
-            <Clock className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" />
-            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+          <div className="no-print flex items-start gap-3 rounded-lg bg-indigo-600 px-4 py-3 dark:bg-indigo-700">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-white" />
+            <p className="text-sm font-medium text-white">
               Your request to switch to{' '}
-              <span className="font-bold text-indigo-700 dark:text-indigo-300">
+              <span className="font-bold text-white underline decoration-white/60 decoration-2 underline-offset-2">
                 {INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry}
               </span>
               {' '}is awaiting Super Admin approval.
