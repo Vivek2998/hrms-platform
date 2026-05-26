@@ -708,7 +708,7 @@ export default function OrgChartPage() {
             <Clock className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-300" />
             <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
               Your request to switch to{' '}
-              <span className="font-semibold underline decoration-dotted">
+              <span className="font-bold text-indigo-700 dark:text-indigo-300">
                 {INDUSTRY_LABELS[pendingRequest.requestedIndustry as IndustryType] ?? pendingRequest.requestedIndustry}
               </span>
               {' '}is awaiting Super Admin approval.
