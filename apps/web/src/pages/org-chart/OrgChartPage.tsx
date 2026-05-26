@@ -523,6 +523,8 @@ function IndustrySetupBanner({ currentType, onSeed }: { currentType: string; onS
 export default function OrgChartPage() {
   const role = useAuthStore((s) => s.user?.role);
   const isSuperAdmin = role === 'SUPER_ADMIN';
+  const isOrgAdmin   = role === 'ORG_ADMIN';
+  const canManageChart = isSuperAdmin || isOrgAdmin;
 
   const { data: employees,           isLoading: empLoading  } = useOrgChart();
   const { data: positionDesignations, isLoading: posLoading  } = useDesignationsWithEmployees();
@@ -579,14 +581,15 @@ export default function OrgChartPage() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isSuperAdmin && hasPositions && (
+            {canManageChart && hasPositions && (
               <Button size="sm" variant="outline" className="gap-2"
                 onClick={() => {
                   setSelectedIndustry((orgSettings?.industryType as IndustryType) ?? 'IT_SOFTWARE');
                   setShowIndustryModal(true);
                 }}
               >
-                <RefreshCw className="h-4 w-4" />Re-initialize Template
+                <RefreshCw className="h-4 w-4" />
+                {isSuperAdmin ? 'Re-initialize Template' : 'Request Template Change'}
               </Button>
             )}
             <Button size="sm" variant="outline" className="gap-2" onClick={() => window.print()}>
@@ -627,7 +630,7 @@ export default function OrgChartPage() {
                 {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 w-48 rounded-xl" />)}
               </div>
             ) : !hasPositions ? (
-              isSuperAdmin ? (
+              canManageChart ? (
                 <IndustrySetupBanner currentType={orgSettings?.industryType ?? 'IT_SOFTWARE'} onSeed={() => {}} />
               ) : (
                 <Card>
@@ -635,7 +638,7 @@ export default function OrgChartPage() {
                     <Building2 className="h-12 w-12 text-muted-foreground" />
                     <p className="font-medium">Position chart not set up yet</p>
                     <p className="max-w-sm text-sm text-muted-foreground">
-                      The organization chart will be initialized by your Super Administrator.
+                      The organization chart will be initialized by your Administrator.
                       Filled positions update automatically as employees are hired.
                     </p>
                   </CardContent>
@@ -703,14 +706,20 @@ export default function OrgChartPage() {
         </div>
       </div>
 
-      {/* Re-initialize modal (super admin only) */}
-      {isSuperAdmin && (
+      {/* Re-initialize / request-change modal (super admin + org admin) */}
+      {canManageChart && (
         <Dialog open={showIndustryModal} onOpenChange={setShowIndustryModal}>
           <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Re-initialize Position Template</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>
+                {isSuperAdmin ? 'Re-initialize Position Template' : 'Request Template Change'}
+              </DialogTitle>
+            </DialogHeader>
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Select the organization type to re-seed the hierarchy. Existing positions won't be deleted — only missing ones from the template will be added.
+                {isSuperAdmin
+                  ? "Select the organization type to re-seed the hierarchy. Existing positions won't be deleted — only missing ones from the template will be added."
+                  : 'Select the organization type you want applied. Existing positions will be kept and any missing template positions will be added automatically.'}
               </p>
               <Select value={selectedIndustry} onValueChange={(v) => setSelectedIndustry(v as IndustryType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -724,7 +733,8 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowIndustryModal(false)}>Cancel</Button>
               <Button disabled={seeding} onClick={handleConfirmReinit}>
-                {seeding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}Initialize
+                {seeding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isSuperAdmin ? 'Initialize' : 'Submit Request'}
               </Button>
             </DialogFooter>
           </DialogContent>
