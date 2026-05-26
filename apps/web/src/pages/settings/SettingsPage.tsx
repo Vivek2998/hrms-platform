@@ -166,7 +166,7 @@ export default function SettingsPage() {
     save(
       {
         ...(form.phone ? { phone: form.phone } : {}),
-        ...(form.dateOfBirth ? { dateOfBirth: new Date(form.dateOfBirth).toISOString() } : {}),
+        ...(form.dateOfBirth ? { dateOfBirth: form.dateOfBirth.slice(0, 10) } : {}),
         ...(form.bloodGroup ? { bloodGroup: form.bloodGroup } : {}),
         ...(form.maritalStatus ? { maritalStatus: form.maritalStatus as MyProfile['maritalStatus'] } : {}),
         presentAddress: {

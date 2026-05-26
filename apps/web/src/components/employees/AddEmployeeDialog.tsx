@@ -158,7 +158,10 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
     remove: removeExperience,
   } = useFieldArray({ control: form.control, name: 'experiences' });
 
-  const toIso = (date?: string) => (date ? new Date(date).toISOString() : undefined);
+  // Backend schema expects YYYY-MM-DD (date-only). Never send full ISO datetime
+  // strings (toISOString() → "2000-01-15T00:00:00.000Z") — those fail the
+  // /^\d{4}-\d{2}-\d{2}$/ regex and produce a 400 Bad Request.
+  const toDateStr = (date?: string) => (date?.trim() ? date.slice(0, 10) : undefined);
 
   const onSubmit = (values: FormValues) => {
     const payload = {
@@ -168,7 +171,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
       workEmail: values.workEmail,
       password: values.password,
       phone: values.phone || undefined,
-      dateOfBirth: toIso(values.dateOfBirth),
+      dateOfBirth: toDateStr(values.dateOfBirth),
       gender: values.gender,
       bloodGroup: values.bloodGroup || undefined,
       maritalStatus: values.maritalStatus,
@@ -176,7 +179,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
       designation: values.designation || undefined,
       departmentId: values.departmentId || undefined,
       managerId: values.managerId || undefined,
-      dateOfJoining: toIso(values.dateOfJoining),
+      dateOfJoining: toDateStr(values.dateOfJoining),
       presentAddress:
         values.presentLine1 || values.presentCity
           ? {

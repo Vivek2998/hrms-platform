@@ -198,7 +198,7 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
   }, [open, employee, form]);
 
   const errors = form.formState.errors;
-  const toIso = (date?: string) => (date ? new Date(date).toISOString() : undefined);
+  // Backend expects YYYY-MM-DD — use .slice(0, 10) inline, never .toISOString()
 
   const onSubmit = (values: FormValues) => {
     const p: Partial<Employee> = {
@@ -211,12 +211,12 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
     if (values.gender) p.gender = values.gender;
     if (values.maritalStatus) p.maritalStatus = values.maritalStatus;
     if (values.phone) p.phone = values.phone;
-    if (values.dateOfBirth) p.dateOfBirth = new Date(values.dateOfBirth).toISOString();
+    if (values.dateOfBirth) p.dateOfBirth = values.dateOfBirth.slice(0, 10);
     if (values.bloodGroup) p.bloodGroup = values.bloodGroup;
     if (values.designation) p.designation = values.designation;
     if (values.departmentId) p.departmentId = values.departmentId;
     if (values.managerId) p.managerId = values.managerId;
-    if (values.dateOfJoining) p.dateOfJoining = new Date(values.dateOfJoining).toISOString();
+    if (values.dateOfJoining) p.dateOfJoining = values.dateOfJoining.slice(0, 10);
     if (values.noticePeriodDays) p.noticePeriodDays = parseInt(values.noticePeriodDays);
     if (values.presentLine1 || values.presentCity) {
       const addr: NonNullable<typeof p.presentAddress> = { country: 'IN' };
