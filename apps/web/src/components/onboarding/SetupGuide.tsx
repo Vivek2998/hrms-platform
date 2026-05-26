@@ -22,9 +22,13 @@ export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       {/* Header — always visible, clicking it toggles collapse */}
-      <button
+      {/* div instead of button to avoid invalid nested-button HTML (buttons inside) */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => collapsed ? expandGuide() : collapseGuide()}
-        className="flex w-full items-center gap-3 px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { collapsed ? expandGuide() : collapseGuide(); } }}
+        className="flex w-full items-center gap-3 px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors text-left cursor-pointer"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
           <Rocket className="h-4 w-4 text-primary" />
@@ -58,7 +62,7 @@ export function SetupGuide({ onStartTour }: { onStartTour?: () => void }) {
             <X className="h-4 w-4" />
           </button>
         </div>
-      </button>
+      </div>
 
       {/* Collapsible body — grid-template-rows trick gives a true smooth height animation */}
       <div
