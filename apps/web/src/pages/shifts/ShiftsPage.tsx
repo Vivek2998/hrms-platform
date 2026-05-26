@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Moon, UserPlus, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Moon, UserPlus } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -487,7 +487,7 @@ function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
                             disabled={removeMutation.isPending}
                             onClick={() => { removeMutation.mutate(a.id); }}
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </td>
