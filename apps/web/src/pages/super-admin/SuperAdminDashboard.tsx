@@ -685,7 +685,7 @@ function OrgChartRequestsTab() {
                   <TableHead>Template Change</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
-                  {filter === 'PENDING' && <TableHead className="text-right">Action</TableHead>}
+                  {filter === 'PENDING' && <TableHead className="w-24 text-right">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -725,13 +725,15 @@ function OrgChartRequestsTab() {
                       })}
                     </TableCell>
                     {filter === 'PENDING' && (
-                      <TableCell className="text-right">
-                        {req.status === 'PENDING' && (
-                          <Button size="sm" variant="outline" className="text-xs h-7"
-                            onClick={() => setReviewing(req)}>
-                            Review
-                          </Button>
-                        )}
+                      <TableCell className="w-24">
+                        <div className="flex justify-end">
+                          {req.status === 'PENDING' && (
+                            <Button size="sm" variant="outline" className="text-xs h-7"
+                              onClick={() => setReviewing(req)}>
+                              Review
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
