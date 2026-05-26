@@ -53,6 +53,8 @@ export function useCreateEmployee() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: employeeKeys.all });
+      // Refresh the org chart position chart so new hires appear automatically
+      void qc.invalidateQueries({ queryKey: ['designations', 'with-employees'] });
       toast.success('Employee created successfully');
     },
   });
@@ -70,6 +72,8 @@ export function useUpdateEmployee(id: string) {
         qc.setQueryData(employeeKeys.detail(id), updatedEmployee);
       }
       void qc.invalidateQueries({ queryKey: employeeKeys.all });
+      // Refresh position chart in case designation assignment changed
+      void qc.invalidateQueries({ queryKey: ['designations', 'with-employees'] });
       toast.success('Employee updated successfully');
     },
   });
