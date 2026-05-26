@@ -318,48 +318,98 @@ export function superAdminRoutes(app: FastifyInstance) {
     if (changeReq.status !== 'PENDING') throw fail('This request has already been resolved', 409);
 
     if (input.action === 'APPROVE') {
-      // 1. Update the org's industryType
-      await app.prisma.organization.update({
-        where: { id: changeReq.organizationId },
-        data: { industryType: changeReq.requestedIndustry },
-      });
+      await app.prisma.$transaction(async (tx) => {
+        // 1. Update the org's industryType
+        await tx.organization.update({
+          where: { id: changeReq.organizationId },
+          data: { industryType: changeReq.requestedIndustry },
+        });
 
-      // 2. Seed the new template
-      const template = INDUSTRY_TEMPLATES[changeReq.requestedIndustry as IndustryType];
-      if (template) {
-        const keyToId = new Map<string, string>();
-        for (const pos of template) {
-          const existing = await app.prisma.designation.findFirst({
-            where: { organizationId: changeReq.organizationId, templateKey: pos.key },
-            select: { id: true },
-          });
-          if (existing) { keyToId.set(pos.key, existing.id); continue; }
-          const byName = await app.prisma.designation.findFirst({
-            where: { organizationId: changeReq.organizationId, name: pos.title },
-            select: { id: true },
-          });
-          if (byName) {
-            await app.prisma.designation.update({ where: { id: byName.id }, data: { templateKey: pos.key, level: pos.level, department: pos.department ?? undefined } });
-            keyToId.set(pos.key, byName.id);
-            continue;
+        // 2. Wipe old template positions so the new template starts clean.
+        //
+        //    Strategy:
+        //    a) Clear parentId on ALL template-keyed designations first
+        //       (avoids self-FK constraint violations during delete).
+        //    b) Hard-delete template designations that have no employees — these
+        //       are pure "vacant" slots from the previous template.
+        //    c) For any template designation that still has employees assigned,
+        //       detach it from the template (null out templateKey + parentId) so
+        //       it becomes a standalone custom designation and the employee
+        //       doesn't lose their role.
+
+        // a) Clear parentId links within old template designations
+        await tx.designation.updateMany({
+          where: {
+            organizationId: changeReq.organizationId,
+            templateKey: { not: null },
+          },
+          data: { parentId: null },
+        });
+
+        // b) Delete vacant template designations
+        await tx.designation.deleteMany({
+          where: {
+            organizationId: changeReq.organizationId,
+            templateKey: { not: null },
+            employees: { none: {} },
+          },
+        });
+
+        // c) Detach remaining (employee-occupied) template designations
+        await tx.designation.updateMany({
+          where: {
+            organizationId: changeReq.organizationId,
+            templateKey: { not: null },
+          },
+          data: { templateKey: null },
+        });
+
+        // 3. Seed the new template
+        const template = INDUSTRY_TEMPLATES[changeReq.requestedIndustry as IndustryType];
+        if (template) {
+          const keyToId = new Map<string, string>();
+          for (const pos of template) {
+            // After the wipe above, no templateKey rows remain — skip the
+            // "existing by templateKey" check and go straight to name-match.
+            const byName = await tx.designation.findFirst({
+              where: { organizationId: changeReq.organizationId, name: pos.title },
+              select: { id: true },
+            });
+            if (byName) {
+              await tx.designation.update({
+                where: { id: byName.id },
+                data: { templateKey: pos.key, level: pos.level, department: pos.department ?? undefined },
+              });
+              keyToId.set(pos.key, byName.id);
+              continue;
+            }
+            const created = await tx.designation.create({
+              data: {
+                organizationId: changeReq.organizationId,
+                name: pos.title,
+                level: pos.level,
+                department: pos.department,
+                templateKey: pos.key,
+              },
+            });
+            keyToId.set(pos.key, created.id);
           }
-          const created = await app.prisma.designation.create({
-            data: { organizationId: changeReq.organizationId, name: pos.title, level: pos.level, department: pos.department, templateKey: pos.key },
-          });
-          keyToId.set(pos.key, created.id);
+          // Wire up parent relationships
+          for (const pos of template) {
+            if (!pos.parentKey) continue;
+            const pid = keyToId.get(pos.key);
+            const parentId = keyToId.get(pos.parentKey);
+            if (pid && parentId) {
+              await tx.designation.update({ where: { id: pid }, data: { parentId } });
+            }
+          }
         }
-        for (const pos of template) {
-          if (!pos.parentKey) continue;
-          const pid = keyToId.get(pos.key);
-          const parentId = keyToId.get(pos.parentKey);
-          if (pid && parentId) await app.prisma.designation.update({ where: { id: pid }, data: { parentId } });
-        }
-      }
 
-      // 3. Mark request approved
-      await app.prisma.orgChartChangeRequest.update({
-        where: { id },
-        data: { status: 'APPROVED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+        // 4. Mark request approved
+        await tx.orgChartChangeRequest.update({
+          where: { id },
+          data: { status: 'APPROVED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+        });
       });
 
       void sendEmail(

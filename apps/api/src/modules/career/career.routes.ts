@@ -401,48 +401,76 @@ export async function careerRoutes(app: FastifyInstance) {
       select: { name: true },
     });
 
-    // 1. Update org industry type
-    await app.prisma.organization.update({
-      where: { id: req.user.orgId },
-      data: { industryType: changeReq.requestedIndustry },
-    });
+    await app.prisma.$transaction(async (tx) => {
+      // 1. Update org industry type
+      await tx.organization.update({
+        where: { id: req.user.orgId },
+        data: { industryType: changeReq.requestedIndustry },
+      });
 
-    // 2. Seed the new template (same logic as /designations/seed)
-    const template = INDUSTRY_TEMPLATES[changeReq.requestedIndustry as IndustryType];
-    if (template) {
-      const keyToId = new Map<string, string>();
-      for (const pos of template) {
-        const existing = await app.prisma.designation.findFirst({
-          where: { organizationId: req.user.orgId, templateKey: pos.key },
-          select: { id: true },
-        });
-        if (existing) { keyToId.set(pos.key, existing.id); continue; }
-        const byName = await app.prisma.designation.findFirst({
-          where: { organizationId: req.user.orgId, name: pos.title },
-          select: { id: true },
-        });
-        if (byName) {
-          await app.prisma.designation.update({ where: { id: byName.id }, data: { templateKey: pos.key, level: pos.level, department: pos.department ?? undefined } });
-          keyToId.set(pos.key, byName.id);
-          continue;
+      // 2. Wipe old template positions before seeding the new template.
+      //    a) Clear parentId links to avoid self-FK violations during delete.
+      //    b) Hard-delete vacant template designations (no employees).
+      //    c) Detach occupied ones (keep the designation, remove templateKey).
+      await tx.designation.updateMany({
+        where: { organizationId: req.user.orgId, templateKey: { not: null } },
+        data: { parentId: null },
+      });
+      await tx.designation.deleteMany({
+        where: {
+          organizationId: req.user.orgId,
+          templateKey: { not: null },
+          employees: { none: {} },
+        },
+      });
+      await tx.designation.updateMany({
+        where: { organizationId: req.user.orgId, templateKey: { not: null } },
+        data: { templateKey: null },
+      });
+
+      // 3. Seed the new template
+      const template = INDUSTRY_TEMPLATES[changeReq.requestedIndustry as IndustryType];
+      if (template) {
+        const keyToId = new Map<string, string>();
+        for (const pos of template) {
+          const byName = await tx.designation.findFirst({
+            where: { organizationId: req.user.orgId, name: pos.title },
+            select: { id: true },
+          });
+          if (byName) {
+            await tx.designation.update({
+              where: { id: byName.id },
+              data: { templateKey: pos.key, level: pos.level, department: pos.department ?? undefined },
+            });
+            keyToId.set(pos.key, byName.id);
+            continue;
+          }
+          const created = await tx.designation.create({
+            data: {
+              organizationId: req.user.orgId,
+              name: pos.title,
+              level: pos.level,
+              department: pos.department,
+              templateKey: pos.key,
+            },
+          });
+          keyToId.set(pos.key, created.id);
         }
-        const created = await app.prisma.designation.create({
-          data: { organizationId: req.user.orgId, name: pos.title, level: pos.level, department: pos.department, templateKey: pos.key },
-        });
-        keyToId.set(pos.key, created.id);
+        for (const pos of template) {
+          if (!pos.parentKey) continue;
+          const pid = keyToId.get(pos.key);
+          const parentId = keyToId.get(pos.parentKey);
+          if (pid && parentId) {
+            await tx.designation.update({ where: { id: pid }, data: { parentId } });
+          }
+        }
       }
-      for (const pos of template) {
-        if (!pos.parentKey) continue;
-        const pid = keyToId.get(pos.key);
-        const parentId = keyToId.get(pos.parentKey);
-        if (pid && parentId) await app.prisma.designation.update({ where: { id: pid }, data: { parentId } });
-      }
-    }
 
-    // 3. Mark request resolved
-    await app.prisma.orgChartChangeRequest.update({
-      where: { id },
-      data: { status: 'APPROVED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+      // 4. Mark request resolved
+      await tx.orgChartChangeRequest.update({
+        where: { id },
+        data: { status: 'APPROVED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+      });
     });
 
     // 4. Notify org admin by email
