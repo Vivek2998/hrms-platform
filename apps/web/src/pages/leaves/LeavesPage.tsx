@@ -440,28 +440,28 @@ function LeaveBalancesPanel() {
                     <p className="text-xs text-muted-foreground">{emp.employeeCode}</p>
                   </div>
 
-                  {/* Per-type chips — each shows code + remaining days */}
-                  <div className="hidden sm:flex flex-wrap items-center gap-1.5 mr-2">
-                    {rows.map((bal) => {
+                  {/* Per-type stat columns — number hero, code label, divider between */}
+                  <div className="hidden sm:flex items-center gap-0 mr-3">
+                    {rows.map((bal, i) => {
                       const rem = Math.max(0, bal.allocated - bal.used - bal.pending);
                       const exhausted = rem === 0 && bal.allocated > 0;
-                      const hasActivity = bal.used > 0 || bal.pending > 0;
+                      const active    = bal.used > 0 || bal.pending > 0;
                       return (
-                        <span
-                          key={bal.leaveTypeId}
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium
-                            ${exhausted
-                              ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400'
-                              : hasActivity
-                                ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                                : 'border-border bg-muted/40 text-muted-foreground'
-                            }`}
-                        >
-                          <span>{bal.leaveType.code}</span>
-                          <span className={`font-bold ${exhausted ? 'text-red-600 dark:text-red-400' : hasActivity ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>
-                            {rem}
-                          </span>
-                        </span>
+                        <div key={bal.leaveTypeId} className="flex items-center">
+                          {i > 0 && <div className="mx-3 h-6 w-px bg-border/50" />}
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className={`text-sm font-bold leading-none tabular-nums ${
+                              exhausted ? 'text-red-500'
+                              : active   ? 'text-amber-500'
+                              :            'text-foreground'
+                            }`}>
+                              {rem}
+                            </span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">
+                              {bal.leaveType.code}
+                            </span>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
