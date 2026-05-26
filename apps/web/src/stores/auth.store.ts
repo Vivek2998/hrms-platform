@@ -64,6 +64,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Wipe all UI session state (tab positions, active filters, etc.)
+        // so a different user logging in on the same browser tab starts clean.
+        try {
+          Object.keys(sessionStorage)
+            .filter((k) => k.startsWith('hrms_ui_'))
+            .forEach((k) => sessionStorage.removeItem(k));
+        } catch {
+          // sessionStorage unavailable — ignore
+        }
+
         set({
           user: null,
           accessToken: null,

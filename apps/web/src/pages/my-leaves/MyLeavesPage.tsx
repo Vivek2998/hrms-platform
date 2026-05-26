@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -198,7 +198,7 @@ function ApplyLeaveDialog({ open, onClose }: { open: boolean; onClose: () => voi
 }
 
 export default function MyLeavesPage() {
-  const [tab, setTab] = useSearchParamState<Tab>('tab', 'ALL');
+  const [tab, setTab] = useSessionStorageState<Tab>('my_leaves_tab', 'ALL');
   const [showApply, setShowApply] = useState(false);
 
   const { data, isLoading } = useMyLeaves(tab !== 'ALL' ? tab : undefined);

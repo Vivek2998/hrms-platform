@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { CheckCircle, XCircle, Inbox, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +36,7 @@ const TYPE_META: Record<ApprovalItemType, { label: string; color: string }> = {
 };
 
 export default function ApprovalInboxPage() {
-  const [activeType, setActiveType] = useSearchParamState<FilterType>('type', 'ALL');
+  const [activeType, setActiveType] = useSessionStorageState<FilterType>('approval_type', 'ALL');
   const { data: items, isLoading, refetch } = useApprovalInbox(
     activeType === 'ALL' ? undefined : activeType
   );

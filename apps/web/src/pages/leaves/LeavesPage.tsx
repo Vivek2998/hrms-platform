@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Plus, CheckCircle, XCircle, ChevronLeft, ChevronRight, Pencil, Zap, Download, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -412,8 +412,8 @@ function LeaveBalancesPanel() {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function LeavesPage() {
-  const [section, setSection] = useSearchParamState<Section>('section', 'requests');
-  const [tab, setTab] = useSearchParamState<Tab>('tab', 'PENDING');
+  const [section, setSection] = useSessionStorageState<Section>('leaves_section', 'requests');
+  const [tab, setTab] = useSessionStorageState<Tab>('leaves_tab', 'PENDING');
   const [showAddType, setShowAddType] = useState(false);
   const [approvalTarget, setApprovalTarget] = useState<ApprovalTarget | null>(null);
   const [isExporting, setIsExporting] = useState(false);

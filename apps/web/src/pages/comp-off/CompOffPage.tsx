@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
+import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { Plus, CheckCircle, XCircle, CalendarIcon, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -285,7 +285,7 @@ export default function CompOffPage() {
   const role = useAuthStore((s) => s.user?.role);
   const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(role);
 
-  const [tab, setTab] = useSearchParamState<Tab>('tab', 'PENDING');
+  const [tab, setTab] = useSessionStorageState<Tab>('comp_off_tab', 'PENDING');
   const [showApply, setShowApply] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
 
