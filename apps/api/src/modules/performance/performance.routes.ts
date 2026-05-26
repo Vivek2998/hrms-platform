@@ -74,7 +74,6 @@ export function performanceRoutes(app: FastifyInstance) {
         frequency: input.frequency as any,
         startDate: new Date(input.startDate),
         endDate: new Date(input.endDate),
-        createdBy: req.user.sub,
       },
     });
     return reply.status(201).send(ok(cycle));
@@ -205,7 +204,7 @@ export function performanceRoutes(app: FastifyInstance) {
     const input = managerReviewSchema.parse(req.body);
     const updated = await app.prisma.performanceReview.updateMany({
       where: { id: reviewId, reviewerId: req.user.sub },
-      data: { ...input, status: 'COMPLETED', completedAt: new Date() },
+      data: { ...input, status: 'COMPLETED', managerSubmittedAt: new Date() },
     });
     if (updated.count === 0) throw fail('Review not found', 404);
     return reply.send(ok({ reviewId }));

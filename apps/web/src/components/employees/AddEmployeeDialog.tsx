@@ -261,7 +261,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                 ))}
               </TabsList>
             </div>
-            <div className="h-[300px] overflow-y-auto pr-1">
+            <div className="h-[300px] overflow-y-auto px-1">
               {/* ── Tab 1: Personal ── */}
               <TabsContent value="personal" className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
