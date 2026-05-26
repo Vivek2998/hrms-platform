@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronDown, Network, Printer, Users, Building2, RefreshCw,
   Plus, ZoomIn, ZoomOut, Maximize2, UserPlus, AlertCircle,
@@ -33,44 +33,187 @@ function initials(first: string, last: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// ZOOM CONTROLS
+// INFINITE CANVAS — pan + pinch/wheel zoom, fixed container
 // ─────────────────────────────────────────────────────────────
 
-function ZoomControls({ zoom, onZoom }: { zoom: number; onZoom: (v: number) => void }) {
+interface Transform { zoom: number; x: number; y: number }
+
+function ChartCanvas({ children, contentKey }: { children: React.ReactNode; contentKey?: string | number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef  = useRef<HTMLDivElement>(null);
+  const tfRef       = useRef<Transform>({ zoom: 0.85, x: 0, y: 40 });
+  const [tf, setTf] = useState<Transform>(tfRef.current);
+  const [dragging, setDragging] = useState(false);
+  const lastMouse   = useRef({ x: 0, y: 0 });
+
+  /** Apply transform to both the ref (for non-React handlers) and state (for render) */
+  const applyTf = useCallback((next: Transform) => {
+    tfRef.current = next;
+    setTf(next);
+  }, []);
+
+  /** Center content inside the container after data loads */
+  const center = useCallback((targetZoom?: number) => {
+    const container = containerRef.current;
+    const content   = contentRef.current;
+    if (!container || !content) return;
+
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    // offsetWidth/Height reflect layout size, unaffected by CSS transform
+    const nw = content.offsetWidth;
+    const nh = content.offsetHeight;
+    if (nw === 0 || nh === 0) return;
+
+    const z = targetZoom ?? Math.min(0.85, (cw - 80) / nw);
+    const x = (cw - nw * z) / 2;
+    const y = Math.max(32, (ch - nh * z) / 3); // bias toward upper third
+    applyTf({ zoom: z, x, y });
+  }, [applyTf]);
+
+  /** (Re-)center whenever content data changes */
+  useEffect(() => {
+    // rAF ensures DOM has been painted with the new children
+    const id = requestAnimationFrame(() => center());
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentKey]);
+
+  // ── Wheel: two-finger scroll = pan, pinch (ctrlKey) = zoom ──
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const { zoom: z, x, y } = tfRef.current;
+
+    if (e.ctrlKey || e.metaKey) {
+      // Trackpad pinch OR Ctrl + mouse wheel → zoom towards cursor
+      const curX = e.clientX - rect.left;
+      const curY = e.clientY - rect.top;
+      // Cap factor so one scroll tick doesn't jump too far
+      const rawFactor = 1 - e.deltaY * 0.008;
+      const factor    = Math.max(0.85, Math.min(1.18, rawFactor));
+      const newZoom   = Math.min(3, Math.max(0.1, z * factor));
+      const r         = newZoom / z;
+      applyTf({ zoom: newZoom, x: curX - (curX - x) * r, y: curY - (curY - y) * r });
+    } else {
+      // Two-finger scroll → pan
+      // deltaMode 0 = pixel, 1 = line (~16px), 2 = page (~400px)
+      const mult = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
+      applyTf({ zoom: z, x: x - e.deltaX * mult, y: y - e.deltaY * mult });
+    }
+  }, [applyTf]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
+
+  // ── Mouse drag: pan on background click ──
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    // Allow drag only from background (not from interactive chart elements)
+    if (target.closest('button, input, select, a, [role="button"], [data-radix-popper-content-wrapper]')) return;
+    setDragging(true);
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
+  }, []);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      const { zoom: z, x, y } = tfRef.current;
+      applyTf({ zoom: z, x: x + dx, y: y + dy });
+    };
+    const onUp = () => setDragging(false);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, [dragging, applyTf]);
+
+  // ── Zoom control helpers ──
+  function zoomAt(factor: number) {
+    const container = containerRef.current;
+    if (!container) return;
+    const { width, height } = container.getBoundingClientRect();
+    const cx = width / 2; const cy = height / 2;
+    const { zoom: z, x, y } = tfRef.current;
+    const newZoom = Math.min(3, Math.max(0.1, z * factor));
+    const r       = newZoom / z;
+    applyTf({ zoom: newZoom, x: cx - (cx - x) * r, y: cy - (cy - y) * r });
+  }
+
   return (
-    <div className="no-print absolute right-3 top-3 z-10 flex items-center gap-1 rounded-lg border bg-background/95 px-2 py-1 shadow-sm backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={() => onZoom(Math.max(0.3, zoom - 0.15))}
-        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-        title="Zoom out"
+    <div
+      ref={containerRef}
+      className={cn(
+        'relative h-[72vh] overflow-hidden rounded-xl border bg-muted/10',
+        dragging ? 'cursor-grabbing' : 'cursor-grab',
+      )}
+      onMouseDown={onMouseDown}
+    >
+      {/* ── Zoom controls (top-right, always on top) ── */}
+      <div className="no-print pointer-events-auto absolute right-3 top-3 z-20 flex items-center gap-0.5 rounded-lg border bg-background/95 px-1.5 py-1 shadow-md backdrop-blur-sm select-none">
+        <button
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={(e) => { e.stopPropagation(); zoomAt(1 / 1.2); }}
+          title="Zoom out (−)"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="min-w-10 rounded px-1 text-center text-xs font-mono text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={(e) => { e.stopPropagation(); zoomAt(1 / (tf.zoom)); center(1); }}
+          title="Reset to 100%"
+        >
+          {Math.round(tf.zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={(e) => { e.stopPropagation(); zoomAt(1.2); }}
+          title="Zoom in (+)"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </button>
+        <div className="mx-1 h-3.5 w-px bg-border" />
+        <button
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={(e) => { e.stopPropagation(); center(); }}
+          title="Fit to screen"
+        >
+          <Maximize2 className="h-3 w-3" />
+        </button>
+      </div>
+
+      {/* ── Usage hint ── */}
+      <div className="no-print pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border bg-background/80 px-3 py-1 text-[10px] text-muted-foreground backdrop-blur-sm">
+        Pinch or Ctrl+scroll to zoom · Drag to pan
+      </div>
+
+      {/* ── Canvas content ── */}
+      <div
+        ref={contentRef}
+        style={{
+          position: 'absolute',
+          transformOrigin: '0 0',
+          transform: `translate(${tf.x}px, ${tf.y}px) scale(${tf.zoom})`,
+          willChange: 'transform',
+        }}
       >
-        <ZoomOut className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => onZoom(1)}
-        className="min-w-10 text-center text-xs font-mono text-muted-foreground hover:text-foreground"
-        title="Reset zoom"
-      >
-        {Math.round(zoom * 100)}%
-      </button>
-      <button
-        type="button"
-        onClick={() => onZoom(Math.min(2, zoom + 0.15))}
-        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-        title="Zoom in"
-      >
-        <ZoomIn className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => onZoom(0.65)}
-        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-        title="Fit to screen"
-      >
-        <Maximize2 className="h-3 w-3" />
-      </button>
+        {children}
+      </div>
     </div>
   );
 }
@@ -79,20 +222,15 @@ function ZoomControls({ zoom, onZoom }: { zoom: number; onZoom: (v: number) => v
 // REPORTING LINE CHART (managerId-based)
 // ─────────────────────────────────────────────────────────────
 
-interface TreeNode extends OrgChartEmployee {
-  children: TreeNode[];
-}
+interface TreeNode extends OrgChartEmployee { children: TreeNode[] }
 
 function buildTree(employees: OrgChartEmployee[]): TreeNode[] {
   const map = new Map<string, TreeNode>();
   employees.forEach((e) => map.set(e.id, { ...e, children: [] }));
   const roots: TreeNode[] = [];
   map.forEach((node) => {
-    if (node.managerId && map.has(node.managerId)) {
-      map.get(node.managerId)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
+    if (node.managerId && map.has(node.managerId)) map.get(node.managerId)!.children.push(node);
+    else roots.push(node);
   });
   return roots;
 }
@@ -112,18 +250,12 @@ function ReportingNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) 
       >
         <Avatar className="mx-auto h-10 w-10">
           <AvatarImage src={node.avatarUrl ?? undefined} />
-          <AvatarFallback className="bg-primary/10 text-xs text-primary">
-            {initials(node.firstName, node.lastName)}
-          </AvatarFallback>
+          <AvatarFallback className="bg-primary/10 text-xs text-primary">{initials(node.firstName, node.lastName)}</AvatarFallback>
         </Avatar>
         <p className="mt-2 truncate text-sm font-semibold">{node.firstName} {node.lastName}</p>
         <p className="truncate text-xs text-muted-foreground">{node.designation ?? '—'}</p>
-        {node.department && (
-          <p className="mt-0.5 truncate text-[10px] text-muted-foreground/60">{node.department.name}</p>
-        )}
-        {hasKids && (
-          <ChevronDown className={cn('absolute bottom-1.5 right-1.5 h-3 w-3 text-muted-foreground transition-transform', !open && '-rotate-90')} />
-        )}
+        {node.department && <p className="mt-0.5 truncate text-[10px] text-muted-foreground/60">{node.department.name}</p>}
+        {hasKids && <ChevronDown className={cn('absolute bottom-1.5 right-1.5 h-3 w-3 text-muted-foreground transition-transform', !open && '-rotate-90')} />}
       </div>
       {hasKids && open && (
         <>
@@ -154,13 +286,8 @@ function ReportingNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) 
 // ASSIGN EMPLOYEE DIALOG
 // ─────────────────────────────────────────────────────────────
 
-function AssignEmployeeDialog({
-  open, positionName, designationId, onClose,
-}: {
-  open: boolean;
-  positionName: string;
-  designationId: string;
-  onClose: () => void;
+function AssignEmployeeDialog({ open, positionName, designationId, onClose }: {
+  open: boolean; positionName: string; designationId: string; onClose: () => void;
 }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const { data: employeesData } = useEmployees({ limit: 300 });
@@ -171,44 +298,31 @@ function AssignEmployeeDialog({
     try {
       await assign({ employeeId: selectedEmpId, designationId });
       toast.success('Employee assigned to position');
-      setSelectedEmpId('');
-      onClose();
-    } catch {
-      toast.error('Failed to assign employee');
-    }
+      setSelectedEmpId(''); onClose();
+    } catch { toast.error('Failed to assign employee'); }
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { setSelectedEmpId(''); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Assign Employee to "{positionName}"</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>Assign to "{positionName}"</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Select an employee to fill this position. Their profile will be updated automatically.
-          </p>
+          <p className="text-sm text-muted-foreground">Select an employee. Their profile will update automatically.</p>
           <Select value={selectedEmpId} onValueChange={setSelectedEmpId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose an employee..." />
-            </SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Choose an employee..." /></SelectTrigger>
             <SelectContent>
-              {(employeesData?.employees ?? [])
-                .filter((e) => e.status === 'ACTIVE')
-                .map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.firstName} {e.lastName} ({e.employeeCode})
-                    {e.designation ? ` — ${e.designation}` : ''}
-                  </SelectItem>
-                ))}
+              {(employeesData?.employees ?? []).filter((e) => e.status === 'ACTIVE').map((e) => (
+                <SelectItem key={e.id} value={e.id}>
+                  {e.firstName} {e.lastName} ({e.employeeCode}){e.designation ? ` — ${e.designation}` : ''}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button disabled={!selectedEmpId || isPending} onClick={handleAssign}>
-            {isPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            Assign
+            {isPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}Assign
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -220,20 +334,15 @@ function AssignEmployeeDialog({
 // POSITION NODE
 // ─────────────────────────────────────────────────────────────
 
-interface PositionNode extends DesignationWithEmployees {
-  children: PositionNode[];
-}
+interface PositionNode extends DesignationWithEmployees { children: PositionNode[] }
 
 function buildPositionTree(designations: DesignationWithEmployees[]): PositionNode[] {
   const map = new Map<string, PositionNode>();
   designations.forEach((d) => map.set(d.id, { ...d, children: [] }));
   const roots: PositionNode[] = [];
   map.forEach((node) => {
-    if (node.parentId && map.has(node.parentId)) {
-      map.get(node.parentId)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
+    if (node.parentId && map.has(node.parentId)) map.get(node.parentId)!.children.push(node);
+    else roots.push(node);
   });
   const sort = (nodes: PositionNode[]) => {
     nodes.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
@@ -245,33 +354,27 @@ function buildPositionTree(designations: DesignationWithEmployees[]): PositionNo
 
 function pruneVacant(nodes: PositionNode[]): PositionNode[] {
   return nodes
-    .map((node) => ({ ...node, children: pruneVacant(node.children) }))
-    .filter((node) => node.employees.length > 0 || node.children.length > 0);
+    .map((n) => ({ ...n, children: pruneVacant(n.children) }))
+    .filter((n) => n.employees.length > 0 || n.children.length > 0);
 }
 
-function PositionNodeCard({
-  node, depth = 0, printMode = false,
-}: {
-  node: PositionNode;
-  depth?: number;
-  printMode?: boolean;
+function PositionNodeCard({ node, depth = 0, printMode = false }: {
+  node: PositionNode; depth?: number; printMode?: boolean;
 }) {
   const [open, setOpen] = useState(depth < 3);
   const [assignOpen, setAssignOpen] = useState(false);
   const hasKids = node.children.length > 0;
   const isEmpty = node.employees.length === 0;
 
-  if (printMode && isEmpty && node.children.length === 0) return null;
+  if (printMode && isEmpty && !hasKids) return null;
 
   return (
     <div className="flex flex-col items-center">
       <div
         className={cn(
           'relative w-48 rounded-xl border bg-card text-center shadow-sm transition-shadow print:border-gray-300 print:shadow-none',
-          isEmpty
-            ? 'border-dashed border-muted-foreground/30 bg-muted/10'
-            : 'border-solid',
-          hasKids && !printMode && 'cursor-pointer hover:shadow-md',
+          isEmpty ? 'border-dashed border-muted-foreground/30 bg-muted/10' : 'border-solid',
+          hasKids && !printMode && 'hover:shadow-md',
         )}
         onClick={() => { if (hasKids && !printMode) setOpen((v) => !v); }}
       >
@@ -282,22 +385,17 @@ function PositionNodeCard({
             </span>
           </div>
         )}
-
         <div className="px-3 pb-3 pt-1.5">
           {isEmpty ? (
             <>
               <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                 <Users className="h-4 w-4 text-muted-foreground/50" />
               </div>
-              <p className="mt-2 text-sm font-semibold text-foreground">{node.name}</p>
+              <p className="mt-2 text-sm font-semibold">{node.name}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">Vacant</p>
               {!printMode && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 h-6 w-full gap-1 text-xs"
-                  onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}
-                >
+                <Button size="sm" variant="outline" className="mt-2 h-6 w-full gap-1 text-xs"
+                  onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}>
                   <Plus className="h-3 w-3" />Assign
                 </Button>
               )}
@@ -308,39 +406,24 @@ function PositionNodeCard({
                 <div key={emp.id} className="mt-1 first:mt-0">
                   <Avatar className="mx-auto h-9 w-9">
                     <AvatarImage src={emp.avatarUrl ?? undefined} />
-                    <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                      {initials(emp.firstName, emp.lastName)}
-                    </AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-xs text-primary">{initials(emp.firstName, emp.lastName)}</AvatarFallback>
                   </Avatar>
-                  <p className="mt-1.5 truncate text-sm font-semibold">
-                    {emp.firstName} {emp.lastName}
-                  </p>
+                  <p className="mt-1.5 truncate text-sm font-semibold">{emp.firstName} {emp.lastName}</p>
                   <p className="text-[10px] text-muted-foreground">{emp.employeeCode}</p>
                 </div>
               ))}
               <p className="mt-1 text-xs font-medium text-foreground/80">{node.name}</p>
-              {/* Allow manual reassignment even for filled positions */}
               {!printMode && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="mt-1 h-5 w-full gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-                  onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}
-                >
+                <Button size="sm" variant="ghost" className="mt-1 h-5 w-full gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}>
                   <UserPlus className="h-2.5 w-2.5" />Change
                 </Button>
               )}
             </>
           )}
         </div>
-
         {hasKids && !printMode && (
-          <ChevronDown
-            className={cn(
-              'absolute bottom-1.5 right-1.5 h-3 w-3 text-muted-foreground transition-transform',
-              !open && '-rotate-90',
-            )}
-          />
+          <ChevronDown className={cn('absolute bottom-1.5 right-1.5 h-3 w-3 text-muted-foreground transition-transform', !open && '-rotate-90')} />
         )}
       </div>
 
@@ -349,7 +432,7 @@ function PositionNodeCard({
           <div className="h-5 w-px bg-border" />
           <div className="flex flex-wrap justify-center">
             {node.children
-              .filter((child) => !printMode || child.employees.length > 0 || child.children.length > 0)
+              .filter((c) => !printMode || c.employees.length > 0 || c.children.length > 0)
               .map((child, i, arr) => (
                 <div
                   key={child.id}
@@ -367,44 +450,27 @@ function PositionNodeCard({
           </div>
         </>
       )}
-
-      <AssignEmployeeDialog
-        open={assignOpen}
-        positionName={node.name}
-        designationId={node.id}
-        onClose={() => setAssignOpen(false)}
-      />
+      <AssignEmployeeDialog open={assignOpen} positionName={node.name} designationId={node.id} onClose={() => setAssignOpen(false)} />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────
-// INDUSTRY TYPE SETUP BANNER (super admin only)
+// INDUSTRY SETUP BANNER (super admin only)
 // ─────────────────────────────────────────────────────────────
 
-function IndustrySetupBanner({
-  currentType, onSeed,
-}: {
-  currentType: string;
-  onSeed: () => void;
-}) {
+function IndustrySetupBanner({ currentType, onSeed }: { currentType: string; onSeed: () => void }) {
   const [selectedType, setSelectedType] = useState<IndustryType>(currentType as IndustryType);
   const { mutateAsync: updateSettings } = useUpdateOrgSettings();
   const { mutateAsync: seed, isPending } = useSeedDesignations();
 
   async function handleSeed() {
     try {
-      if (selectedType !== currentType) {
-        await updateSettings({ industryType: selectedType });
-      }
+      if (selectedType !== currentType) await updateSettings({ industryType: selectedType });
       const result = await seed();
-      toast.success(
-        `Position chart initialized — ${result.seeded} positions seeded for ${INDUSTRY_LABELS[result.industry as IndustryType] ?? result.industry}`,
-      );
+      toast.success(`Position chart initialized — ${result.seeded} positions seeded for ${INDUSTRY_LABELS[result.industry as IndustryType] ?? result.industry}`);
       onSeed();
-    } catch {
-      toast.error('Failed to initialize position chart');
-    }
+    } catch { toast.error('Failed to initialize position chart'); }
   }
 
   return (
@@ -417,14 +483,12 @@ function IndustrySetupBanner({
           <p className="text-lg font-semibold">Initialize Your Position Chart</p>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
             Select your organization type to load a pre-built hierarchy with all standard positions.
-            Empty positions show as "Vacant" and fill automatically when employees are hired with a matching designation.
+            Positions fill automatically as employees are hired with a matching designation.
           </p>
         </div>
         <div className="flex flex-col items-center gap-3 sm:flex-row">
           <Select value={selectedType} onValueChange={(v) => setSelectedType(v as IndustryType)}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Select organization type" />
-            </SelectTrigger>
+            <SelectTrigger className="w-64"><SelectValue placeholder="Select organization type" /></SelectTrigger>
             <SelectContent>
               {Object.entries(INDUSTRY_LABELS).map(([key, label]) => (
                 <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -437,42 +501,10 @@ function IndustrySetupBanner({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Positions fill automatically as you hire employees with matching designations.
           Use "Assign" on any position for manual updates.
         </p>
       </CardContent>
     </Card>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// ZOOMABLE CHART WRAPPER
-// ─────────────────────────────────────────────────────────────
-
-function ZoomableChart({ children, defaultZoom = 1 }: { children: React.ReactNode; defaultZoom?: number }) {
-  const [zoom, setZoom] = useState(defaultZoom);
-
-  const handleZoom = useCallback((v: number) => {
-    setZoom(Math.round(v * 100) / 100);
-  }, []);
-
-  return (
-    <div className="relative overflow-hidden rounded-xl border bg-card/50">
-      <ZoomControls zoom={zoom} onZoom={handleZoom} />
-      {/* Scrollable vertically only */}
-      <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden py-8">
-        <div
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: 'top center',
-            // Compensate height so container doesn't leave dead space when zoomed out
-            marginBottom: zoom < 1 ? `calc(${(zoom - 1) * 100}% - 2rem)` : undefined,
-          }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -483,28 +515,26 @@ function ZoomableChart({ children, defaultZoom = 1 }: { children: React.ReactNod
 export default function OrgChartPage() {
   const role = useAuthStore((s) => s.user?.role);
   const isSuperAdmin = role === 'SUPER_ADMIN';
-  const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role ?? '');
 
-  const { data: employees, isLoading: empLoading } = useOrgChart();
-  const { data: positionDesignations, isLoading: posLoading } = useDesignationsWithEmployees();
+  const { data: employees,           isLoading: empLoading  } = useOrgChart();
+  const { data: positionDesignations, isLoading: posLoading  } = useDesignationsWithEmployees();
   const { data: orgSettings } = useOrgSettings();
   const { mutateAsync: updateSettings } = useUpdateOrgSettings();
   const { mutateAsync: seed, isPending: seeding } = useSeedDesignations();
 
-  // Position Chart is the default view
-  const [activeTab, setActiveTab] = useState<'reporting' | 'positions'>('positions');
+  const [activeTab,         setActiveTab]         = useState<'reporting' | 'positions'>('positions');
   const [showIndustryModal, setShowIndustryModal] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState<IndustryType>('IT_SOFTWARE');
+  const [selectedIndustry,  setSelectedIndustry]  = useState<IndustryType>('IT_SOFTWARE');
 
   const reportingRoots = useMemo(() => (employees ? buildTree(employees) : []), [employees]);
-  const positionRoots = useMemo(
+  const positionRoots  = useMemo(
     () => (positionDesignations ? buildPositionTree(positionDesignations) : []),
     [positionDesignations],
   );
   const printRoots = useMemo(() => pruneVacant(positionRoots), [positionRoots]);
 
-  const hasPositions = (positionDesignations?.length ?? 0) > 0;
-  const vacantCount = (positionDesignations ?? []).filter((d) => d.employees.length === 0).length;
+  const hasPositions  = (positionDesignations?.length ?? 0) > 0;
+  const vacantCount   = (positionDesignations ?? []).filter((d) => d.employees.length === 0).length;
   const occupiedCount = (positionDesignations ?? []).filter((d) => d.employees.length > 0).length;
 
   async function handleConfirmReinit() {
@@ -513,9 +543,7 @@ export default function OrgChartPage() {
       const result = await seed();
       toast.success(`Re-initialized with ${result.seeded} positions`);
       setShowIndustryModal(false);
-    } catch {
-      toast.error('Failed to re-initialize');
-    }
+    } catch { toast.error('Failed to re-initialize'); }
   }
 
   return (
@@ -543,12 +571,8 @@ export default function OrgChartPage() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/* Re-initialize only for super admin */}
             {isSuperAdmin && hasPositions && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2"
+              <Button size="sm" variant="outline" className="gap-2"
                 onClick={() => {
                   setSelectedIndustry((orgSettings?.industryType as IndustryType) ?? 'IT_SOFTWARE');
                   setShowIndustryModal(true);
@@ -563,7 +587,7 @@ export default function OrgChartPage() {
           </div>
         </div>
 
-        {/* Stats bar */}
+        {/* Stats */}
         {hasPositions && activeTab === 'positions' && (
           <div className="no-print flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-1.5">
@@ -577,8 +601,7 @@ export default function OrgChartPage() {
             <div className="flex items-center gap-1.5">
               <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
-                Positions fill automatically when employees are hired with a matching designation.
-                Print removes vacant positions.
+                Positions fill automatically when employees are hired. Print removes vacant positions.
               </span>
             </div>
           </div>
@@ -595,20 +618,15 @@ export default function OrgChartPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Position Chart Tab ── */}
+          {/* ── Position Chart ── */}
           <TabsContent value="positions" className="mt-4">
             {posLoading ? (
               <div className="flex justify-center gap-6 pt-8">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-36 w-48 rounded-xl" />
-                ))}
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 w-48 rounded-xl" />)}
               </div>
             ) : !hasPositions ? (
               isSuperAdmin ? (
-                <IndustrySetupBanner
-                  currentType={orgSettings?.industryType ?? 'IT_SOFTWARE'}
-                  onSeed={() => {}}
-                />
+                <IndustrySetupBanner currentType={orgSettings?.industryType ?? 'IT_SOFTWARE'} onSeed={() => {}} />
               ) : (
                 <Card>
                   <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
@@ -616,29 +634,28 @@ export default function OrgChartPage() {
                     <p className="font-medium">Position chart not set up yet</p>
                     <p className="max-w-sm text-sm text-muted-foreground">
                       The organization chart will be initialized by your Super Administrator.
-                      Once set up, filled positions will update automatically as employees are hired.
+                      Filled positions update automatically as employees are hired.
                     </p>
                   </CardContent>
                 </Card>
               )
             ) : (
-              <ZoomableChart defaultZoom={0.85}>
-                <div className="flex min-w-max justify-center gap-8 px-8">
+              /* Key = length so canvas re-centers when designations first load */
+              <ChartCanvas contentKey={positionRoots.length}>
+                <div className="flex items-start gap-8 p-12">
                   {positionRoots.map((root) => (
                     <PositionNodeCard key={root.id} node={root} depth={0} />
                   ))}
                 </div>
-              </ZoomableChart>
+              </ChartCanvas>
             )}
           </TabsContent>
 
-          {/* ── Reporting Line Tab ── */}
+          {/* ── Reporting Line ── */}
           <TabsContent value="reporting" className="mt-4">
             {empLoading ? (
               <div className="flex justify-center gap-6 pt-8">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-32 w-44 rounded-xl" />
-                ))}
+                {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-44 rounded-xl" />)}
               </div>
             ) : reportingRoots.length === 0 ? (
               <Card>
@@ -650,18 +667,16 @@ export default function OrgChartPage() {
                 </CardContent>
               </Card>
             ) : (
-              <ZoomableChart defaultZoom={1}>
-                <div className="flex min-w-max justify-center gap-8">
-                  {reportingRoots.map((root) => (
-                    <ReportingNode key={root.id} node={root} depth={0} />
-                  ))}
+              <ChartCanvas contentKey={reportingRoots.length}>
+                <div className="flex items-start gap-8 p-12">
+                  {reportingRoots.map((root) => <ReportingNode key={root.id} node={root} depth={0} />)}
                 </div>
-              </ZoomableChart>
+              </ChartCanvas>
             )}
           </TabsContent>
         </Tabs>
 
-        {/* ── PRINT AREA ── */}
+        {/* Print area */}
         <div id="org-chart-print-area" className="hidden print:block">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold">Organisation Chart</h1>
@@ -673,32 +688,27 @@ export default function OrgChartPage() {
             )}
           </div>
           {activeTab === 'reporting' ? (
-            <div className="flex min-w-max justify-center gap-8">
+            <div className="flex justify-center gap-8">
               {reportingRoots.map((root) => <ReportingNode key={root.id} node={root} depth={0} />)}
             </div>
           ) : printRoots.length === 0 ? (
             <p className="text-center text-gray-400">No employees assigned to positions yet.</p>
           ) : (
-            <div className="flex min-w-max justify-center gap-8">
-              {printRoots.map((root) => (
-                <PositionNodeCard key={root.id} node={root} depth={0} printMode />
-              ))}
+            <div className="flex justify-center gap-8">
+              {printRoots.map((root) => <PositionNodeCard key={root.id} node={root} depth={0} printMode />)}
             </div>
           )}
         </div>
       </div>
 
-      {/* Re-initialize Modal (super admin only) */}
+      {/* Re-initialize modal (super admin only) */}
       {isSuperAdmin && (
         <Dialog open={showIndustryModal} onOpenChange={setShowIndustryModal}>
           <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Re-initialize Position Template</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Re-initialize Position Template</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Select the organization type to re-seed the position hierarchy.
-                Existing positions won't be deleted — only missing ones from the template will be added.
+                Select the organization type to re-seed the hierarchy. Existing positions won't be deleted — only missing ones from the template will be added.
               </p>
               <Select value={selectedIndustry} onValueChange={(v) => setSelectedIndustry(v as IndustryType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -712,8 +722,7 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowIndustryModal(false)}>Cancel</Button>
               <Button disabled={seeding} onClick={handleConfirmReinit}>
-                {seeding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Initialize
+                {seeding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}Initialize
               </Button>
             </DialogFooter>
           </DialogContent>
