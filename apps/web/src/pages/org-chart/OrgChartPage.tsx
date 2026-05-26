@@ -429,8 +429,12 @@ function PositionNodeCard({ node, depth = 0, printMode = false }: {
 
       {hasKids && (open || printMode) && (
         <>
-          <div className="h-5 w-px bg-border" />
-          <div className="flex flex-wrap justify-center">
+          {/* Vertical stem: parent card → T-bar. Longer line gives breathing room below the card */}
+          <div className="h-8 w-px bg-border" />
+          {/* Siblings row: NO wrap so expanding one branch never shifts adjacent columns.
+              items-start anchors each sub-tree at the top — different-height branches
+              don't stretch or push their neighbours. */}
+          <div className="flex items-start justify-center">
             {node.children
               .filter((c) => !printMode || c.employees.length > 0 || c.children.length > 0)
               .map((child, i, arr) => (
@@ -443,7 +447,8 @@ function PositionNodeCard({ node, depth = 0, printMode = false }: {
                     i === arr.length - 1 && arr.length > 1 && 'rounded-tr-md border-r',
                   )}
                 >
-                  <div className="h-5 w-px bg-border" />
+                  {/* Vertical stem: T-bar → child card */}
+                  <div className="h-8 w-px bg-border" />
                   <PositionNodeCard node={child} depth={depth + 1} printMode={printMode} />
                 </div>
               ))}
