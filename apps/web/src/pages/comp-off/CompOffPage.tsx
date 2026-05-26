@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { Plus, CheckCircle, XCircle, CalendarIcon, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -284,7 +285,7 @@ export default function CompOffPage() {
   const role = useAuthStore((s) => s.user?.role);
   const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(role);
 
-  const [tab, setTab] = useState<Tab>('PENDING');
+  const [tab, setTab] = useSearchParamState<Tab>('tab', 'PENDING');
   const [showApply, setShowApply] = useState(false);
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { Plus, CheckCircle, XCircle, Home, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,7 @@ const TABS: { label: string; value: TabVal }[] = [
 export default function WFHPage() {
   const { user } = useAuthStore();
   const isApprover = APPROVER_ROLES.includes(user?.role ?? '');
-  const [tab, setTab] = useState<TabVal>('ALL');
+  const [tab, setTab] = useSearchParamState<TabVal>('tab', 'ALL');
   const [showCreate, setShowCreate] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');

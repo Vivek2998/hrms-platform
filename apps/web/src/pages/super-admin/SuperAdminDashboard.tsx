@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { superAdminApi } from '@/lib/super-admin-api';
 import { useSuperAdminAuthStore } from '@/stores/super-admin-auth.store';
@@ -765,7 +766,7 @@ export default function SuperAdminDashboard() {
   const admin  = useSuperAdminAuthStore((s) => s.admin);
   const logout = useSuperAdminAuthStore((s) => s.logout);
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('organizations');
+  const [activeTab, setActiveTab] = useSearchParamState<Tab>('tab', 'organizations');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<CreateOrgForm>(blankForm());
   const [formError, setFormError] = useState('');

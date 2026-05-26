@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { Plus, Users, CheckCircle, Loader2, Trophy, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +45,7 @@ const TABS: { label: string; value: TabVal }[] = [
 export default function ReferralPage() {
   const { user } = useAuthStore();
   const isHr = HR_ROLES.includes(user?.role ?? '');
-  const [tab, setTab] = useState<TabVal>('ALL');
+  const [tab, setTab] = useSearchParamState<TabVal>('tab', 'ALL');
   const [showCreate, setShowCreate] = useState(false);
   const [statusTarget, setStatusTarget] = useState<any>(null);
 

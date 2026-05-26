@@ -22,6 +22,8 @@ export function useUnreadNotificationCount() {
       return res.data.data;
     },
     refetchInterval: 30_000,
+    refetchIntervalInBackground: true, // keep polling even when browser tab is not focused
+    refetchOnWindowFocus: true,        // override global false — badge must stay current
     staleTime: 15_000,
   });
 }
@@ -35,6 +37,8 @@ export function useNotifications(enabled = true) {
     },
     enabled,
     staleTime: 15_000,
+    refetchInterval: enabled ? 30_000 : false, // live-poll while the panel is open
+    refetchOnWindowFocus: true,                // refresh list when returning to the tab
   });
 }
 
