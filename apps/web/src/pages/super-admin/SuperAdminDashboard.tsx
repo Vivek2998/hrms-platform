@@ -33,8 +33,21 @@ import {
 } from '@/components/ui/table';
 
 type Plan = 'FREE' | 'STARTER' | 'GROWTH' | 'ENTERPRISE';
-type Tab = 'organizations' | 'assets' | 'code-requests';
+type Tab = 'organizations' | 'assets' | 'code-requests' | 'org-chart-requests';
 type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+interface OrgChartRequest {
+  id: string;
+  currentIndustry: string;
+  requestedIndustry: string;
+  reason: string | null;
+  status: RequestStatus;
+  superAdminNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  organization: { id: string; name: string; slug: string };
+  requestedBy: { id: string; firstName: string; lastName: string; workEmail: string };
+}
 
 interface CodeRequest {
   id: string;
@@ -517,6 +530,231 @@ function CodeRequestsTab() {
   );
 }
 
+// ── Org Chart Requests tab ────────────────────────────────────────────────────
+
+const INDUSTRY_LABELS: Record<string, string> = {
+  IT_SOFTWARE: 'IT / Software',
+  MANUFACTURING: 'Manufacturing',
+  HEALTHCARE: 'Healthcare',
+  FINANCIAL_SERVICES: 'Financial Services',
+  RETAIL: 'Retail',
+  EDUCATIONAL: 'Educational',
+  SERVICE_BASED: 'Service Based',
+  GENERAL: 'General',
+};
+
+function ReviewOrgChartDialog({ request, onClose }: { request: OrgChartRequest; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+
+  const resolve = useMutation({
+    mutationFn: (action: 'APPROVE' | 'REJECT') =>
+      superAdminApi.patch(`/super-admin/org-chart-requests/${request.id}`, {
+        action,
+        superAdminNote: note.trim() || undefined,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['super-admin', 'org-chart-requests'] });
+      onClose();
+    },
+    onError: () => setError('Failed to update request. Please try again.'),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Review Org Chart Template Request</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-1">
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Organisation</span>
+              <span className="font-semibold">{request.organization.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Requested by</span>
+              <span>{request.requestedBy.firstName} {request.requestedBy.lastName}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Template change</span>
+              <span className="flex items-center gap-2">
+                <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">
+                  {INDUSTRY_LABELS[request.currentIndustry] ?? request.currentIndustry}
+                </span>
+                <span className="text-muted-foreground">→</span>
+                <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
+                  {INDUSTRY_LABELS[request.requestedIndustry] ?? request.requestedIndustry}
+                </span>
+              </span>
+            </div>
+            {request.reason && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground shrink-0">Reason</span>
+                <span className="italic text-right">"{request.reason}"</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">
+              Note to admin <span className="text-muted-foreground text-xs">(optional — shown in email)</span>
+            </Label>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. Approved — template updated. or Rejected — please contact support."
+              className="resize-none text-sm"
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+          {error && <p className="text-destructive text-sm">{error}</p>}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={onClose} disabled={resolve.isPending}>Cancel</Button>
+          <Button variant="destructive" onClick={() => resolve.mutate('REJECT')} disabled={resolve.isPending}>
+            Reject
+          </Button>
+          <Button onClick={() => resolve.mutate('APPROVE')} disabled={resolve.isPending}
+            className="bg-green-600 hover:bg-green-700 text-white">
+            {resolve.isPending ? 'Processing…' : 'Approve'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function OrgChartRequestsTab() {
+  const qc = useQueryClient();
+  const [filter, setFilter] = useState<'PENDING' | 'ALL'>('PENDING');
+  const [reviewing, setReviewing] = useState<OrgChartRequest | null>(null);
+
+  const { data: requests = [], isLoading } = useQuery<OrgChartRequest[]>({
+    queryKey: ['super-admin', 'org-chart-requests', filter],
+    queryFn: async () => {
+      const res = await superAdminApi.get<{ data: OrgChartRequest[] }>(
+        `/super-admin/org-chart-requests?status=${filter}`,
+      );
+      return res.data.data;
+    },
+  });
+
+  const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
+
+  const statusColors: Record<RequestStatus, string> = {
+    PENDING: 'outline',
+    APPROVED: 'default',
+    REJECTED: 'destructive',
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-base">Org Chart Template Change Requests</CardTitle>
+            {pendingCount > 0 && (
+              <Badge variant="destructive" className="text-xs">{pendingCount} pending</Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Show:</span>
+            {(['PENDING', 'ALL'] as const).map((f) => (
+              <button key={f} onClick={() => setFilter(f)}
+                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filter === f ? 'bg-slate-800 text-white border-slate-800' : 'border-muted-foreground/30 text-muted-foreground hover:border-slate-400'}`}>
+                {f === 'PENDING' ? 'Pending' : 'All'}
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-10">Loading…</p>
+          ) : requests.length === 0 ? (
+            <p className="text-center text-muted-foreground py-10">
+              {filter === 'PENDING' ? 'No pending requests — all clear! ✅' : 'No requests yet.'}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Organisation</TableHead>
+                  <TableHead>Requested By</TableHead>
+                  <TableHead>Template Change</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  {filter === 'PENDING' && <TableHead className="text-right">Action</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests.map((req) => (
+                  <TableRow key={req.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-sm">{req.organization.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{req.organization.slug}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-sm">{req.requestedBy.firstName} {req.requestedBy.lastName}</p>
+                        <p className="text-xs text-muted-foreground">{req.requestedBy.workEmail}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded font-semibold">
+                          {INDUSTRY_LABELS[req.currentIndustry] ?? req.currentIndustry}
+                        </span>
+                        <span className="text-muted-foreground text-xs">→</span>
+                        <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded font-semibold">
+                          {INDUSTRY_LABELS[req.requestedIndustry] ?? req.requestedIndustry}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[req.status] as 'default' | 'outline' | 'destructive'} className="text-xs">
+                        {req.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(req.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </TableCell>
+                    {filter === 'PENDING' && (
+                      <TableCell className="text-right">
+                        {req.status === 'PENDING' && (
+                          <Button size="sm" variant="outline" className="text-xs h-7"
+                            onClick={() => setReviewing(req)}>
+                            Review
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {reviewing && (
+        <ReviewOrgChartDialog
+          request={reviewing}
+          onClose={() => {
+            setReviewing(null);
+            void qc.invalidateQueries({ queryKey: ['super-admin', 'org-chart-requests'] });
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 // ── Main dashboard ─────────────────────────────────────────────────────────────
 
 export default function SuperAdminDashboard() {
@@ -529,6 +767,17 @@ export default function SuperAdminDashboard() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState<CreateOrgForm>(blankForm());
   const [formError, setFormError] = useState('');
+
+  const { data: pendingOrgChartCount = 0 } = useQuery<number>({
+    queryKey: ['super-admin', 'org-chart-requests', 'pending-count'],
+    queryFn: async () => {
+      const res = await superAdminApi.get<{ data: { id: string }[] }>(
+        '/super-admin/org-chart-requests?status=PENDING',
+      );
+      return res.data.data.length;
+    },
+    refetchInterval: 60_000, // refresh every minute for live badge
+  });
 
   const { data: orgs = [], isLoading } = useQuery<OrgRow[]>({
     queryKey: ['super-admin', 'organizations'],
@@ -644,17 +893,23 @@ export default function SuperAdminDashboard() {
             { key: 'organizations', label: 'Organizations' },
             { key: 'assets', label: 'Assets' },
             { key: 'code-requests', label: 'Code Requests' },
-          ] as { key: Tab; label: string }[]).map((tab) => (
+            { key: 'org-chart-requests', label: 'Org Chart Requests', badge: pendingOrgChartCount },
+          ] as { key: Tab; label: string; badge?: number }[]).map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 activeTab === tab.key
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.label}
+              {tab.badge != null && tab.badge > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -761,6 +1016,9 @@ export default function SuperAdminDashboard() {
 
         {/* Code Requests tab */}
         {activeTab === 'code-requests' && <CodeRequestsTab />}
+
+        {/* Org Chart Requests tab */}
+        {activeTab === 'org-chart-requests' && <OrgChartRequestsTab />}
       </main>
 
       {/* Create Organization Dialog */}

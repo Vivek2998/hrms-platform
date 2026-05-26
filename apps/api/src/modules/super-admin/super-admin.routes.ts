@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { signAccessToken } from '../../lib/jwt.js';
 import { ok, fail } from '../../lib/response.js';
 import { provisionOrganization } from '../../lib/provision-org.js';
-import { sendEmail, empCodeDecisionEmail } from '../../lib/email.js';
+import { sendEmail, empCodeDecisionEmail, orgChartDecisionEmail } from '../../lib/email.js';
+import { INDUSTRY_TEMPLATES, type IndustryType } from '../../lib/industry-templates.js';
 
 const PLAN_LIMITS: Record<string, number> = {
   FREE: 10,
@@ -261,6 +262,130 @@ export function superAdminRoutes(app: FastifyInstance) {
           orgName: codeRequest.organization.name,
           requestedPrefix: codeRequest.requestedPrefix,
           applyToExisting: codeRequest.applyToExisting,
+          status: 'REJECTED',
+          superAdminNote: input.superAdminNote,
+        }),
+      );
+    }
+
+    return reply.send(ok({ message: `Request ${input.action === 'APPROVE' ? 'approved' : 'rejected'} successfully` }));
+  });
+
+  // ── Org Chart Change Requests ──────────────────────────────────────────────
+
+  // GET /super-admin/org-chart-requests — list requests (default: PENDING only)
+  app.get('/super-admin/org-chart-requests', auth, async (req, reply) => {
+    const { status } = z
+      .object({ status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'ALL']).default('PENDING') })
+      .parse(req.query);
+
+    const requests = await app.prisma.orgChartChangeRequest.findMany({
+      where: status === 'ALL' ? {} : { status },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        currentIndustry: true,
+        requestedIndustry: true,
+        reason: true,
+        status: true,
+        superAdminNote: true,
+        resolvedAt: true,
+        createdAt: true,
+        organization: { select: { id: true, name: true, slug: true } },
+        requestedBy: { select: { id: true, firstName: true, lastName: true, workEmail: true } },
+      },
+    });
+
+    return reply.send(ok(requests));
+  });
+
+  // PATCH /super-admin/org-chart-requests/:id — approve or reject
+  app.patch('/super-admin/org-chart-requests/:id', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = z.object({
+      action: z.enum(['APPROVE', 'REJECT']),
+      superAdminNote: z.string().max(500).optional(),
+    }).parse(req.body);
+
+    const changeReq = await app.prisma.orgChartChangeRequest.findUnique({
+      where: { id },
+      include: {
+        organization: { select: { id: true, name: true } },
+        requestedBy: { select: { workEmail: true, firstName: true, lastName: true } },
+      },
+    });
+    if (!changeReq) throw fail('Request not found', 404);
+    if (changeReq.status !== 'PENDING') throw fail('This request has already been resolved', 409);
+
+    if (input.action === 'APPROVE') {
+      // 1. Update the org's industryType
+      await app.prisma.organization.update({
+        where: { id: changeReq.organizationId },
+        data: { industryType: changeReq.requestedIndustry },
+      });
+
+      // 2. Seed the new template
+      const template = INDUSTRY_TEMPLATES[changeReq.requestedIndustry as IndustryType];
+      if (template) {
+        const keyToId = new Map<string, string>();
+        for (const pos of template) {
+          const existing = await app.prisma.designation.findFirst({
+            where: { organizationId: changeReq.organizationId, templateKey: pos.key },
+            select: { id: true },
+          });
+          if (existing) { keyToId.set(pos.key, existing.id); continue; }
+          const byName = await app.prisma.designation.findFirst({
+            where: { organizationId: changeReq.organizationId, name: pos.title },
+            select: { id: true },
+          });
+          if (byName) {
+            await app.prisma.designation.update({ where: { id: byName.id }, data: { templateKey: pos.key, level: pos.level, department: pos.department ?? undefined } });
+            keyToId.set(pos.key, byName.id);
+            continue;
+          }
+          const created = await app.prisma.designation.create({
+            data: { organizationId: changeReq.organizationId, name: pos.title, level: pos.level, department: pos.department, templateKey: pos.key },
+          });
+          keyToId.set(pos.key, created.id);
+        }
+        for (const pos of template) {
+          if (!pos.parentKey) continue;
+          const pid = keyToId.get(pos.key);
+          const parentId = keyToId.get(pos.parentKey);
+          if (pid && parentId) await app.prisma.designation.update({ where: { id: pid }, data: { parentId } });
+        }
+      }
+
+      // 3. Mark request approved
+      await app.prisma.orgChartChangeRequest.update({
+        where: { id },
+        data: { status: 'APPROVED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+      });
+
+      void sendEmail(
+        changeReq.requestedBy.workEmail,
+        `Your Org Chart Template Change Request has been Approved`,
+        orgChartDecisionEmail({
+          adminName: `${changeReq.requestedBy.firstName} ${changeReq.requestedBy.lastName}`,
+          orgName: changeReq.organization.name,
+          requestedIndustry: changeReq.requestedIndustry,
+          status: 'APPROVED',
+          superAdminNote: input.superAdminNote,
+        }),
+      );
+    } else {
+      await app.prisma.orgChartChangeRequest.update({
+        where: { id },
+        data: { status: 'REJECTED', superAdminNote: input.superAdminNote, resolvedAt: new Date() },
+      });
+
+      void sendEmail(
+        changeReq.requestedBy.workEmail,
+        `Your Org Chart Template Change Request was Not Approved`,
+        orgChartDecisionEmail({
+          adminName: `${changeReq.requestedBy.firstName} ${changeReq.requestedBy.lastName}`,
+          orgName: changeReq.organization.name,
+          requestedIndustry: changeReq.requestedIndustry,
           status: 'REJECTED',
           superAdminNote: input.superAdminNote,
         }),
