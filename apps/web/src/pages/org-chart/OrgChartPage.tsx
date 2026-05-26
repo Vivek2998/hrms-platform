@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronDown, Network, Printer, Users, Building2, RefreshCw,
-  Plus, ZoomIn, ZoomOut, Maximize2, UserPlus, AlertCircle,
+  Plus, ZoomIn, ZoomOut, Maximize2, UserPlus,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -602,12 +602,6 @@ export default function OrgChartPage() {
             <div className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
               <span className="text-muted-foreground">{vacantCount} vacant</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                Positions fill automatically when employees are hired. Print removes vacant positions.
-              </span>
             </div>
           </div>
         )}
