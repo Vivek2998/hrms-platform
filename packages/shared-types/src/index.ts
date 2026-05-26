@@ -293,6 +293,8 @@ export interface Employee {
   teamId?: string;
   managerId?: string;
   designation?: string;
+  designationId?: string | null;
+  previousEmployeeCode?: string | null;
   location?: string;
   presentAddress?: EmployeeAddress;
   permanentAddress?: EmployeeAddress;

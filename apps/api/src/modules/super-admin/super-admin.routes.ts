@@ -214,7 +214,14 @@ export function superAdminRoutes(app: FastifyInstance) {
             const newCode = `${codeRequest.requestedPrefix}-${suffix}`;
             return tx.employee.update({
               where: { id: emp.id },
-              data: { employeeCode: newCode },
+              data: {
+                employeeCode: newCode,
+                // Preserve the old code permanently for audit trail.
+                // If the employee already has a previousEmployeeCode (from a
+                // prior rename), keep the oldest historical value — don't
+                // overwrite it — so the full rename chain is visible.
+                previousEmployeeCode: emp.employeeCode,
+              },
             });
           });
 

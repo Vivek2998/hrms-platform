@@ -1,0 +1,307 @@
+Modern HRMS performance modules revolve around structured goal/OKR/KPI management, continuous feedback (check‑ins, 1:1s, 360), formal reviews, and development plans, all driven by configurable workflows and strict role‑based permissions. Below is how top systems like Workday, SAP SuccessFactors, BambooHR, Cornerstone, etc. actually implement, measure, and monitor performance — and what that implies for your HRMS.
+
+What a modern performance management system does
+A performance management system tracks employee performance in a consistent, measurable way and aligns it with business objectives. It combines technologies and methods so managers and employees jointly set expectations, define goals, measure performance, share reviews, and give feedback. When implemented well, it increases productivity, improves engagement, reduces turnover, and maximizes revenue per employee.
+
+Most modern systems have moved from once‑a‑year appraisals to continuous performance management: frequent check‑ins, real‑time feedback, and flexible goals that can change as business priorities shift. They typically support multiple models together — KPIs, OKRs, SMART goals, behavioral competencies, and development plans.
+
+Core functional modules in leading HRMS
+Across Workday, SAP SuccessFactors, BambooHR, Zoho People, etc., the performance area usually contains these core modules.
+
+1. Goals / OKRs / KPIs
+Goals (often SMART: Specific, Measurable, Achievable, Relevant, Time‑bound) are defined jointly by employee and manager and aligned to organizational objectives.
+
+OKRs (Objectives and Key Results) are used to define ambitious objectives and measurable key results; they align team and individual work with strategic priorities.
+
+KPIs are metrics used to monitor ongoing performance (e.g., tickets closed, sales, quality rate) and are often tied to goals or key results.
+
+Systems support multiple performance “modules” such as goals, KRAs, skillsets, and competencies to evaluate performance fairly.
+
+2. Competencies & skills
+Competencies (e.g., communication, leadership, teamwork) are defined with descriptions and often weightages per role.
+
+Modern platforms like SAP SuccessFactors maintain skills profiles and use AI to infer and update skills based on continuous performance data and feedback.
+
+Competency ratings feed into performance scores, calibration, and development planning.
+
+3. Continuous feedback & check‑ins
+Systems provide check‑ins (mid‑year, quarterly, or ad‑hoc) where employees and managers discuss progress, update goals, and document notes.
+
+Check‑ins are usually initiated as Workday tasks, with HR pushing out mid‑year check‑ins but managers allowed to start additional ones as needed.
+
+Continuous feedback features allow real‑time recognition, coaching, and comments tied directly to goals or activities.
+
+4. Formal reviews & ratings
+Annual or cycle‑based performance reviews aggregate goals, competencies, feedback, and manager comments into a structured form.
+
+Reviews have configurable sections (goals, competencies, overall comments, development plan) and use rating scales (e.g., 1–5, Meets/Exceeds).
+
+Calibration tools (in systems like SAP SuccessFactors) help standardize ratings across managers and ensure fairness.
+
+5. 360‑degree feedback
+Employees receive feedback from multiple sources: manager, peers, direct reports, sometimes clients or vendors.
+
+Platforms like BambooHR and others support self‑assessment, manager assessment, peer feedback, and upward feedback in a single 360 cycle.
+
+360 feedback is organized by competency categories and presented as aggregated scores and comments for the employee.
+
+6. Performance analytics & reporting
+Performance reports show goal progress, feedback trends, distribution of ratings, and identification of high‑performers or under‑performers.
+
+Dashboards present employee, team, and organizational views, often with filters by department, manager, and cycle.
+
+Advanced systems use AI/predictive analytics to support talent decisions, internal mobility, and risk of turnover.
+
+7. Development plans & L&D integration
+Individual development plans capture training, mentoring, stretch assignments, and target dates.
+
+Performance tools integrate with learning modules (LMS) so poor ratings on a competency can trigger recommended courses.
+
+How performance is measured in HRMS
+Goal / KPI / OKR measurement
+Goals have attributes like title, description, metric, target value, weight, due date, and alignment (linked to higher‑level organizational goals).
+
+SMART goals and KRAs are standard; many HRMS explicitly mention that goals must be specific, measurable, and jointly set by manager and employee.
+
+OKR‑based systems measure percent completion of each Key Result (e.g., 0–1 or 0–100%), then compute an objective score from the KR scores.
+
+KPIs are numeric indicators tracked over time; systems treat them as metrics attached to goals or roles (e.g., sales per quarter, defect rate, customer NPS).
+
+Leading guidance emphasizes that KPIs are for monitoring current performance, while OKRs are used to drive improvement and stretch goals; best‑in‑class systems support using both together.
+
+Competency and behavioral scoring
+Each competency has a rating scale (often 1–5) and optionally a weight within the total performance score.
+
+Questionnaires or 360 surveys ask about behaviors (e.g., teamwork, communication) and aggregate scores per competency.
+
+Skills‑based performance evaluation in SuccessFactors uses inferred skills, validated in forms and 360 reviews, feeding into a “skills portfolio.”
+
+Overall ratings & calibration
+Systems combine weighted goal achievement, KPI results, competency scores, and sometimes potential/values to produce an overall rating.
+
+Calibration views let HR and leaders compare ratings across teams and adjust for consistency, often using visual tools like grids or distribution graphs.
+
+Who does what: roles and permissions
+Modern HRMS rely heavily on role‑based access control and security domains to define who can see/change performance data.
+
+Employee (self‑service)
+Typical capabilities:
+
+View own goals, progress, feedback, and reviews.
+
+Propose or create personal goals that align to organization or team goals (especially in OKR setups).
+
+Update goal status, add comments, and log achievements.
+
+Complete self‑appraisals and mid‑year/annual self‑evaluations via tasks in systems like Workday.
+
+Request or give peer feedback where 360 feedback is enabled.
+
+In Workday, for example, the mid‑year check‑in process is started by the worker, who receives a task to complete self‑evaluation and reflect on goals; after submission, the manager reviews and comments.
+
+Manager
+Typical responsibilities:
+
+Approve/cascade goals from organization to team members and create role‑specific goals for their team.
+
+Conduct check‑ins, add comments on progress, and adjust goals as needed mid‑cycle.
+
+Write performance reviews, rate goals and competencies, and propose overall ratings.
+
+Initiate or approve 360 feedback participants (choosing peers/direct reports to give feedback).
+
+Create and track development plans and recommend training or mobility decisions.
+
+HR / HR admin
+Typical capabilities:
+
+Configure performance cycles, review templates, sections, and rating scales.
+
+Define goal libraries (e.g., SMART goal templates) and competency frameworks for different roles.
+
+Control security: who can see/edit goals, feedback, ratings (Workday uses domains like “Self‑Service: Employee Goals” vs “Worker Data: Employee Goals”).
+
+Push out tasks (launch review cycles, mid‑year check‑ins) to managers and employees.
+
+Run performance analytics and calibration sessions; feed performance results into compensation and succession modules.
+
+Senior leadership
+Consumes high‑level dashboards: performance distribution by org, top talent lists, at‑risk population, and impact of performance on business KPIs.
+
+Uses analytics and AI insights to support promotions, succession, and workforce planning.
+
+Who can add goals, tasks, and performance data
+From how Workday, BambooHR, and others are structured, typical patterns are:
+
+Organizational / strategic goals: Created by HR or senior leadership; cascaded down to departments and teams using “goal cascading” features.
+
+Team goals: Created by managers, sometimes by HR, then cascaded or assigned to team members.
+
+Individual goals:
+
+Employee can propose personal goals or align a personal goal to an org/team goal.
+
+Manager approves/edits these and may add mandatory goals.
+
+KPIs / Key Results:
+
+Often defined at template or library level by HR (e.g., in performance setup forms like FlowHCM’s objective/KPI creation).
+
+Sometimes managers or employees can define local KPIs within the limits allowed by the template.
+
+Check‑ins and 1:1 notes:
+
+Check‑in conversations are usually started by the employee in Workday; HR also schedules mandatory ones by pushing tasks.
+
+Managers document their notes, action items, and follow‑ups during or after the conversation.
+
+Feedback / 360:
+
+HR defines which feedback types are enabled in a cycle (self, manager, peer, upward).
+
+Managers and sometimes employees nominate peers; the system sends survey links and collects answers.
+
+Your HRMS should therefore provide flexible configuration: per cycle you define which actors can create/edit which entities (goals, KPIs, feedback, check‑ins).
+
+How performance is monitored through HRMS
+Dashboards and views
+Employee dashboards show current goals, progress bars, upcoming due dates, received feedback, and review status.
+
+Manager dashboards list team members with indicators like goal completion %, feedback volume, upcoming reviews, and risk flags (e.g., low rating + low engagement).
+
+HR dashboards aggregate across orgs: rating distributions, calibration status, completion rates of reviews, and correlation with business results.
+
+BambooHR, for example, provides performance reports that help managers identify high‑performing but undervalued employees and underperformers needing support.
+
+Scheduling, reminders, and workflows
+HR defines performance cycles (e.g., annual review with mid‑year check‑in) and the system automatically generates tasks and reminders.
+
+Workflows route review forms between employee, manager, skip‑level, and HR for approval and sign‑off.
+
+Notifications are sent for overdue reviews, incomplete feedback, or missing goals.
+
+Real‑time updates and integrations
+With tools like SuccessFactors, employees and managers can update goals and capture achievements directly from collaboration platforms (e.g., Microsoft Teams) or mobile apps.
+
+AI assistants (e.g., SAP’s Joule / Performance Preparation Agent) can aggregate goals, achievements, and feedback into a summary for managers before review discussions.
+
+Typical criteria used to assess performance
+Across systems, criteria fall into 4 broad buckets.
+
+Results / KPIs
+
+Revenue, sales, utilization, tickets closed, defects, on‑time delivery, etc.
+
+Goal achievement % (OKR or SMART goals completion).
+
+Skills & competencies
+
+Job‑specific skills (e.g., Python, robotics, testing) and soft skills (communication, collaboration).
+
+Leadership, problem‑solving, innovation, customer focus.
+
+Behaviors & values
+
+Living company values, teamwork, reliability, ethics.
+
+Often captured in 360 feedback surveys with statements rated on Likert scales.
+
+Growth & potential
+
+Learning agility, ability to take on bigger roles, involvement in development activities.
+
+Progress on development plans and completed learning.
+
+Each organization defines weights for these components, and modern HRMS allow configuring these weights per template or per job family.
+
+Under‑the‑hood: typical data model and objects
+In practice, most enterprise HRMS data models include entities like:
+
+Employee, Position, OrgUnit
+
+PerformanceCycle (time‑bound: e.g., 2026 Annual Review)
+
+Goal / Objective (fields: owner, type, alignment, metric, target, weight, status, dates)
+
+KeyResult / KPI (numeric metrics linked to a goal or role)
+
+Competency (name, description, scale, weight)
+
+ReviewTemplate (sections, scales, workflow steps)
+
+ReviewInstance (employee, cycle, template, section scores, comments, overall rating)
+
+CheckIn (employee, manager, date, topics, notes, actions)
+
+Feedback (giver, receiver, type: peer/upward/manager, questions, answers)
+
+DevelopmentPlan (employee, goals, activities, target dates)
+
+Permissions are then layered on these entities using role/relationship rules (self vs manager vs HR).
+
+For your own HRMS (React + Flutter + FastAPI stack), this maps naturally to relational tables or collections with clear foreign keys (Employee → Goals → KeyResults, etc.).
+
+What the “best” HRMS do differently
+Looking at SAP SuccessFactors, Workday, BambooHR, Cornerstone, and similar leaders, some differentiating patterns emerge.
+
+1. Strong alignment with strategy
+They make it very easy to align individual goals with organization‑wide objectives through cascading and alignment features.
+
+Many now embed OKRs explicitly, not just generic goals, so teams can manage ambitious, outcome‑oriented objectives.
+
+2. Continuous, not just annual, performance
+Built‑in check‑ins, 1:1s, and real‑time feedback — with templates, prompts, and required frequencies — keep performance conversations regular.
+
+Mobile apps and integrations (Teams, etc.) allow managers/employees to give feedback and update goals in the flow of work.
+
+3. 360 feedback that is simple but powerful
+Configurable 360 cycles with self, manager, peer, and upward feedback, custom questions, and anonymous aggregation.
+
+Clear presentation of 360 results per competency to drive coaching and development plans.
+
+4. AI‑assisted goal setting and reviews
+SAP SuccessFactors uses AI to generate strategy‑aligned goals, summarize performance data, and suggest talking points for reviews.
+
+AI also infers skills and keeps skill profiles updated from continuous performance signals.
+
+5. Deep integration with compensation and talent
+Performance scores feed into compensation planning (merit, bonus, stock) and succession / talent review processes.
+
+Dashboards support 9‑box or similar talent grids for potential vs performance.
+
+How this can translate into your HRMS (high‑level)
+Since you’re building a commercial‑grade cross‑platform HRMS, you’ll want to match the standard patterns above and then exceed them in UX and intelligence. At a high level:
+
+Baseline features you should definitely implement:
+
+Goals/KRAs with SMART structure, alignment, and weights, plus optional OKR mode.
+
+KPIs and numeric metrics linked to goals or roles.
+
+Competency library with rating scales and weights by role.
+
+Cycles (annual, mid‑year) with configurable review templates and workflows.
+
+Self‑service for employees to update goals, do self‑reviews, and request/receive feedback.
+
+Manager tools for goal approval, check‑ins, reviews, and development plans.
+
+360 feedback support with at least self/manager/peer flows.
+
+Dashboards and reports for employees, managers, and HR.
+
+Potential differentiators to become “best in market”:
+
+Super‑simple UX for mixed KPI+OKR usage, explaining to users when to set a KPI vs OKR and allowing them to coexist cleanly.
+
+Opinionated templates for different industries (tech, manufacturing, healthcare) with pre‑built goals and KPIs.
+
+AI helpers (later phase) that:
+
+Suggest SMART goals from plain‑language descriptions.
+
+Summarize performance data for managers before a 1:1.
+
+Tight integration between performance and your other HRMS modules (attendance, leave, projects) to auto‑surface signals (e.g., repeated late attendance impacting reliability competency).
+
+If you like, next step we can design the exact performance module architecture for your stack: entities, API endpoints, React screens, and review workflows, then identify 2–3 unique features that will make your HRMS stand out against Workday/SuccessFactors/BambooHR.

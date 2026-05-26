@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, PenLine } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useCreateEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useDesignations } from '@/hooks/useDesignations';
 
 const schema = z.object({
   // Personal
@@ -48,6 +49,7 @@ const schema = z.object({
     .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT'])
     .default('FULL_TIME'),
   designation: z.string().optional(),
+  designationId: z.string().optional(),
   departmentId: z.string().optional(),
   managerId: z.string().optional(),
   dateOfJoining: z.string().optional(),
@@ -131,9 +133,11 @@ const TABS = [
 
 export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
   const [activeTab, setActiveTab] = useState<string>('personal');
+  const [customDesignation, setCustomDesignation] = useState(false);
   const { mutate: createEmployee, isPending } = useCreateEmployee();
   const { data: departments = [] } = useDepartments();
   const { data: employeeList } = useEmployees({ limit: 100 });
+  const { data: designations = [] } = useDesignations();
   const managers = employeeList?.employees ?? [];
 
   const form = useForm<FormValues>({
@@ -177,6 +181,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
       maritalStatus: values.maritalStatus,
       employmentType: values.employmentType,
       designation: values.designation || undefined,
+      designationId: values.designationId || undefined,
       departmentId: values.departmentId || undefined,
       managerId: values.managerId || undefined,
       dateOfJoining: toDateStr(values.dateOfJoining),
@@ -226,6 +231,7 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
   const handleClose = () => {
     form.reset();
     setActiveTab('personal');
+    setCustomDesignation(false);
     onClose();
   };
 
@@ -354,7 +360,58 @@ export function AddEmployeeDialog({ open, onClose }: AddEmployeeDialogProps) {
                     <Input type="email" {...form.register('workEmail')} />
                   </Field>
                   <Field label="Designation">
-                    <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
+                    {designations.length > 0 && !customDesignation ? (
+                      <div className="space-y-1.5">
+                        <Controller
+                          control={form.control}
+                          name="designationId"
+                          render={({ field }) => (
+                            <Select
+                              value={field.value ?? ''}
+                              onValueChange={(val) => {
+                                field.onChange(val);
+                                const found = designations.find((d) => d.id === val);
+                                if (found) form.setValue('designation', found.name);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select designation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {designations.map((d) => (
+                                  <SelectItem key={d.id} value={d.id}>
+                                    {d.name}
+                                    {d.department ? (
+                                      <span className="text-muted-foreground ml-1.5 text-xs">· {d.department}</span>
+                                    ) : null}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setCustomDesignation(true); form.setValue('designationId', ''); }}
+                          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                        >
+                          <PenLine className="h-3 w-3" /> Enter custom title
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
+                        {designations.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setCustomDesignation(false)}
+                            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                          >
+                            ← Pick from list
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </Field>
                   <Field label="Employment Type">
                     <Controller

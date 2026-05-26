@@ -61,6 +61,7 @@ export const createEmployeeSchema = z.object({
     .enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT'])
     .default('FULL_TIME'),
   designation: z.string().max(100).optional(),
+  designationId: z.string().uuid().optional().nullable(),
   departmentId: z.string().uuid().optional(),
   teamId: z.string().uuid().optional(),
   managerId: z.string().uuid().optional(),

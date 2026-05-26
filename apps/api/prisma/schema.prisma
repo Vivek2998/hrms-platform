@@ -381,6 +381,10 @@ model Organization {
   // Auto-derived from org name at registration if not explicitly set.
   // Run migration: prisma migrate dev --name "add_org_employee_code_prefix"
   employeeCodePrefix  String @default("EMP")
+  // Industry / org category — used to seed the position org chart template.
+  // Values: IT_SOFTWARE | MANUFACTURING | HEALTHCARE | FINANCIAL_SERVICES |
+  //         RETAIL | EDUCATIONAL | SERVICE_BASED | GENERAL
+  industryType        String  @default("IT_SOFTWARE")
   trialEndsAt      DateTime?
   isActive    Boolean  @default(true)
   deletedAt   DateTime?
@@ -545,6 +549,9 @@ model Employee {
   id                  String          @id @default(uuid())
   organizationId      String
   employeeCode        String
+  // Preserved whenever the employee code is changed (prefix rename or manual override).
+  // Kept permanently for audit / transparency — never wiped.
+  previousEmployeeCode String?
   firstName           String
   lastName            String
   displayName         String?
@@ -674,6 +681,7 @@ model Employee {
   esopGrants               EsopGrant[]
   employeeCodeRequests     EmployeeCodeChangeRequest[]
   leaveBalances            LeaveBalance[]
+  designationRef           Designation? @relation("EmployeeDesignation", fields: [designationId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -2526,12 +2534,21 @@ model Designation {
   department     String?
   description    String?
   skills         String[] @default([])
+  // Self-referencing parent for position org-chart hierarchy.
+  // Populated by the industry-template seed, or manually by admin.
+  parentId       String?
+  // templateId: the stable ID within the industry template (e.g. "ceo", "vp_eng").
+  // Null for manually created designations.
+  templateKey    String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
+  parent       Designation?  @relation("DesignationTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Designation[] @relation("DesignationTree")
   fromPaths    CareerPath[] @relation("FromDesignation")
   toPaths      CareerPath[] @relation("ToDesignation")
+  employees    Employee[]   @relation("EmployeeDesignation")
 
   @@unique([organizationId, name])
   @@index([organizationId])

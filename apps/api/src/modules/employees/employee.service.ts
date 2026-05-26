@@ -22,6 +22,8 @@ const EMPLOYEE_SELECT = {
   status: true,
   employmentType: true,
   designation: true,
+  designationId: true,
+  previousEmployeeCode: true,
   departmentId: true,
   teamId: true,
   managerId: true,

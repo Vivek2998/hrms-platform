@@ -26,6 +26,8 @@ import { useUpdateEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/stores/auth.store';
+import { useDesignations } from '@/hooks/useDesignations';
+import { PenLine } from 'lucide-react';
 import type { Employee } from '@hrms/shared-types';
 
 const schema = z.object({
@@ -45,6 +47,7 @@ const schema = z.object({
   workEmail: z.string().email('Invalid work email'),
   employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT']),
   designation: z.string().optional(),
+  designationId: z.string().optional().nullable(),
   departmentId: z.string().optional(),
   managerId: z.string().optional(),
   dateOfJoining: z.string().optional(),
@@ -134,6 +137,7 @@ function buildDefaults(employee: Employee): FormValues {
     workEmail: employee.workEmail ?? '',
     employmentType: (employee.employmentType ?? 'FULL_TIME') as FormValues['employmentType'],
     designation: employee.designation ?? '',
+    designationId: employee.designationId ?? '',
     departmentId: employee.departmentId ?? '',
     managerId: employee.managerId ?? '',
     dateOfJoining: toDateInput(employee.dateOfJoining),
@@ -181,9 +185,11 @@ const TABS = [
 
 export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDialogProps) {
   const [activeTab, setActiveTab] = useState<string>('personal');
+  const [customDesignation, setCustomDesignation] = useState(false);
   const { mutate: updateEmployee, isPending } = useUpdateEmployee(employee.id);
   const { data: departments = [] } = useDepartments();
   const { data: employeeList } = useEmployees({ limit: 100 });
+  const { data: designations = [] } = useDesignations();
   const managers = (employeeList?.employees ?? []).filter((e) => e.id !== employee.id);
   const currentUserRole = useAuthStore((s) => s.user?.role);
   const canEditWorkEmail = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(currentUserRole ?? '');
@@ -194,7 +200,12 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
   });
 
   useEffect(() => {
-    if (open) form.reset(buildDefaults(employee));
+    if (open) {
+      form.reset(buildDefaults(employee));
+      // If employee has a designationId that exists in the list, use dropdown;
+      // if they have a free-text designation but no designationId, switch to custom mode.
+      setCustomDesignation(!!employee.designation && !employee.designationId);
+    }
   }, [open, employee, form]);
 
   const errors = form.formState.errors;
@@ -214,6 +225,8 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
     if (values.dateOfBirth) p.dateOfBirth = values.dateOfBirth.slice(0, 10);
     if (values.bloodGroup) p.bloodGroup = values.bloodGroup;
     if (values.designation) p.designation = values.designation;
+    // Always send designationId (even null to unlink a removed designation)
+    p.designationId = values.designationId || null;
     if (values.departmentId) p.departmentId = values.departmentId;
     if (values.managerId) p.managerId = values.managerId;
     if (values.dateOfJoining) p.dateOfJoining = values.dateOfJoining.slice(0, 10);
@@ -386,7 +399,58 @@ export function EditEmployeeDialog({ employee, open, onClose }: EditEmployeeDial
                     </Field>
                   )}
                   <Field label="Designation">
-                    <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
+                    {designations.length > 0 && !customDesignation ? (
+                      <div className="space-y-1.5">
+                        <Controller
+                          control={form.control}
+                          name="designationId"
+                          render={({ field }) => (
+                            <Select
+                              value={field.value ?? ''}
+                              onValueChange={(val) => {
+                                field.onChange(val);
+                                const found = designations.find((d) => d.id === val);
+                                if (found) form.setValue('designation', found.name);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select designation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {designations.map((d) => (
+                                  <SelectItem key={d.id} value={d.id}>
+                                    {d.name}
+                                    {d.department ? (
+                                      <span className="text-muted-foreground ml-1.5 text-xs">· {d.department}</span>
+                                    ) : null}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setCustomDesignation(true); form.setValue('designationId', ''); }}
+                          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                        >
+                          <PenLine className="h-3 w-3" /> Enter custom title
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Input placeholder="e.g. Software Engineer" {...form.register('designation')} />
+                        {designations.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setCustomDesignation(false)}
+                            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                          >
+                            ← Pick from list
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </Field>
                   <Field label="Employment Type">
                     <Controller

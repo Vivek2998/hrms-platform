@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { ok, fail } from '../../lib/response.js';
 import { sendEmail, empCodeRequestToSuperAdminEmail } from '../../lib/email.js';
 
+const INDUSTRY_TYPES = [
+  'IT_SOFTWARE', 'MANUFACTURING', 'HEALTHCARE', 'FINANCIAL_SERVICES',
+  'RETAIL', 'EDUCATIONAL', 'SERVICE_BASED', 'GENERAL',
+] as const;
+
 const requestChangeSchema = z.object({
   requestedPrefix: z
     .string()
@@ -13,6 +18,39 @@ const requestChangeSchema = z.object({
 
 export function orgSettingsRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
+
+  // ── GET /organizations/settings/general ─────────────────────
+  app.get('/organizations/settings/general', auth, async (req, reply) => {
+    const org = await app.prisma.organization.findUnique({
+      where: { id: req.user.orgId },
+      select: {
+        id: true, name: true, slug: true, logoUrl: true, website: true,
+        email: true, phone: true, timezone: true, currency: true,
+        industryType: true,
+        employeeCodePrefix: true,
+      },
+    });
+    if (!org) throw fail('Organization not found', 404);
+    return reply.send(ok(org));
+  });
+
+  // ── PATCH /organizations/settings/general ───────────────────
+  app.patch('/organizations/settings/general', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN'].includes(req.user.role)) throw fail('Forbidden', 403);
+    const input = z.object({
+      industryType: z.enum(INDUSTRY_TYPES).optional(),
+      timezone: z.string().optional(),
+      currency: z.string().optional(),
+      website: z.string().url().optional().nullable(),
+      phone: z.string().optional().nullable(),
+    }).parse(req.body);
+    const updated = await app.prisma.organization.update({
+      where: { id: req.user.orgId },
+      data: input,
+      select: { id: true, industryType: true, timezone: true },
+    });
+    return reply.send(ok(updated));
+  });
 
   // ── GET /organizations/settings/employee-code ─────────────────────────────
   // Returns the current prefix, format example, and any pending request.
