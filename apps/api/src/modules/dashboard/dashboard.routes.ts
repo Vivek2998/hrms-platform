@@ -150,7 +150,7 @@ export function dashboardRoutes(app: FastifyInstance) {
 
     const hasPip = emp
       ? (await app.prisma.performanceImprovementPlan.count({
-          where: { organizationId: orgId, employeeId: userId, status: { in: ['ACTIVE', 'IN_PROGRESS'] } },
+          where: { organizationId: orgId, employeeId: userId, status: { in: ['ACTIVE', 'EXTENDED'] } },
         })) > 0
       : false;
 
