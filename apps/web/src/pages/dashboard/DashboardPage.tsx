@@ -336,14 +336,12 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
         ))}
       </div>
 
-      <CardHeader className="relative flex flex-row items-center gap-2 pb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-          <Cake className="h-4 w-4 text-white" />
+      <CardContent className="relative pt-3">
+        {/* Centered label — quiet, doesn't compete with content */}
+        <div className="mb-3 flex items-center justify-center gap-1.5">
+          <Cake className="h-3 w-3 text-white/60" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">Birthdays Today</span>
         </div>
-        <CardTitle className="text-sm font-semibold text-white">Birthdays Today</CardTitle>
-      </CardHeader>
-
-      <CardContent className="relative pt-0">
         {loading ? (
           <div className="flex items-center gap-2.5 py-2">
             <Skeleton className="h-12 w-12 shrink-0 rounded-full bg-white/20" />
@@ -431,14 +429,12 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
 function NewJoineeWidget({ entries, loading }: { entries: NewJoineeEntry[]; loading: boolean }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
-          <UserPlus className="h-4 w-4 text-blue-500" />
+      <CardContent className="pt-3">
+        <div className="mb-3 flex items-center justify-center gap-1.5">
+          <UserPlus className="h-3 w-3 text-muted-foreground/60" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">New Joinees</span>
+          <span className="text-[9px] text-muted-foreground/40">· 30 days</span>
         </div>
-        <CardTitle className="text-sm font-semibold">New Joinees</CardTitle>
-        <span className="text-muted-foreground ml-auto text-xs">30 days</span>
-      </CardHeader>
-      <CardContent className="pt-0">
         {loading ? (
           <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : entries.length === 0 ? (
@@ -466,13 +462,11 @@ function NewJoineeWidget({ entries, loading }: { entries: NewJoineeEntry[]; load
 function AnniversaryWidget({ entries, loading }: { entries: AnniversaryEntry[]; loading: boolean }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950">
-          <Award className="h-4 w-4 text-amber-500" />
+      <CardContent className="pt-3">
+        <div className="mb-3 flex items-center justify-center gap-1.5">
+          <Award className="h-3 w-3 text-muted-foreground/60" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Work Anniversaries</span>
         </div>
-        <CardTitle className="text-sm font-semibold">Work Anniversaries</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
         {loading ? (
           <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : entries.length === 0 ? (
