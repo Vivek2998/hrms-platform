@@ -89,6 +89,7 @@ interface NavGroup {
   key: string;
   label: string;
   icon: IconType;
+  to?: string;        // optional: makes the group header itself a navigable link
   children: NavItem[];
 }
 
@@ -154,8 +155,8 @@ const ENTRIES: SidebarEntry[] = [
     key: 'performance',
     label: 'Performance',
     icon: Target,
+    to: '/performance',   // group header IS the performance overview page
     children: [
-      { label: 'Reviews & Goals', to: '/performance', icon: BarChart2, feature: 'performance' },
       { label: 'KPI / KRA', to: '/kpi-kra', icon: Target },
       { label: 'PIP', to: '/pip', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'] },
       { label: 'Nine-Box Grid', to: '/nine-box', icon: BarChart2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
@@ -296,7 +297,10 @@ export function Sidebar() {
       const hasActive = entry.children.some(
         (c) => location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
       );
-      if (hasActive) {
+      // Also open when on the group's own page (for groups that have a `to`)
+      const parentActive =
+        entry.to && (location.pathname === entry.to || location.pathname.startsWith(entry.to + '/'));
+      if (hasActive || parentActive) {
         setOpenGroups(new Set([entry.key]));
         return;
       }
@@ -414,6 +418,21 @@ export function Sidebar() {
                               </p>
                             </div>
                             <div className="py-1">
+                              {/* Parent overview link for groups that have their own page */}
+                              {entry.to && (
+                                <>
+                                  <NavLink
+                                    to={entry.to}
+                                    end
+                                    className={({ isActive }) => flyoutItemClass(isActive)}
+                                    onClick={() => setFlyoutGroup(null)}
+                                  >
+                                    <entry.icon className="h-4 w-4 shrink-0" />
+                                    <span>Overview</span>
+                                  </NavLink>
+                                  {visible.length > 0 && <div className="my-1 border-t" />}
+                                </>
+                              )}
                               {visible.map((child) => {
                                 const locked = isLocked(child, orgPlan);
                                 if (locked) {
@@ -456,6 +475,81 @@ export function Sidebar() {
                   const isChildActive = visible.some(
                     (c) => location.pathname === c.to || location.pathname.startsWith(c.to + '/'),
                   );
+
+                  // ── Groups with their own navigable page (e.g. Performance) ──
+                  // Header = NavLink (left, active-highlighted) + ChevronButton (right, toggles children)
+                  if (entry.to) {
+                    return (
+                      <li key={entry.key}>
+                        <div className="flex w-full items-center overflow-hidden rounded-md">
+                          <NavLink
+                            to={entry.to}
+                            end
+                            className={({ isActive }) =>
+                              cn(
+                                'flex flex-1 items-center gap-3 rounded-l-md px-3 py-2 text-sm font-medium transition-colors',
+                                isActive
+                                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                              )
+                            }
+                          >
+                            <entry.icon className="h-5 w-5 shrink-0" />
+                            <span className="flex-1 text-left">{entry.label}</span>
+                          </NavLink>
+                          <button
+                            onClick={() => setOpenGroups(isOpen ? new Set() : new Set([entry.key]))}
+                            className="flex h-9.5 w-8 shrink-0 items-center justify-center rounded-r-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            aria-label={isOpen ? 'Collapse section' : 'Expand section'}
+                          >
+                            <ChevronDown
+                              className={cn(
+                                'h-4 w-4 shrink-0 transition-all duration-200',
+                                isOpen ? 'rotate-180 opacity-100' : 'opacity-40',
+                              )}
+                            />
+                          </button>
+                        </div>
+                        <div className={cn('grid overflow-hidden transition-[grid-template-rows] duration-200', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+                          <ul className="min-h-0 mt-0.5 space-y-0.5">
+                            {visible.map((child) => {
+                              const locked = isLocked(child, orgPlan);
+                              if (locked) {
+                                return (
+                                  <li key={child.to}>
+                                    <button
+                                      onClick={() => {
+                                        const plan = child.feature ? requiredPlan(child.feature) : null;
+                                        if (plan) toast.info(`${child.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+                                      }}
+                                      className={cn(expandedItemClass(false, true), 'w-full cursor-pointer opacity-50')}
+                                    >
+                                      <child.icon className="h-4 w-4 shrink-0" />
+                                      <span className="flex-1 text-left">{child.label}</span>
+                                      <Lock className="h-3 w-3 shrink-0" />
+                                    </button>
+                                  </li>
+                                );
+                              }
+                              return (
+                                <li key={child.to}>
+                                  <NavLink
+                                    to={child.to}
+                                    className={({ isActive }) => expandedItemClass(isActive, true)}
+                                  >
+                                    <child.icon className="h-4 w-4 shrink-0" />
+                                    <span>{child.label}</span>
+                                  </NavLink>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      </li>
+                    );
+                  }
+
+                  // ── Standard groups (header-only toggle, navigates to first child on open) ──
                   return (
                     <li key={entry.key}>
                       <button
