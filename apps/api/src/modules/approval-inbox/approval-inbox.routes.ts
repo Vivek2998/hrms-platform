@@ -41,7 +41,7 @@ export function approvalInboxRoutes(app: FastifyInstance) {
 
     // ── Leaves ────────────────────────────────────────────────
     if (!type || type === 'LEAVE') {
-      const leaves = await app.prisma.leaveApplication.findMany({
+      const leaves = await app.prisma.leaveRequest.findMany({
         where: { organizationId: orgId, status: 'PENDING' },
         include: {
           employee: employeeSelect,
@@ -55,7 +55,7 @@ export function approvalInboxRoutes(app: FastifyInstance) {
           id: l.id,
           type: 'LEAVE',
           title: `${l.leaveType.name} Leave`,
-          subtitle: `${l.startDate.toISOString().slice(0, 10)} → ${l.endDate.toISOString().slice(0, 10)}`,
+          subtitle: `${l.fromDate.toISOString().slice(0, 10)} → ${l.toDate.toISOString().slice(0, 10)}`,
           employeeName: `${l.employee.firstName} ${l.employee.lastName}`,
           employeeId: l.employee.id,
           createdAt: l.createdAt,
@@ -171,7 +171,7 @@ export function approvalInboxRoutes(app: FastifyInstance) {
     }
 
     const [leaves, expenses, regs, compOffs, tickets] = await app.prisma.$transaction([
-      app.prisma.leaveApplication.count({ where: { organizationId: orgId, status: 'PENDING' } }),
+      app.prisma.leaveRequest.count({ where: { organizationId: orgId, status: 'PENDING' } }),
       app.prisma.expenseClaim.count({ where: { organizationId: orgId, status: 'SUBMITTED' } }),
       app.prisma.attendanceRegularisation.count({ where: { organizationId: orgId, status: 'PENDING' } }),
       app.prisma.compOff.count({ where: { organizationId: orgId, status: 'PENDING' } }),
