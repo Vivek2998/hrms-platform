@@ -283,6 +283,9 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   const [current, setCurrent]   = React.useState(0);
   const [direction, setDirection] = React.useState<'left' | 'right'>('left');
   const [paused, setPaused]     = React.useState(false);
+  const [prev, setPrev]         = React.useState<number | null>(null);
+
+  const ANIM_MS = 500;
 
   // Refs so interval callback always reads latest values without re-subscribing
   const currentRef      = React.useRef(0);
@@ -291,6 +294,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   const intervalRef     = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const wheelCoolRef    = React.useRef(false);
   const dragStartX      = React.useRef<number | null>(null);
+  const transRef        = React.useRef(false);
 
   currentRef.current    = current;
   pausedRef.current     = paused;
@@ -302,8 +306,11 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
     if (entriesLenRef.current <= 1) return;
     intervalRef.current = setInterval(() => {
       if (pausedRef.current) return;
+      const next = (currentRef.current + 1) % entriesLenRef.current;
+      setPrev(currentRef.current);
       setDirection('left');
-      setCurrent((c) => (c + 1) % entriesLenRef.current);
+      setCurrent(next);
+      setTimeout(() => { setPrev(null); transRef.current = false; }, ANIM_MS + 40);
     }, 5000);
   }, []);
 
@@ -314,10 +321,13 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
 
   // ── Navigation ─────────────────────────────────────────────────
   function navigate(next: number) {
-    if (next === currentRef.current) return;
+    if (next === currentRef.current || transRef.current) return;
+    transRef.current = true;
+    setPrev(currentRef.current);
     setDirection(next > currentRef.current ? 'left' : 'right');
     setCurrent(next);
-    scheduleNext(); // reset auto-play timer on manual interaction
+    setTimeout(() => { setPrev(null); transRef.current = false; }, ANIM_MS + 40);
+    scheduleNext();
   }
 
   // ── Touch (mobile swipe) ───────────────────────────────────────
@@ -406,42 +416,69 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
             onMouseUp={onMouseUp}
             onWheel={onWheel}
           >
-            <div
-              key={current}
-              className="flex items-center gap-2.5 py-1"
-              style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} 480ms cubic-bezier(0.22, 1, 0.36, 1) both` }}
-            >
-              {entry.avatarUrl ? (
-                <img src={entry.avatarUrl} alt={`${entry.firstName} ${entry.lastName}`}
-                  className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
-              ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
-                  {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{entry.firstName} {entry.lastName}</p>
-                {entry.designation && <p className="truncate text-xs text-white/70">{entry.designation}</p>}
-              </div>
-              <button
-                disabled={wished.has(entry.id) || giveKudos.isPending}
-                onClick={() => {
-                  if (wished.has(entry.id) || giveKudos.isPending) return;
-                  giveKudos.mutate(
-                    { toEmployeeId: entry.id, category: 'OTHER', message: `Happy Birthday ${entry.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
-                    { onSuccess: () => setWished((prev) => new Set(prev).add(entry.id)) },
-                  );
-                }}
-                className={cn(
-                  'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-all',
-                  wished.has(entry.id)
-                    ? 'cursor-default border-white/30 bg-white/20 text-white/80'
-                    : 'border-white/50 bg-white/15 text-white hover:bg-white/30 hover:border-white/70',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
+            {/* Slide container — exiting card slides out while entering card slides in */}
+            <div className="relative overflow-hidden">
+              {prev !== null && entries[prev] && (() => {
+                const pe = entries[prev]!;
+                return (
+                  <div
+                    key={`exit-${prev}`}
+                    className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2.5 py-1"
+                    style={{ animation: `${direction === 'left' ? 'bday-slide-to-left' : 'bday-slide-to-right'} ${ANIM_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both` }}
+                  >
+                    {pe.avatarUrl ? (
+                      <img src={pe.avatarUrl} alt={`${pe.firstName} ${pe.lastName}`}
+                        className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
+                        {`${pe.firstName[0]}${pe.lastName[0]}`.toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-white">{pe.firstName} {pe.lastName}</p>
+                      {pe.designation && <p className="truncate text-xs text-white/70">{pe.designation}</p>}
+                    </div>
+                    <div className="h-7 w-16 shrink-0 rounded-md border border-white/30 bg-white/20" />
+                  </div>
+                );
+              })()}
+              <div
+                key={`enter-${current}`}
+                className="flex items-center gap-2.5 py-1"
+                style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} ${ANIM_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both` }}
               >
-                {wished.has(entry.id) ? '🎂 Wished!' : 'Wish 🎂'}
-              </button>
+                {entry.avatarUrl ? (
+                  <img src={entry.avatarUrl} alt={`${entry.firstName} ${entry.lastName}`}
+                    className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
+                    {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-white">{entry.firstName} {entry.lastName}</p>
+                  {entry.designation && <p className="truncate text-xs text-white/70">{entry.designation}</p>}
+                </div>
+                <button
+                  disabled={wished.has(entry.id) || giveKudos.isPending}
+                  onClick={() => {
+                    if (wished.has(entry.id) || giveKudos.isPending) return;
+                    giveKudos.mutate(
+                      { toEmployeeId: entry.id, category: 'OTHER', message: `Happy Birthday ${entry.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
+                      { onSuccess: () => setWished((ws) => new Set(ws).add(entry.id)) },
+                    );
+                  }}
+                  className={cn(
+                    'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-all',
+                    wished.has(entry.id)
+                      ? 'cursor-default border-white/30 bg-white/20 text-white/80'
+                      : 'border-white/50 bg-white/15 text-white hover:bg-white/30 hover:border-white/70',
+                    'disabled:cursor-not-allowed disabled:opacity-50',
+                  )}
+                >
+                  {wished.has(entry.id) ? '🎂 Wished!' : 'Wish 🎂'}
+                </button>
+              </div>
             </div>
             {entries.length > 1 && (
               <div className="flex justify-center gap-1.5 pt-2">
