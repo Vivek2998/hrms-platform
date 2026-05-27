@@ -285,7 +285,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   const [paused, setPaused]     = React.useState(false);
   const [prev, setPrev]         = React.useState<number | null>(null);
 
-  const ANIM_MS = 500;
+  const ANIM_MS = 600;
 
   // Refs so interval callback always reads latest values without re-subscribing
   const currentRef      = React.useRef(0);
@@ -424,7 +424,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                   <div
                     key={`exit-${prev}`}
                     className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2.5 py-1"
-                    style={{ animation: `${direction === 'left' ? 'bday-slide-to-left' : 'bday-slide-to-right'} ${ANIM_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both` }}
+                    style={{ animation: `${direction === 'left' ? 'bday-slide-to-left' : 'bday-slide-to-right'} ${ANIM_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both` }}
                   >
                     {pe.avatarUrl ? (
                       <img src={pe.avatarUrl} alt={`${pe.firstName} ${pe.lastName}`}
@@ -445,7 +445,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
               <div
                 key={`enter-${current}`}
                 className="flex items-center gap-2.5 py-1"
-                style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} ${ANIM_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both` }}
+                style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} ${ANIM_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both` }}
               >
                 {entry.avatarUrl ? (
                   <img src={entry.avatarUrl} alt={`${entry.firstName} ${entry.lastName}`}
