@@ -286,7 +286,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   const [transitioning, setTransitioning] = React.useState(false);
   const [paused, setPaused]               = React.useState(false);
 
-  const ANIM_MS = 520;
+  const ANIM_MS = 720;
 
   const currentRef      = React.useRef(0);
   const pausedRef       = React.useRef(false);
