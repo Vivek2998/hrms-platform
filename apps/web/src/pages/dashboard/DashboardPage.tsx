@@ -338,16 +338,15 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
 
       <CardHeader className="relative flex flex-row items-center gap-2 pb-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-          <Sparkles className="h-4 w-4 text-white" />
+          <Cake className="h-4 w-4 text-white" />
         </div>
         <CardTitle className="text-sm font-semibold text-white">Birthdays Today</CardTitle>
-        <Cake className="ml-auto h-4 w-4 text-white/50" />
       </CardHeader>
 
       <CardContent className="relative pt-0">
         {loading ? (
           <div className="flex items-center gap-2.5 py-2">
-            <Skeleton className="h-11 w-11 shrink-0 rounded-full bg-white/20" />
+            <Skeleton className="h-12 w-12 shrink-0 rounded-full bg-white/20" />
             <div className="flex-1 space-y-1.5">
               <Skeleton className="h-3.5 w-24 bg-white/20" />
               <Skeleton className="h-3 w-16 bg-white/20" />
@@ -375,10 +374,10 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                 <img
                   src={entry.avatarUrl}
                   alt={`${entry.firstName} ${entry.lastName}`}
-                  className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white/40"
+                  className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40"
                 />
               ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
                   {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
                 </div>
               )}
