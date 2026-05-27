@@ -328,7 +328,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
       transRef.current = true;
       const next = (currentRef.current + 1) % entriesLenRef.current;
       startSlide(next, 'left', currentRef.current);
-    }, 5000);
+    }, 8000);
   }, [startSlide]);
 
   React.useEffect(() => {
