@@ -83,6 +83,10 @@
   from { transform: translateX(-32px); opacity: 0; }
   to   { transform: translateX(0);     opacity: 1; }
 }
+@keyframes bday-twinkle {
+  0%, 100% { opacity: 0.2;  transform: scale(0.7)  rotate(0deg);  }
+  50%       { opacity: 0.85; transform: scale(1.15) rotate(20deg); }
+}
 
 @keyframes shimmer {
   0% { transform: translateX(-100%); }

@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import {
   Users, Clock, CalendarDays, Cake, UserPlus, Award,
   ClipboardList, CalendarCheck, IndianRupee, CalendarPlus, ChevronRight,
-  ReceiptText, Building2, Inbox,
+  ReceiptText, Building2, Inbox, Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -266,6 +266,17 @@ function PersonAvatar({ name, url }: { name: string; url?: string | null | undef
 
 // ── Celebration Widgets ──────────────────────────────────────────
 
+// Fixed sparkle positions — deterministic, no layout thrash
+const BDAY_SPARKLES = [
+  { top: '10%', left: '6%',  size: 10, delay: '0s'    },
+  { top: '16%', left: '89%', size: 8,  delay: '0.65s' },
+  { top: '48%', left: '3%',  size: 7,  delay: '1.1s'  },
+  { top: '52%', left: '92%', size: 9,  delay: '0.35s' },
+  { top: '76%', left: '17%', size: 7,  delay: '1.45s' },
+  { top: '70%', left: '79%', size: 6,  delay: '0.85s' },
+  { top: '32%', left: '48%', size: 5,  delay: '0.5s'  },
+];
+
 function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loading: boolean }) {
   const giveKudos = useGiveKudos();
   const [wished, setWished] = React.useState<Set<string>>(new Set());
@@ -301,25 +312,50 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   const entry = entries[current];
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950">
-          <Cake className="h-4 w-4 text-pink-500" />
+    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 shadow-lg shadow-pink-500/25">
+      {/* Glow orbs */}
+      <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-orange-300/20 blur-2xl" />
+      <div className="pointer-events-none absolute bottom-4 right-1/3 h-16 w-16 rounded-full bg-yellow-200/10 blur-xl" />
+
+      {/* Animated sparkles */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {BDAY_SPARKLES.map((s, i) => (
+          <span
+            key={i}
+            className="absolute select-none text-white"
+            style={{
+              top: s.top, left: s.left,
+              fontSize: `${s.size}px`,
+              animation: 'bday-twinkle 2.4s ease-in-out infinite',
+              animationDelay: s.delay,
+            }}
+          >
+            ✦
+          </span>
+        ))}
+      </div>
+
+      <CardHeader className="relative flex flex-row items-center gap-2 pb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+          <Sparkles className="h-4 w-4 text-white" />
         </div>
-        <CardTitle className="text-sm font-semibold">Birthdays Today</CardTitle>
+        <CardTitle className="text-sm font-semibold text-white">Birthdays Today</CardTitle>
+        <Cake className="ml-auto h-4 w-4 text-white/50" />
       </CardHeader>
-      <CardContent className="pt-0">
+
+      <CardContent className="relative pt-0">
         {loading ? (
           <div className="flex items-center gap-2.5 py-2">
-            <Skeleton className="h-11 w-11 shrink-0 rounded-full" />
+            <Skeleton className="h-11 w-11 shrink-0 rounded-full bg-white/20" />
             <div className="flex-1 space-y-1.5">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3.5 w-24 bg-white/20" />
+              <Skeleton className="h-3 w-16 bg-white/20" />
             </div>
-            <Skeleton className="h-7 w-16 shrink-0 rounded-md" />
+            <Skeleton className="h-7 w-16 shrink-0 rounded-md bg-white/20" />
           </div>
         ) : entries.length === 0 ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today</p>
+          <p className="py-4 text-center text-sm text-white/70">No birthdays today 🎂</p>
         ) : (
           <div
             className="select-none"
@@ -328,8 +364,6 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
           >
-            {/* key=current forces React to remount on every change → triggers fresh animation.
-                Only ONE entry is ever in the DOM — zero bleed possible by design. */}
             <div
               key={current}
               className="flex items-center gap-2.5 py-1"
@@ -341,17 +375,17 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                 <img
                   src={entry.avatarUrl}
                   alt={`${entry.firstName} ${entry.lastName}`}
-                  className="h-11 w-11 shrink-0 rounded-full object-cover"
+                  className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white/40"
                 />
               ) : (
-                <div className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
                   {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{entry.firstName} {entry.lastName}</p>
+                <p className="truncate text-sm font-semibold text-white">{entry.firstName} {entry.lastName}</p>
                 {entry.designation && (
-                  <p className="text-muted-foreground truncate text-xs">{entry.designation}</p>
+                  <p className="truncate text-xs text-white/70">{entry.designation}</p>
                 )}
               </div>
               <button
@@ -364,11 +398,11 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                   );
                 }}
                 className={cn(
-                  'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-colors',
+                  'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-all',
                   wished.has(entry.id)
-                    ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
-                    : 'border-pink-200 bg-transparent text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
-                  'disabled:cursor-not-allowed disabled:opacity-60',
+                    ? 'cursor-default border-white/30 bg-white/20 text-white/80'
+                    : 'border-white/50 bg-white/15 text-white hover:bg-white/30 hover:border-white/70',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
                 )}
               >
                 {wished.has(entry.id) ? '🎂 Wished!' : 'Wish 🎂'}
@@ -382,7 +416,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                     onClick={() => navigate(i)}
                     className={cn(
                       'h-1.5 rounded-full transition-all duration-300',
-                      i === current ? 'w-4 bg-pink-400' : 'w-1.5 bg-pink-200 dark:bg-pink-800',
+                      i === current ? 'w-4 bg-white' : 'w-1.5 bg-white/35',
                     )}
                   />
                 ))}
