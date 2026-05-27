@@ -269,9 +269,12 @@ function PersonAvatar({ name, url }: { name: string; url?: string | null | undef
 function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loading: boolean }) {
   const giveKudos = useGiveKudos();
   const [wished, setWished] = React.useState<Set<string>>(new Set());
+  const [current, setCurrent] = React.useState(0);
 
-  function handleWish(e: BirthdayEntry) {
-    if (wished.has(e.id) || giveKudos.isPending) return;
+  const e = entries[current];
+
+  function handleWish() {
+    if (!e || wished.has(e.id) || giveKudos.isPending) return;
     giveKudos.mutate(
       { toEmployeeId: e.id, category: 'OTHER', message: `Happy Birthday ${e.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
       { onSuccess: () => setWished((prev) => new Set(prev).add(e.id)) },
@@ -299,60 +302,54 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
         ) : entries.length === 0 ? (
           <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today</p>
         ) : (
-          <div className="overflow-hidden">
-            <div className="flex snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-              {entries.map((e) => (
-                <div key={e.id} className="flex min-w-full snap-start flex-col gap-2 py-1">
-                  <div className="flex items-center gap-2.5">
-                    {e.avatarUrl ? (
-                      <img
-                        src={e.avatarUrl}
-                        alt={`${e.firstName} ${e.lastName}`}
-                        className="h-11 w-11 shrink-0 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold">
-                        {`${e.firstName[0]}${e.lastName[0]}`.toUpperCase()}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">{e.firstName} {e.lastName}</p>
-                      {e.designation && (
-                        <p className="text-muted-foreground truncate text-xs">{e.designation}</p>
-                      )}
-                    </div>
-                    <button
-                      disabled={wished.has(e.id) || giveKudos.isPending}
-                      onClick={() => handleWish(e)}
-                      className={cn(
-                        'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-colors',
-                        wished.has(e.id)
-                          ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
-                          : 'border-pink-200 bg-transparent text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
-                        'disabled:cursor-not-allowed disabled:opacity-60',
-                      )}
-                    >
-                      {wished.has(e.id) ? '🎂 Wished!' : 'Wish 🎂'}
-                    </button>
-                  </div>
-                  {entries.length > 1 && (
-                    <div className="flex justify-center gap-1 pt-0.5">
-                      {entries.map((_, i) => (
-                        <span
-                          key={i}
-                          className={cn(
-                            'h-1.5 rounded-full transition-all duration-200',
-                            entries[i].id === e.id
-                              ? 'w-4 bg-pink-400'
-                              : 'w-1.5 bg-pink-200 dark:bg-pink-800',
-                          )}
-                        />
-                      ))}
-                    </div>
-                  )}
+          <div className="flex flex-col gap-2 py-1">
+            {/* Single entry shown at a time — no adjacent content, no bleed */}
+            <div className="flex items-center gap-2.5">
+              {e.avatarUrl ? (
+                <img
+                  src={e.avatarUrl}
+                  alt={`${e.firstName} ${e.lastName}`}
+                  className="h-11 w-11 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold">
+                  {`${e.firstName[0]}${e.lastName[0]}`.toUpperCase()}
                 </div>
-              ))}
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{e.firstName} {e.lastName}</p>
+                {e.designation && (
+                  <p className="text-muted-foreground truncate text-xs">{e.designation}</p>
+                )}
+              </div>
+              <button
+                disabled={wished.has(e.id) || giveKudos.isPending}
+                onClick={handleWish}
+                className={cn(
+                  'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-colors',
+                  wished.has(e.id)
+                    ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
+                    : 'border-pink-200 bg-transparent text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                )}
+              >
+                {wished.has(e.id) ? '🎂 Wished!' : 'Wish 🎂'}
+              </button>
             </div>
+            {entries.length > 1 && (
+              <div className="flex justify-center gap-1 pt-0.5">
+                {entries.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrent(i)}
+                    className={cn(
+                      'h-1.5 rounded-full transition-all duration-200',
+                      i === current ? 'w-4 bg-pink-400' : 'w-1.5 bg-pink-200 dark:bg-pink-800',
+                    )}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
