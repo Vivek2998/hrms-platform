@@ -75,7 +75,7 @@ function HeroCard() {
   const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase();
 
   return (
-    <div className="from-primary to-primary/80 relative overflow-hidden rounded-xl bg-gradient-to-br p-5 shadow-md">
+    <div className="from-primary to-primary/80 relative overflow-hidden rounded-xl bg-linear-to-br p-5 shadow-md">
       <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
       <div className="absolute -bottom-8 right-16 h-24 w-24 rounded-full bg-white/5" />
       <div className="relative flex items-center justify-between gap-4">
@@ -279,40 +279,86 @@ const BDAY_SPARKLES = [
 
 function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loading: boolean }) {
   const giveKudos = useGiveKudos();
-  const [wished, setWished] = React.useState<Set<string>>(new Set());
-  const [current, setCurrent] = React.useState(0);
+  const [wished, setWished]     = React.useState<Set<string>>(new Set());
+  const [current, setCurrent]   = React.useState(0);
   const [direction, setDirection] = React.useState<'left' | 'right'>('left');
-  const dragStartX = React.useRef<number | null>(null);
+  const [paused, setPaused]     = React.useState(false);
 
+  // Refs so interval callback always reads latest values without re-subscribing
+  const currentRef      = React.useRef(0);
+  const pausedRef       = React.useRef(false);
+  const entriesLenRef   = React.useRef(entries.length);
+  const intervalRef     = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const wheelCoolRef    = React.useRef(false);
+  const dragStartX      = React.useRef<number | null>(null);
+
+  currentRef.current    = current;
+  pausedRef.current     = paused;
+  entriesLenRef.current = entries.length;
+
+  // ── Auto-play ──────────────────────────────────────────────────
+  const scheduleNext = React.useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (entriesLenRef.current <= 1) return;
+    intervalRef.current = setInterval(() => {
+      if (pausedRef.current) return;
+      setDirection('left');
+      setCurrent((c) => (c + 1) % entriesLenRef.current);
+    }, 3500);
+  }, []);
+
+  React.useEffect(() => {
+    scheduleNext();
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [scheduleNext]);
+
+  // ── Navigation ─────────────────────────────────────────────────
   function navigate(next: number) {
-    if (next === current) return;
-    setDirection(next > current ? 'left' : 'right');
+    if (next === currentRef.current) return;
+    setDirection(next > currentRef.current ? 'left' : 'right');
     setCurrent(next);
+    scheduleNext(); // reset auto-play timer on manual interaction
   }
 
+  // ── Touch (mobile swipe) ───────────────────────────────────────
   function onTouchStart(ev: React.TouchEvent) { dragStartX.current = ev.touches[0].clientX; }
   function onTouchEnd(ev: React.TouchEvent) {
     if (dragStartX.current === null) return;
     const dx = ev.changedTouches[0].clientX - dragStartX.current;
     dragStartX.current = null;
     if (Math.abs(dx) < 40) return;
-    if (dx < 0) navigate(Math.min(current + 1, entries.length - 1));
-    else        navigate(Math.max(current - 1, 0));
+    navigate(dx < 0
+      ? Math.min(currentRef.current + 1, entriesLenRef.current - 1)
+      : Math.max(currentRef.current - 1, 0));
   }
+
+  // ── Mouse drag (desktop click-drag) ───────────────────────────
   function onMouseDown(ev: React.MouseEvent) { dragStartX.current = ev.clientX; }
   function onMouseUp(ev: React.MouseEvent) {
     if (dragStartX.current === null) return;
     const dx = ev.clientX - dragStartX.current;
     dragStartX.current = null;
     if (Math.abs(dx) < 40) return;
-    if (dx < 0) navigate(Math.min(current + 1, entries.length - 1));
-    else        navigate(Math.max(current - 1, 0));
+    navigate(dx < 0
+      ? Math.min(currentRef.current + 1, entriesLenRef.current - 1)
+      : Math.max(currentRef.current - 1, 0));
+  }
+
+  // ── Trackpad horizontal scroll ─────────────────────────────────
+  function onWheel(ev: React.WheelEvent) {
+    if (Math.abs(ev.deltaX) < Math.abs(ev.deltaY)) return; // mostly vertical — ignore
+    if (wheelCoolRef.current) return;                        // debounce rapid events
+    wheelCoolRef.current = true;
+    setTimeout(() => { wheelCoolRef.current = false; }, 500);
+    navigate(ev.deltaX > 0
+      ? Math.min(currentRef.current + 1, entriesLenRef.current - 1)
+      : Math.max(currentRef.current - 1, 0));
   }
 
   const entry = entries[current];
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 shadow-lg shadow-pink-500/25">
+    <Card className="relative overflow-hidden border-0 bg-linear-to-br from-rose-400 via-pink-500 to-fuchsia-500 shadow-lg shadow-pink-500/25">
       {/* Glow orbs */}
       <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-orange-300/20 blur-2xl" />
@@ -321,27 +367,23 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
       {/* Animated sparkles */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {BDAY_SPARKLES.map((s, i) => (
-          <span
-            key={i}
-            className="absolute select-none text-white"
-            style={{
-              top: s.top, left: s.left,
-              fontSize: `${s.size}px`,
-              animation: 'bday-twinkle 2.4s ease-in-out infinite',
-              animationDelay: s.delay,
-            }}
-          >
-            ✦
-          </span>
+          <span key={i} className="absolute select-none text-white" style={{
+            top: s.top, left: s.left, fontSize: `${s.size}px`,
+            animation: 'bday-twinkle 2.4s ease-in-out infinite',
+            animationDelay: s.delay,
+          }}>✦</span>
         ))}
       </div>
 
       <CardContent className="relative pt-3">
-        {/* Centered label — quiet, doesn't compete with content */}
+        {/* Centered label */}
         <div className="mb-3 flex items-center justify-center gap-1.5">
-          <Cake className="h-3 w-3 text-white/60" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">Birthdays Today</span>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/25">
+            <Cake className="h-3.5 w-3.5 text-white" />
+          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/70">Birthdays Today</span>
         </div>
+
         {loading ? (
           <div className="flex items-center gap-2.5 py-2">
             <Skeleton className="h-12 w-12 shrink-0 rounded-full bg-white/20" />
@@ -356,24 +398,22 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
         ) : (
           <div
             className="select-none"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
+            onWheel={onWheel}
           >
             <div
               key={current}
               className="flex items-center gap-2.5 py-1"
-              style={{
-                animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} 260ms ease-out both`,
-              }}
+              style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} 260ms ease-out both` }}
             >
               {entry.avatarUrl ? (
-                <img
-                  src={entry.avatarUrl}
-                  alt={`${entry.firstName} ${entry.lastName}`}
-                  className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40"
-                />
+                <img src={entry.avatarUrl} alt={`${entry.firstName} ${entry.lastName}`}
+                  className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
               ) : (
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
                   {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
@@ -381,9 +421,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-white">{entry.firstName} {entry.lastName}</p>
-                {entry.designation && (
-                  <p className="truncate text-xs text-white/70">{entry.designation}</p>
-                )}
+                {entry.designation && <p className="truncate text-xs text-white/70">{entry.designation}</p>}
               </div>
               <button
                 disabled={wished.has(entry.id) || giveKudos.isPending}
@@ -408,14 +446,9 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
             {entries.length > 1 && (
               <div className="flex justify-center gap-1.5 pt-2">
                 {entries.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => navigate(i)}
-                    className={cn(
-                      'h-1.5 rounded-full transition-all duration-300',
-                      i === current ? 'w-4 bg-white' : 'w-1.5 bg-white/35',
-                    )}
-                  />
+                  <button key={i} onClick={() => navigate(i)}
+                    className={cn('h-1.5 rounded-full transition-all duration-300',
+                      i === current ? 'w-4 bg-white' : 'w-1.5 bg-white/35')} />
                 ))}
               </div>
             )}
@@ -431,9 +464,11 @@ function NewJoineeWidget({ entries, loading }: { entries: NewJoineeEntry[]; load
     <Card>
       <CardContent className="pt-3">
         <div className="mb-3 flex items-center justify-center gap-1.5">
-          <UserPlus className="h-3 w-3 text-muted-foreground/60" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">New Joinees</span>
-          <span className="text-[9px] text-muted-foreground/40">· 30 days</span>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
+            <UserPlus className="h-3.5 w-3.5 text-blue-500" />
+          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">New Joinees</span>
+          <span className="text-[10px] text-muted-foreground/50">· 30 days</span>
         </div>
         {loading ? (
           <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
@@ -464,8 +499,10 @@ function AnniversaryWidget({ entries, loading }: { entries: AnniversaryEntry[]; 
     <Card>
       <CardContent className="pt-3">
         <div className="mb-3 flex items-center justify-center gap-1.5">
-          <Award className="h-3 w-3 text-muted-foreground/60" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Work Anniversaries</span>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950">
+            <Award className="h-3.5 w-3.5 text-amber-500" />
+          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">Work Anniversaries</span>
         </div>
         {loading ? (
           <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
