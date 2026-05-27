@@ -344,6 +344,49 @@ enum OpenPositionStatus {
   CANCELLED
 }
 
+enum KPIUnit {
+  PERCENTAGE
+  NUMBER
+  CURRENCY
+  BOOLEAN
+}
+
+enum KPIFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum KRAStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum KPIRecordStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ACHIEVED
+  MISSED
+  PARTIAL
+}
+
+enum SkillCategory {
+  TECHNICAL
+  SOFT_SKILL
+  DOMAIN
+  CERTIFICATION
+  LANGUAGE
+  TOOL
+}
+
+enum SkillProficiency {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
 // ─────────────────────────────────────────────────────────────
 // ORGANIZATIONS (Tenants)
 // ─────────────────────────────────────────────────────────────
@@ -450,6 +493,14 @@ model Organization {
   eapResources            EapResource[]
   employeeCodeRequests    EmployeeCodeChangeRequest[]
   orgChartChangeRequests  OrgChartChangeRequest[]
+  // KPI / KRA
+  kras                    KRA[]
+  kpis                    KPI[]
+  kraAssignments          EmployeeKRAAssignment[]
+  kpiRecords              EmployeeKPIRecord[]
+  // Skills Matrix
+  skills                  Skill[]
+  employeeSkills          EmployeeSkill[]
 
   @@map("organizations")
 }
@@ -710,6 +761,11 @@ model Employee {
   orgChartChangeRequests   OrgChartChangeRequest[]
   leaveBalances            LeaveBalance[]
   designationRef           Designation? @relation("EmployeeDesignation", fields: [designationId], references: [id], onDelete: SetNull)
+  // KPI / KRA
+  kraAssignments           EmployeeKRAAssignment[]
+  // Skills Matrix
+  employeeSkills           EmployeeSkill[]
+  skillsVerified           EmployeeSkill[]          @relation("SkillVerifier")
 
   @@unique([organizationId, employeeCode])
   @@unique([organizationId, workEmail])
@@ -1502,10 +1558,11 @@ model PerformanceCycle {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  organization  Organization        @relation(fields: [organizationId], references: [id])
+  organization  Organization          @relation(fields: [organizationId], references: [id])
   goals         PerformanceGoal[]
   reviews       PerformanceReview[]
   peerFeedbacks PeerFeedback[]
+  kraAssignments EmployeeKRAAssignment[]
 
   @@index([organizationId])
   @@map("performance_cycles")
@@ -3017,4 +3074,144 @@ model EapResource {
 
   @@index([organizationId, category])
   @@map("eap_resources")
+}
+
+// ─────────────────────────────────────────────────────────────
+// KPI / KRA — Key Result Areas & Key Performance Indicators
+// ─────────────────────────────────────────────────────────────
+
+model KRA {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  department     String?  // optional grouping label
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  kpis         KPI[]
+  assignments  EmployeeKRAAssignment[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("kras")
+}
+
+model KPI {
+  id             String       @id @default(uuid())
+  organizationId String
+  kraId          String
+  name           String
+  description    String?
+  unit           KPIUnit      @default(NUMBER)
+  targetValue    Float?
+  frequency      KPIFrequency @default(QUARTERLY)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  kra          KRA                @relation(fields: [kraId], references: [id], onDelete: Cascade)
+  records      EmployeeKPIRecord[]
+
+  @@index([organizationId, kraId])
+  @@map("kpis")
+}
+
+model EmployeeKRAAssignment {
+  id             String    @id @default(uuid())
+  organizationId String
+  employeeId     String
+  kraId          String
+  cycleId        String?
+  period         String    // e.g. "Q1-2026", "FY-2026"
+  status         KRAStatus @default(ACTIVE)
+  overallScore   Float?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  employee     Employee           @relation(fields: [employeeId], references: [id])
+  kra          KRA                @relation(fields: [kraId], references: [id])
+  cycle        PerformanceCycle?  @relation(fields: [cycleId], references: [id])
+  kpiRecords   EmployeeKPIRecord[]
+
+  @@unique([employeeId, kraId, period])
+  @@index([organizationId, employeeId])
+  @@map("employee_kra_assignments")
+}
+
+model EmployeeKPIRecord {
+  id             String          @id @default(uuid())
+  organizationId String
+  assignmentId   String
+  kpiId          String
+  targetValue    Float?
+  actualValue    Float?
+  achievementPct Float?
+  status         KPIRecordStatus @default(NOT_STARTED)
+  notes          String?
+  recordedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id])
+  assignment   EmployeeKRAAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  kpi          KPI                   @relation(fields: [kpiId], references: [id])
+
+  @@unique([assignmentId, kpiId])
+  @@index([organizationId])
+  @@map("employee_kpi_records")
+}
+
+// ─────────────────────────────────────────────────────────────
+// SKILLS MATRIX
+// ─────────────────────────────────────────────────────────────
+
+model Skill {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  category       SkillCategory @default(TECHNICAL)
+  description    String?
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  employeeSkills EmployeeSkill[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("skills")
+}
+
+model EmployeeSkill {
+  id                String           @id @default(uuid())
+  organizationId    String
+  employeeId        String
+  skillId           String
+  proficiency       SkillProficiency @default(BEGINNER)
+  yearsOfExperience Float?
+  lastUsedYear      Int?
+  certificationUrl  String?
+  isVerified        Boolean          @default(false)
+  verifiedById      String?
+  verifiedAt        DateTime?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  skill        Skill        @relation(fields: [skillId], references: [id])
+  verifiedBy   Employee?    @relation("SkillVerifier", fields: [verifiedById], references: [id])
+
+  @@unique([employeeId, skillId])
+  @@index([organizationId, employeeId])
+  @@index([organizationId, skillId])
+  @@map("employee_skills")
 }

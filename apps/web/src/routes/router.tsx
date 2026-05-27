@@ -79,6 +79,8 @@ const ResumeParsePage = lazy(() => import('@/pages/resume-parse/ResumeParsePage'
 const ContractorsPage = lazy(() => import('@/pages/contractors/ContractorsPage'));
 const ESOPPage = lazy(() => import('@/pages/esop/ESOPPage'));
 const EAPPage = lazy(() => import('@/pages/eap/EAPPage'));
+const KpiKraPage = lazy(() => import('@/pages/kpi-kra/KpiKraPage'));
+const SkillsMatrixPage = lazy(() => import('@/pages/skills-matrix/SkillsMatrixPage'));
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return (
@@ -399,6 +401,14 @@ export const router = createBrowserRouter([
             <Lazy><SuccessionPage /></Lazy>
           </RoleGuard>
         ),
+      },
+      {
+        path: 'kpi-kra',
+        element: (<Lazy><KpiKraPage /></Lazy>),
+      },
+      {
+        path: 'skills-matrix',
+        element: (<Lazy><SkillsMatrixPage /></Lazy>),
       },
       {
         path: 'chat',

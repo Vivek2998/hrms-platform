@@ -64,6 +64,7 @@ import {
   HardHat,
   LineChart,
   HeartHandshake,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -163,6 +164,8 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Nine-Box Grid', to: '/nine-box', icon: BarChart2, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'Career Paths', to: '/career', icon: Map },
       { label: 'Succession Planning', to: '/succession', icon: Crown, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'KPI / KRA', to: '/kpi-kra', icon: Target },
+      { label: 'Skills Matrix', to: '/skills-matrix', icon: Layers },
       { label: 'Headcount Planning', to: '/headcount', icon: Users, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'Attrition Prediction', to: '/attrition', icon: AlertTriangle, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
       { label: 'Pay Equity', to: '/pay-equity', icon: Scale, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
