@@ -288,48 +288,55 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
       </CardHeader>
       <CardContent className="pt-0">
         {loading ? (
-          <div className="flex flex-col items-center gap-3 py-2">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-7 w-full" />
+          <div className="flex items-center gap-2.5 py-2">
+            <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-1.5">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <Skeleton className="h-7 w-16 shrink-0 rounded-md" />
           </div>
         ) : entries.length === 0 ? (
           <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today</p>
         ) : (
-          <div className="flex snap-x snap-mandatory overflow-x-auto">
+          <div className="flex snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
             {entries.map((e) => (
               <div
                 key={e.id}
-                className="flex min-w-full snap-start flex-col items-center gap-3 py-2"
+                className="flex min-w-full snap-start flex-col gap-2 py-1"
               >
-                <PersonAvatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
-                <div className="w-full text-center">
-                  <p className="text-sm font-semibold">{e.firstName} {e.lastName}</p>
-                  {e.designation && (
-                    <p className="text-muted-foreground mt-0.5 text-xs">{e.designation}</p>
-                  )}
+                <div className="flex items-center gap-2.5">
+                  <PersonAvatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{e.firstName} {e.lastName}</p>
+                    {e.designation && (
+                      <p className="text-muted-foreground truncate text-xs">{e.designation}</p>
+                    )}
+                  </div>
+                  <button
+                    disabled={wished.has(e.id) || giveKudos.isPending}
+                    onClick={() => handleWish(e)}
+                    className={cn(
+                      'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-colors',
+                      wished.has(e.id)
+                        ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
+                        : 'border-pink-200 bg-white text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:bg-transparent dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
+                      'disabled:cursor-not-allowed disabled:opacity-60',
+                    )}
+                  >
+                    {wished.has(e.id) ? '🎂 Wished!' : 'Wish 🎂'}
+                  </button>
                 </div>
-                <button
-                  disabled={wished.has(e.id) || giveKudos.isPending}
-                  onClick={() => handleWish(e)}
-                  className={cn(
-                    'h-8 w-full rounded-md border text-xs font-medium transition-colors',
-                    wished.has(e.id)
-                      ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
-                      : 'border-pink-200 bg-white text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:bg-transparent dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
-                    'disabled:cursor-not-allowed disabled:opacity-60',
-                  )}
-                >
-                  {wished.has(e.id) ? '🎂 Wished!' : 'Wish 🎂'}
-                </button>
                 {entries.length > 1 && (
-                  <div className="flex gap-1">
+                  <div className="flex justify-center gap-1 pt-1">
                     {entries.map((_, i) => (
                       <span
                         key={i}
                         className={cn(
-                          'h-1.5 w-1.5 rounded-full',
-                          entries[i].id === e.id ? 'bg-pink-400' : 'bg-pink-200 dark:bg-pink-800',
+                          'h-1.5 rounded-full transition-all',
+                          entries[i].id === e.id
+                            ? 'w-4 bg-pink-400'
+                            : 'w-1.5 bg-pink-200 dark:bg-pink-800',
                         )}
                       />
                     ))}
