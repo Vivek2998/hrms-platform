@@ -22,7 +22,7 @@ export function AppShell() {
         )}
       >
         <Header />
-        <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-8">
+        <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-14">
           <div key={location.pathname} className="animate-page-enter h-full">
             <Outlet />
           </div>
