@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/axios';
+import { apiClient } from '@/lib/axios';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ export function useSkills(category?: string) {
     queryKey: ['skills', category],
     queryFn: async () => {
       const params = category ? `?category=${category}` : '';
-      const { data } = await api.get(`/skills${params}`);
+      const { data } = await apiClient.get(`/skills${params}`);
       return data.data;
     },
   });
@@ -73,7 +73,7 @@ export function useSkills(category?: string) {
 export function useCreateSkill() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<Skill>) => api.post('/skills', payload),
+    mutationFn: (payload: Partial<Skill>) => apiClient.post('/skills', payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['skills'] }),
   });
 }
@@ -82,7 +82,7 @@ export function useUpdateSkill() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...rest }: Partial<Skill> & { id: string }) =>
-      api.patch(`/skills/${id}`, rest),
+      apiClient.patch(`/skills/${id}`, rest),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['skills'] }),
   });
 }
@@ -90,7 +90,7 @@ export function useUpdateSkill() {
 export function useDeleteSkill() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/skills/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/skills/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['skills'] }),
   });
 }
@@ -101,7 +101,7 @@ export function useMySkills() {
   return useQuery<EmployeeSkill[]>({
     queryKey: ['my-skills'],
     queryFn: async () => {
-      const { data } = await api.get('/skills/my-skills');
+      const { data } = await apiClient.get('/skills/my-skills');
       return data.data;
     },
   });
@@ -117,7 +117,7 @@ export function useAddMySkill() {
       lastUsedYear?: number;
       certificationUrl?: string;
       notes?: string;
-    }) => api.post('/skills/my-skills', payload),
+    }) => apiClient.post('/skills/my-skills', payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-skills'] });
       qc.invalidateQueries({ queryKey: ['skills-matrix'] });
@@ -128,7 +128,7 @@ export function useAddMySkill() {
 export function useDeleteMySkill() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (skillId: string) => api.delete(`/skills/my-skills/${skillId}`),
+    mutationFn: (skillId: string) => apiClient.delete(`/skills/my-skills/${skillId}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-skills'] });
       qc.invalidateQueries({ queryKey: ['skills-matrix'] });
@@ -142,7 +142,7 @@ export function useEmployeeSkills(employeeId: string | null) {
   return useQuery<EmployeeSkill[]>({
     queryKey: ['employee-skills', employeeId],
     queryFn: async () => {
-      const { data } = await api.get(`/skills/employees/${employeeId}`);
+      const { data } = await apiClient.get(`/skills/employees/${employeeId}`);
       return data.data;
     },
     enabled: !!employeeId,
@@ -153,7 +153,7 @@ export function useVerifySkill() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ employeeId, skillId }: { employeeId: string; skillId: string }) =>
-      api.patch(`/skills/verify/${employeeId}/${skillId}`, {}),
+      apiClient.patch(`/skills/verify/${employeeId}/${skillId}`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['skills-matrix'] });
       qc.invalidateQueries({ queryKey: ['employee-skills'] });
@@ -171,7 +171,7 @@ export function useSkillsMatrix(params?: { skillId?: string; category?: string; 
       if (params?.skillId) q.set('skillId', params.skillId);
       if (params?.category) q.set('category', params.category);
       if (params?.search) q.set('search', params.search);
-      const { data } = await api.get(`/skills/matrix?${q}`);
+      const { data } = await apiClient.get(`/skills/matrix?${q}`);
       return data.data;
     },
   });
@@ -184,7 +184,7 @@ export function useSearchBySkill(skillId: string | null, proficiency?: string) {
     queryFn: async () => {
       const q = new URLSearchParams({ skillId: skillId! });
       if (proficiency) q.set('proficiency', proficiency);
-      const { data } = await api.get(`/skills/search?${q}`);
+      const { data } = await apiClient.get(`/skills/search?${q}`);
       return data.data;
     },
     enabled: !!skillId,
@@ -197,7 +197,7 @@ export function useSkillsSummary() {
   return useQuery<SkillsSummary>({
     queryKey: ['skills-summary'],
     queryFn: async () => {
-      const { data } = await api.get('/skills/summary');
+      const { data } = await apiClient.get('/skills/summary');
       return data.data;
     },
   });

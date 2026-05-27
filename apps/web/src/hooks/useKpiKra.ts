@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/axios';
+import { apiClient } from '@/lib/axios';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ export function useKRAs() {
   return useQuery<KRA[]>({
     queryKey: ['kras'],
     queryFn: async () => {
-      const { data } = await api.get('/kpi-kra/kras');
+      const { data } = await apiClient.get('/kpi-kra/kras');
       return data.data;
     },
   });
@@ -76,7 +76,7 @@ export function useKRAs() {
 export function useCreateKRA() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<KRA>) => api.post('/kpi-kra/kras', payload),
+    mutationFn: (payload: Partial<KRA>) => apiClient.post('/kpi-kra/kras', payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kras'] }),
   });
 }
@@ -85,7 +85,7 @@ export function useUpdateKRA() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...rest }: Partial<KRA> & { id: string }) =>
-      api.patch(`/kpi-kra/kras/${id}`, rest),
+      apiClient.patch(`/kpi-kra/kras/${id}`, rest),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kras'] }),
   });
 }
@@ -93,7 +93,7 @@ export function useUpdateKRA() {
 export function useDeleteKRA() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/kpi-kra/kras/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/kpi-kra/kras/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kras'] }),
   });
 }
@@ -104,7 +104,7 @@ export function useCreateKPI() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ kraId, ...rest }: Partial<KPI> & { kraId: string }) =>
-      api.post(`/kpi-kra/kras/${kraId}/kpis`, rest),
+      apiClient.post(`/kpi-kra/kras/${kraId}/kpis`, rest),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kras'] }),
   });
 }
@@ -113,7 +113,7 @@ export function useUpdateKPI() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...rest }: Partial<KPI> & { id: string }) =>
-      api.patch(`/kpi-kra/kpis/${id}`, rest),
+      apiClient.patch(`/kpi-kra/kpis/${id}`, rest),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kras'] }),
   });
 }
@@ -121,7 +121,7 @@ export function useUpdateKPI() {
 export function useDeleteKPI() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/kpi-kra/kpis/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/kpi-kra/kpis/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kras'] }),
   });
 }
@@ -135,7 +135,7 @@ export function useKRAAssignments(employeeId?: string, period?: string) {
       const params = new URLSearchParams();
       if (employeeId) params.set('employeeId', employeeId);
       if (period) params.set('period', period);
-      const { data } = await api.get(`/kpi-kra/assignments?${params}`);
+      const { data } = await apiClient.get(`/kpi-kra/assignments?${params}`);
       return data.data;
     },
   });
@@ -150,7 +150,7 @@ export function useAssignKRA() {
       period: string;
       cycleId?: string;
       notes?: string;
-    }) => api.post('/kpi-kra/assignments', payload),
+    }) => apiClient.post('/kpi-kra/assignments', payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kra-assignments'] }),
   });
 }
@@ -159,7 +159,7 @@ export function useUpdateAssignment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...rest }: { id: string; status?: KRAStatus; notes?: string; overallScore?: number }) =>
-      api.patch(`/kpi-kra/assignments/${id}`, rest),
+      apiClient.patch(`/kpi-kra/assignments/${id}`, rest),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kra-assignments'] }),
   });
 }
@@ -167,7 +167,7 @@ export function useUpdateAssignment() {
 export function useDeleteAssignment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/kpi-kra/assignments/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/kpi-kra/assignments/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kra-assignments'] }),
   });
 }
@@ -186,7 +186,7 @@ export function useUpdateKPIRecord() {
       targetValue?: number;
       status?: KPIRecordStatus;
       notes?: string;
-    }) => api.patch(`/kpi-kra/records/${id}`, rest),
+    }) => apiClient.patch(`/kpi-kra/records/${id}`, rest),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kra-assignments'] }),
   });
 }
@@ -197,7 +197,7 @@ export function useKpiKraSummary() {
   return useQuery<KpiKraSummary>({
     queryKey: ['kpi-kra-summary'],
     queryFn: async () => {
-      const { data } = await api.get('/kpi-kra/summary');
+      const { data } = await apiClient.get('/kpi-kra/summary');
       return data.data;
     },
   });

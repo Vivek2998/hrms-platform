@@ -477,29 +477,42 @@ export function Sidebar() {
                   );
 
                   // ── Groups with their own navigable page (e.g. Performance) ──
-                  // Header = NavLink (left, active-highlighted) + ChevronButton (right, toggles children)
+                  // Active bg lifted to the outer container so both NavLink + ChevronButton
+                  // share the same full-width highlight (avoids the half-highlighted row problem).
                   if (entry.to) {
+                    const isParentActive =
+                      location.pathname === entry.to || location.pathname.startsWith(entry.to + '/');
                     return (
                       <li key={entry.key}>
-                        <div className="flex w-full items-center overflow-hidden rounded-md">
+                        <div
+                          className={cn(
+                            'flex w-full items-center overflow-hidden rounded-md transition-colors',
+                            isParentActive
+                              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                              : '',
+                          )}
+                        >
                           <NavLink
                             to={entry.to}
                             end
-                            className={({ isActive }) =>
-                              cn(
-                                'flex flex-1 items-center gap-3 rounded-l-md px-3 py-2 text-sm font-medium transition-colors',
-                                isActive
-                                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                              )
-                            }
+                            className={cn(
+                              'flex flex-1 items-center gap-3 px-3 py-2 text-sm font-medium transition-colors',
+                              isParentActive
+                                ? 'text-sidebar-primary-foreground'
+                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-l-md',
+                            )}
                           >
                             <entry.icon className="h-5 w-5 shrink-0" />
                             <span className="flex-1 text-left">{entry.label}</span>
                           </NavLink>
                           <button
                             onClick={() => setOpenGroups(isOpen ? new Set() : new Set([entry.key]))}
-                            className="flex h-9.5 w-8 shrink-0 items-center justify-center rounded-r-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                            className={cn(
+                              'flex h-9.5 w-8 shrink-0 items-center justify-center rounded-r-md transition-colors',
+                              isParentActive
+                                ? 'text-sidebar-primary-foreground hover:bg-white/10'
+                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                            )}
                             aria-label={isOpen ? 'Collapse section' : 'Expand section'}
                           >
                             <ChevronDown
