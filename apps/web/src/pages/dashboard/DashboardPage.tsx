@@ -331,10 +331,12 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
     }, 8000);
   }, [startSlide]);
 
+  // Re-run when entries load — on first mount entries may be empty so
+  // scheduleNext exits early; this fires again once data arrives.
   React.useEffect(() => {
     scheduleNext();
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [scheduleNext]);
+  }, [scheduleNext, entries.length]);
 
   // ── Navigation ─────────────────────────────────────────────────
   function navigate(next: number) {
