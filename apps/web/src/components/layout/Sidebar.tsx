@@ -477,17 +477,27 @@ export function Sidebar() {
                   );
 
                   // ── Groups with their own navigable page (e.g. Performance) ──
-                  // Single NavLink wraps the full row (identical layout to standard groups) so
-                  // the chevron sits at exactly the same position as Leaves/Payroll/etc.
-                  // The nested <button> intercepts chevron clicks to toggle without navigating.
+                  // Use a plain <button> — identical DOM structure to standard groups.
+                  // No nesting, no wrapper: the ChevronDown is a direct flex child at px-3 right,
+                  // exactly matching Leaves/Payroll/Company/People in every pixel.
+                  // Click when NOT on the page → navigate (useEffect auto-opens the accordion).
+                  // Click when already on the page → toggle accordion only.
                   if (entry.to) {
+                    const parentTo = entry.to;
                     const isParentActive =
-                      location.pathname === entry.to || location.pathname.startsWith(entry.to + '/');
+                      location.pathname === parentTo || location.pathname.startsWith(parentTo + '/');
                     return (
                       <li key={entry.key}>
-                        <NavLink
-                          to={entry.to}
-                          end
+                        <button
+                          onClick={() => {
+                            if (!isParentActive) {
+                              navigate(parentTo);
+                              // useEffect will auto-open the group once location changes
+                            } else {
+                              // Already on this page — just toggle the accordion
+                              setOpenGroups(isOpen ? new Set() : new Set([entry.key]));
+                            }
+                          }}
                           className={cn(
                             'group/nav flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                             isParentActive
@@ -497,31 +507,18 @@ export function Sidebar() {
                         >
                           <entry.icon className="h-5 w-5 shrink-0" />
                           <span className="flex-1 text-left">{entry.label}</span>
-                          {isChildActive && !isOpen && !isParentActive && (
+                          {isChildActive && !isOpen && (
                             <span className="h-2 w-2 shrink-0 rounded-full bg-primary/50 blur-[2px]" />
                           )}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setOpenGroups(isOpen ? new Set() : new Set([entry.key]));
-                            }}
+                          <ChevronDown
                             className={cn(
-                              'rounded p-0.5 transition-colors',
-                              isParentActive ? 'hover:bg-white/10' : 'hover:bg-black/5',
+                              'h-4 w-4 shrink-0 transition-all duration-200',
+                              isOpen
+                                ? 'rotate-180 opacity-100'
+                                : 'opacity-40 group-hover/nav:opacity-100',
                             )}
-                            aria-label={isOpen ? 'Collapse section' : 'Expand section'}
-                          >
-                            <ChevronDown
-                              className={cn(
-                                'h-4 w-4 shrink-0 transition-all duration-200',
-                                isOpen
-                                  ? 'rotate-180 opacity-100'
-                                  : 'opacity-40 group-hover/nav:opacity-100',
-                              )}
-                            />
-                          </button>
-                        </NavLink>
+                          />
+                        </button>
                         <div className={cn('grid overflow-hidden transition-[grid-template-rows] duration-200', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
                           <ul className="min-h-0 mt-0.5 space-y-0.5">
                             {visible.map((child) => {
