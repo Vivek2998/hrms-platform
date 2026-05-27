@@ -2,9 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
-  Users, Clock, CalendarDays, DollarSign, Cake, UserPlus, Award,
+  Users, Clock, CalendarDays, Cake, UserPlus, Award,
   ClipboardList, CalendarCheck, IndianRupee, CalendarPlus, ChevronRight,
-  ReceiptText, Building2,
+  ReceiptText, Building2, Inbox,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth.store';
-import { useEmployees } from '@/hooks/useEmployees';
-import { useAttendance } from '@/hooks/useAttendance';
-import { useLeaves } from '@/hooks/useLeaves';
-import { usePayrollRuns } from '@/hooks/usePayroll';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
+import { useApprovalInbox } from '@/hooks/useApprovalInbox';
 import { useGiveKudos } from '@/hooks/useKudos';
 import { ErrorState } from '@/components/ui/error-state';
 import { getDailyQuote } from '@/data/quotes';
@@ -26,6 +23,7 @@ import { SetupGuide } from '@/components/onboarding/SetupGuide';
 import { AutoTour, useProductTour } from '@/components/onboarding/ProductTour';
 import { useSetupGuide } from '@/hooks/useSetupGuide';
 import type { UserRole } from '@hrms/shared-types';
+import type { ApprovalInboxItem } from '@hrms/shared-types';
 import type {
   BirthdayEntry,
   NewJoineeEntry,
@@ -36,13 +34,6 @@ import type {
 } from '@/hooks/useDashboardWidgets';
 
 // ── Helpers ──────────────────────────────────────────────────────
-
-function todayRange() {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-  return { from, to };
-}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -170,37 +161,92 @@ function QuickActionsSection({ role }: { role: UserRole | undefined }) {
   );
 }
 
-// ── Stat Card ────────────────────────────────────────────────────
+// ── Pending Request type labels ───────────────────────────────────
 
-interface StatCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  loading?: boolean;
-  accentClass: string;
-  iconBg: string;
-  iconFg: string;
-}
+const TYPE_META: Record<string, { label: string; color: string }> = {
+  LEAVE:          { label: 'Leave',          color: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400' },
+  EXPENSE:        { label: 'Expense',        color: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400' },
+  REGULARISATION: { label: 'Regularisation', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' },
+  COMP_OFF:       { label: 'Comp Off',       color: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400' },
+  HELPDESK:       { label: 'Helpdesk',       color: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400' },
+};
 
-function StatCard({ title, value, subtitle, icon: Icon, loading, accentClass, iconBg, iconFg }: StatCardProps) {
+// ── Pending Requests Widget ───────────────────────────────────────
+
+function PendingRequestsWidget({
+  items, loading, error, onRetry,
+}: {
+  items: ApprovalInboxItem[];
+  loading: boolean;
+  error: boolean;
+  onRetry: () => void;
+}) {
+  const navigate = useNavigate();
+  const displayItems = items.slice(0, 8);
+
   return (
-    <Card className={cn('border-l-4', accentClass)}>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-full', iconBg)}>
-          <Icon className={cn('h-5 w-5', iconFg)} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-muted-foreground text-xs font-medium">{title}</p>
-          {loading ? (
-            <Skeleton className="mt-1 h-6 w-16" />
-          ) : (
-            <>
-              <p className="text-lg font-bold leading-tight">{value}</p>
-              <p className="text-muted-foreground truncate text-xs">{subtitle}</p>
-            </>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950">
+            <Inbox className="h-4 w-4 text-rose-500" />
+          </div>
+          <CardTitle className="text-sm font-semibold">Pending Requests</CardTitle>
+          {!loading && items.length > 0 && (
+            <Badge variant="warning" className="ml-1">{items.length}</Badge>
           )}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto gap-1 px-2 text-xs"
+          onClick={() => void navigate('/approval-inbox')}
+        >
+          View all <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {loading ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+          </div>
+        ) : error ? (
+          <ErrorState onRetry={onRetry} />
+        ) : items.length === 0 ? (
+          <p className="text-muted-foreground py-6 text-center text-sm">
+            No pending requests — all clear!
+          </p>
+        ) : (
+          <div className="divide-y">
+            {displayItems.map((item) => {
+              const meta = TYPE_META[item.type] ?? { label: item.type, color: 'bg-gray-100 text-gray-700' };
+              return (
+                <div key={item.id} className="flex items-center gap-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={cn('inline-flex rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide', meta.color)}>
+                        {meta.label}
+                      </span>
+                      <p className="truncate text-sm font-medium">{item.employeeName}</p>
+                    </div>
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                      {item.title}{item.subtitle ? ` · ${item.subtitle}` : ''}
+                    </p>
+                  </div>
+                  <Badge variant="warning" className="shrink-0">PENDING</Badge>
+                </div>
+              );
+            })}
+            {items.length > 8 && (
+              <p className="pt-3 text-center text-xs text-muted-foreground">
+                +{items.length - 8} more —{' '}
+                <button className="text-primary hover:underline" onClick={() => void navigate('/approval-inbox')}>
+                  view all
+                </button>
+              </p>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -414,21 +460,19 @@ function MyRequestsWidget({
 // ── Main Page ────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const role = user?.role;
   const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role);
   const { state: guideState } = useSetupGuide();
   const { start: startTour } = useProductTour();
-  const { from, to } = todayRange();
 
-  const { data: empData, isLoading: empLoading } = useEmployees({ limit: 1 });
-  const { data: attData, isLoading: attLoading } = useAttendance({ limit: 1, from, to, status: 'PRESENT' });
-  const { data: leaveData, isLoading: leaveLoading, isError: leaveError, refetch: refetchLeaves } = useLeaves({ limit: 5, status: 'PENDING' });
-  const { data: payrollData, isLoading: payrollLoading } = usePayrollRuns({ limit: 1 });
   const { data: widgets, isLoading: widgetsLoading } = useDashboardWidgets();
-
-  const latestRun = payrollData?.data[0];
+  const {
+    data: inboxItems = [],
+    isLoading: inboxLoading,
+    isError: inboxError,
+    refetch: refetchInbox,
+  } = useApprovalInbox();
 
   return (
     <div className="space-y-4">
@@ -450,51 +494,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {isHR && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Employees"
-            value={empData?.meta.total.toString() ?? '—'}
-            subtitle="active headcount"
-            icon={Users}
-            loading={empLoading}
-            accentClass="border-l-blue-500"
-            iconBg="bg-blue-100 dark:bg-blue-950"
-            iconFg="text-blue-600 dark:text-blue-400"
-          />
-          <StatCard
-            title="Present Today"
-            value={attData?.meta.total.toString() ?? '—'}
-            subtitle="punched in so far"
-            icon={Clock}
-            loading={attLoading}
-            accentClass="border-l-green-500"
-            iconBg="bg-green-100 dark:bg-green-950"
-            iconFg="text-green-600 dark:text-green-400"
-          />
-          <StatCard
-            title="Pending Leaves"
-            value={leaveData?.meta.total.toString() ?? '—'}
-            subtitle="awaiting approval"
-            icon={CalendarDays}
-            loading={leaveLoading}
-            accentClass="border-l-amber-500"
-            iconBg="bg-amber-100 dark:bg-amber-950"
-            iconFg="text-amber-600 dark:text-amber-400"
-          />
-          <StatCard
-            title="Last Payroll"
-            value={latestRun ? `₹${(latestRun.totalNetPay / 100_000).toFixed(1)}L` : '—'}
-            subtitle={latestRun ? `${String(latestRun.month)}/${String(latestRun.year)} · ${latestRun.status}` : 'no runs yet'}
-            icon={DollarSign}
-            loading={payrollLoading}
-            accentClass="border-l-violet-500"
-            iconBg="bg-violet-100 dark:bg-violet-950"
-            iconFg="text-violet-600 dark:text-violet-400"
-          />
-        </div>
-      )}
-
       <div className="grid gap-4 md:grid-cols-3">
         <BirthdayWidget entries={widgets?.birthdays ?? []} loading={widgetsLoading} />
         <NewJoineeWidget entries={widgets?.newJoinees ?? []} loading={widgetsLoading} />
@@ -511,57 +510,12 @@ export default function DashboardPage() {
       )}
 
       {isHR && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950">
-                <CalendarDays className="h-4 w-4 text-rose-500" />
-              </div>
-              <CardTitle className="text-sm font-semibold">Pending Leave Requests</CardTitle>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto gap-1 px-2 text-xs"
-              onClick={() => void navigate('/leaves')}
-            >
-              View all <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {leaveLoading ? (
-              <div className="space-y-3">
-                {[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-              </div>
-            ) : leaveError ? (
-              <ErrorState onRetry={() => void refetchLeaves()} />
-            ) : leaveData?.data.length === 0 ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">
-                No pending leave requests — all clear!
-              </p>
-            ) : (
-              <div className="divide-y">
-                {leaveData?.data.map((leave) => (
-                  <div key={leave.id} className="flex items-center gap-3 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {leave.employee
-                          ? `${leave.employee.firstName} ${leave.employee.lastName}`
-                          : leave.employeeId}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {leave.leaveType?.name ?? 'Leave'} ·{' '}
-                        {new Date(leave.fromDate).toLocaleDateString('en-IN')} –{' '}
-                        {new Date(leave.toDate).toLocaleDateString('en-IN')} · {leave.totalDays}d
-                      </p>
-                    </div>
-                    <Badge variant="warning" className="shrink-0">PENDING</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <PendingRequestsWidget
+          items={inboxItems}
+          loading={inboxLoading}
+          error={inboxError}
+          onRetry={() => void refetchInbox()}
+        />
       )}
     </div>
   );
