@@ -382,7 +382,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   // ── Entry row ──────────────────────────────────────────────────
   function renderRow(e: BirthdayEntry, showWish: boolean) {
     return (
-      <div className="flex items-center gap-2.5 py-1">
+      <div className="flex items-center gap-2.5 py-1 pl-1">
         {e.avatarUrl ? (
           <img src={e.avatarUrl} alt={`${e.firstName} ${e.lastName}`}
             className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
