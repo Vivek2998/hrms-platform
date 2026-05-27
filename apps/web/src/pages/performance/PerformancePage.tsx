@@ -876,9 +876,7 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
   const { mutateAsync: deleteGoal } = useDeleteGoal();
   const { data: employeesData } = useEmployees({ limit: 200 });
 
-  if (!cycleId)
-    return <p className="text-muted-foreground text-sm py-8 text-center">Select a cycle to view goals.</p>;
-
+  // ⚠️ useMemo must be above any early return (Rules of Hooks)
   const weightedAvg = useMemo(() => {
     if (!goals?.length) return 0;
     const totalW = goals.reduce((s, g) => s + g.weightage, 0);
@@ -886,6 +884,9 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
       ? Math.round(goals.reduce((s, g) => s + g.progress * g.weightage, 0) / totalW)
       : 0;
   }, [goals]);
+
+  if (!cycleId)
+    return <p className="text-muted-foreground text-sm py-8 text-center">Select a cycle to view goals.</p>;
 
   return (
     <div className="space-y-4">
