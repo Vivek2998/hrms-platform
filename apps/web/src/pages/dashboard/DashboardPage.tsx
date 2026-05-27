@@ -279,15 +279,15 @@ const BDAY_SPARKLES = [
 
 function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loading: boolean }) {
   const giveKudos = useGiveKudos();
-  const [wished, setWished]     = React.useState<Set<string>>(new Set());
-  const [current, setCurrent]   = React.useState(0);
-  const [direction, setDirection] = React.useState<'left' | 'right'>('left');
-  const [paused, setPaused]     = React.useState(false);
-  const [prev, setPrev]         = React.useState<number | null>(null);
+  const [wished, setWished]               = React.useState<Set<string>>(new Set());
+  const [current, setCurrent]             = React.useState(0);
+  const [prev, setPrev]                   = React.useState<number | null>(null);
+  const [direction, setDirection]         = React.useState<'left' | 'right'>('left');
+  const [transitioning, setTransitioning] = React.useState(false);
+  const [paused, setPaused]               = React.useState(false);
 
-  const ANIM_MS = 600;
+  const ANIM_MS = 520;
 
-  // Refs so interval callback always reads latest values without re-subscribing
   const currentRef      = React.useRef(0);
   const pausedRef       = React.useRef(false);
   const entriesLenRef   = React.useRef(entries.length);
@@ -300,19 +300,36 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   pausedRef.current     = paused;
   entriesLenRef.current = entries.length;
 
+  // ── Kick off a slide: mount both cards in starting position,
+  //    then on the next painted frame start the CSS transition ──────
+  const startSlide = React.useCallback((nextIdx: number, dir: 'left' | 'right', prevIdx: number) => {
+    setPrev(prevIdx);
+    setDirection(dir);
+    setCurrent(nextIdx);
+    setTransitioning(false);           // render track at rest position first
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {    // wait one painted frame, then slide
+        setTransitioning(true);
+        setTimeout(() => {
+          setPrev(null);
+          setTransitioning(false);
+          transRef.current = false;
+        }, ANIM_MS + 40);
+      });
+    });
+  }, []);
+
   // ── Auto-play ──────────────────────────────────────────────────
   const scheduleNext = React.useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (entriesLenRef.current <= 1) return;
     intervalRef.current = setInterval(() => {
-      if (pausedRef.current) return;
+      if (pausedRef.current || transRef.current) return;
+      transRef.current = true;
       const next = (currentRef.current + 1) % entriesLenRef.current;
-      setPrev(currentRef.current);
-      setDirection('left');
-      setCurrent(next);
-      setTimeout(() => { setPrev(null); transRef.current = false; }, ANIM_MS + 40);
+      startSlide(next, 'left', currentRef.current);
     }, 5000);
-  }, []);
+  }, [startSlide]);
 
   React.useEffect(() => {
     scheduleNext();
@@ -323,10 +340,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   function navigate(next: number) {
     if (next === currentRef.current || transRef.current) return;
     transRef.current = true;
-    setPrev(currentRef.current);
-    setDirection(next > currentRef.current ? 'left' : 'right');
-    setCurrent(next);
-    setTimeout(() => { setPrev(null); transRef.current = false; }, ANIM_MS + 40);
+    startSlide(next, next > currentRef.current ? 'left' : 'right', currentRef.current);
     scheduleNext();
   }
 
@@ -356,16 +370,62 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
 
   // ── Trackpad horizontal scroll ─────────────────────────────────
   function onWheel(ev: React.WheelEvent) {
-    if (Math.abs(ev.deltaX) < Math.abs(ev.deltaY)) return; // mostly vertical — ignore
-    if (wheelCoolRef.current) return;                        // debounce rapid events
+    if (Math.abs(ev.deltaX) < Math.abs(ev.deltaY)) return;
+    if (wheelCoolRef.current) return;
     wheelCoolRef.current = true;
-    setTimeout(() => { wheelCoolRef.current = false; }, 500);
+    setTimeout(() => { wheelCoolRef.current = false; }, 700);
     navigate(ev.deltaX > 0
       ? Math.min(currentRef.current + 1, entriesLenRef.current - 1)
       : Math.max(currentRef.current - 1, 0));
   }
 
+  // ── Entry row ──────────────────────────────────────────────────
+  function renderRow(e: BirthdayEntry, showWish: boolean) {
+    return (
+      <div className="flex items-center gap-2.5 py-1">
+        {e.avatarUrl ? (
+          <img src={e.avatarUrl} alt={`${e.firstName} ${e.lastName}`}
+            className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
+            {`${e.firstName[0]}${e.lastName[0]}`.toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">{e.firstName} {e.lastName}</p>
+          {e.designation && <p className="truncate text-xs text-white/70">{e.designation}</p>}
+        </div>
+        {showWish && (
+          <button
+            disabled={wished.has(e.id) || giveKudos.isPending}
+            onClick={() => {
+              if (wished.has(e.id) || giveKudos.isPending) return;
+              giveKudos.mutate(
+                { toEmployeeId: e.id, category: 'OTHER', message: `Happy Birthday ${e.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
+                { onSuccess: () => setWished((ws) => new Set(ws).add(e.id)) },
+              );
+            }}
+            className={cn(
+              'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-all',
+              wished.has(e.id)
+                ? 'cursor-default border-white/30 bg-white/20 text-white/80'
+                : 'border-white/50 bg-white/15 text-white hover:bg-white/30 hover:border-white/70',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+            )}
+          >
+            {wished.has(e.id) ? '🎂 Wished!' : 'Wish 🎂'}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   const entry = entries[current];
+
+  // Track position: left direction → prev on left, current on right → slide from 0% to -50%
+  //                 right direction → current on left, prev on right → slide from -50% to 0%
+  const trackStart = direction === 'left' ? '0%'   : '-50%';
+  const trackEnd   = direction === 'left' ? '-50%' : '0%';
 
   return (
     <Card className="relative overflow-hidden border-0 bg-linear-to-br from-rose-400 via-pink-500 to-fuchsia-500 shadow-lg shadow-pink-500/25">
@@ -416,69 +476,40 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
             onMouseUp={onMouseUp}
             onWheel={onWheel}
           >
-            {/* Slide container — exiting card slides out while entering card slides in */}
-            <div className="relative overflow-hidden">
-              {prev !== null && entries[prev] && (() => {
-                const pe = entries[prev]!;
-                return (
-                  <div
-                    key={`exit-${prev}`}
-                    className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2.5 py-1"
-                    style={{ animation: `${direction === 'left' ? 'bday-slide-to-left' : 'bday-slide-to-right'} ${ANIM_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both` }}
-                  >
-                    {pe.avatarUrl ? (
-                      <img src={pe.avatarUrl} alt={`${pe.firstName} ${pe.lastName}`}
-                        className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
-                    ) : (
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
-                        {`${pe.firstName[0]}${pe.lastName[0]}`.toUpperCase()}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-white">{pe.firstName} {pe.lastName}</p>
-                      {pe.designation && <p className="truncate text-xs text-white/70">{pe.designation}</p>}
-                    </div>
-                    <div className="h-7 w-16 shrink-0 rounded-md border border-white/30 bg-white/20" />
-                  </div>
-                );
-              })()}
-              <div
-                key={`enter-${current}`}
-                className="flex items-center gap-2.5 py-1"
-                style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} ${ANIM_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both` }}
-              >
-                {entry.avatarUrl ? (
-                  <img src={entry.avatarUrl} alt={`${entry.firstName} ${entry.lastName}`}
-                    className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white/40" />
-                ) : (
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white ring-2 ring-white/30">
-                    {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white">{entry.firstName} {entry.lastName}</p>
-                  {entry.designation && <p className="truncate text-xs text-white/70">{entry.designation}</p>}
-                </div>
-                <button
-                  disabled={wished.has(entry.id) || giveKudos.isPending}
-                  onClick={() => {
-                    if (wished.has(entry.id) || giveKudos.isPending) return;
-                    giveKudos.mutate(
-                      { toEmployeeId: entry.id, category: 'OTHER', message: `Happy Birthday ${entry.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
-                      { onSuccess: () => setWished((ws) => new Set(ws).add(entry.id)) },
-                    );
+            {/*
+              Sliding track — two cards sit side-by-side in a 200%-wide flex row.
+              The viewport clips to one card-width via overflow-hidden.
+              We CSS-transition the track's translateX to slide between cards.
+              No absolute positioning = no overlap = no bleed artifacts.
+            */}
+            <div className="w-full overflow-hidden">
+              {prev !== null && entries[prev] ? (
+                <div
+                  className="flex"
+                  style={{
+                    width: '200%',
+                    transform: `translateX(${transitioning ? trackEnd : trackStart})`,
+                    transition: transitioning
+                      ? `transform ${ANIM_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`
+                      : 'none',
+                    willChange: 'transform',
                   }}
-                  className={cn(
-                    'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-all',
-                    wished.has(entry.id)
-                      ? 'cursor-default border-white/30 bg-white/20 text-white/80'
-                      : 'border-white/50 bg-white/15 text-white hover:bg-white/30 hover:border-white/70',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
-                  )}
                 >
-                  {wished.has(entry.id) ? '🎂 Wished!' : 'Wish 🎂'}
-                </button>
-              </div>
+                  {direction === 'left' ? (
+                    <>
+                      <div className="w-1/2 min-w-0 shrink-0">{renderRow(entries[prev], false)}</div>
+                      <div className="w-1/2 min-w-0 shrink-0">{renderRow(entry, true)}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-1/2 min-w-0 shrink-0">{renderRow(entry, true)}</div>
+                      <div className="w-1/2 min-w-0 shrink-0">{renderRow(entries[prev], false)}</div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                renderRow(entry, true)
+              )}
             </div>
             {entries.length > 1 && (
               <div className="flex justify-center gap-1.5 pt-2">
