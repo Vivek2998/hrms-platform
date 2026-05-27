@@ -210,10 +210,13 @@ function AddGoalDialog({
           {isManagerRole && !forEmployeeId && (
             <div className="space-y-1">
               <Label>Assign to (leave blank for yourself)</Label>
-              <Select value={watch('employeeId')} onValueChange={(v) => setValue('employeeId', v)}>
+              <Select
+                value={watch('employeeId') || '__self__'}
+                onValueChange={(v) => setValue('employeeId', v === '__self__' ? '' : v)}
+              >
                 <SelectTrigger><SelectValue placeholder="Select employee (optional)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Myself</SelectItem>
+                  <SelectItem value="__self__">Myself</SelectItem>
                   {(employeesData?.employees ?? []).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.firstName} {e.lastName} ({e.employeeCode})
@@ -889,12 +892,15 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
       <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
           {isManagerView && (
-            <Select value={filterEmpId} onValueChange={setFilterEmpId}>
+            <Select
+              value={filterEmpId || '__all__'}
+              onValueChange={(v) => setFilterEmpId(v === '__all__' ? '' : v)}
+            >
               <SelectTrigger className="w-52 h-8 text-sm">
                 <SelectValue placeholder="All employees" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All employees</SelectItem>
+                <SelectItem value="__all__">All employees</SelectItem>
                 {(employeesData?.employees ?? []).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.firstName} {e.lastName}
