@@ -477,52 +477,51 @@ export function Sidebar() {
                   );
 
                   // ── Groups with their own navigable page (e.g. Performance) ──
-                  // Active bg lifted to the outer container so both NavLink + ChevronButton
-                  // share the same full-width highlight (avoids the half-highlighted row problem).
+                  // Single NavLink wraps the full row (identical layout to standard groups) so
+                  // the chevron sits at exactly the same position as Leaves/Payroll/etc.
+                  // The nested <button> intercepts chevron clicks to toggle without navigating.
                   if (entry.to) {
                     const isParentActive =
                       location.pathname === entry.to || location.pathname.startsWith(entry.to + '/');
                     return (
                       <li key={entry.key}>
-                        <div
+                        <NavLink
+                          to={entry.to}
+                          end
                           className={cn(
-                            'flex w-full items-center overflow-hidden rounded-md transition-colors',
+                            'group/nav flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                             isParentActive
                               ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                              : '',
+                              : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                           )}
                         >
-                          <NavLink
-                            to={entry.to}
-                            end
-                            className={cn(
-                              'flex flex-1 items-center gap-3 px-3 py-2 text-sm font-medium transition-colors',
-                              isParentActive
-                                ? 'text-sidebar-primary-foreground'
-                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-l-md',
-                            )}
-                          >
-                            <entry.icon className="h-5 w-5 shrink-0" />
-                            <span className="flex-1 text-left">{entry.label}</span>
-                          </NavLink>
+                          <entry.icon className="h-5 w-5 shrink-0" />
+                          <span className="flex-1 text-left">{entry.label}</span>
+                          {isChildActive && !isOpen && !isParentActive && (
+                            <span className="h-2 w-2 shrink-0 rounded-full bg-primary/50 blur-[2px]" />
+                          )}
                           <button
-                            onClick={() => setOpenGroups(isOpen ? new Set() : new Set([entry.key]))}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setOpenGroups(isOpen ? new Set() : new Set([entry.key]));
+                            }}
                             className={cn(
-                              'flex h-9.5 w-8 shrink-0 items-center justify-center rounded-r-md transition-colors',
-                              isParentActive
-                                ? 'text-sidebar-primary-foreground hover:bg-white/10'
-                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                              'rounded p-0.5 transition-colors',
+                              isParentActive ? 'hover:bg-white/10' : 'hover:bg-black/5',
                             )}
                             aria-label={isOpen ? 'Collapse section' : 'Expand section'}
                           >
                             <ChevronDown
                               className={cn(
                                 'h-4 w-4 shrink-0 transition-all duration-200',
-                                isOpen ? 'rotate-180 opacity-100' : 'opacity-40',
+                                isOpen
+                                  ? 'rotate-180 opacity-100'
+                                  : 'opacity-40 group-hover/nav:opacity-100',
                               )}
                             />
                           </button>
-                        </div>
+                        </NavLink>
                         <div className={cn('grid overflow-hidden transition-[grid-template-rows] duration-200', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
                           <ul className="min-h-0 mt-0.5 space-y-0.5">
                             {visible.map((child) => {
