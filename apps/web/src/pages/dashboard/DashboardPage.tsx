@@ -270,32 +270,35 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
   const giveKudos = useGiveKudos();
   const [wished, setWished] = React.useState<Set<string>>(new Set());
   const [current, setCurrent] = React.useState(0);
+  const [direction, setDirection] = React.useState<'left' | 'right'>('left');
   const dragStartX = React.useRef<number | null>(null);
 
-  // Touch — mobile swipe
-  function onTouchStart(ev: React.TouchEvent) {
-    dragStartX.current = ev.touches[0].clientX;
+  function navigate(next: number) {
+    if (next === current) return;
+    setDirection(next > current ? 'left' : 'right');
+    setCurrent(next);
   }
+
+  function onTouchStart(ev: React.TouchEvent) { dragStartX.current = ev.touches[0].clientX; }
   function onTouchEnd(ev: React.TouchEvent) {
     if (dragStartX.current === null) return;
     const dx = ev.changedTouches[0].clientX - dragStartX.current;
     dragStartX.current = null;
     if (Math.abs(dx) < 40) return;
-    if (dx < 0) setCurrent((c) => Math.min(c + 1, entries.length - 1));
-    else        setCurrent((c) => Math.max(c - 1, 0));
+    if (dx < 0) navigate(Math.min(current + 1, entries.length - 1));
+    else        navigate(Math.max(current - 1, 0));
   }
-  // Mouse — desktop drag
-  function onMouseDown(ev: React.MouseEvent) {
-    dragStartX.current = ev.clientX;
-  }
+  function onMouseDown(ev: React.MouseEvent) { dragStartX.current = ev.clientX; }
   function onMouseUp(ev: React.MouseEvent) {
     if (dragStartX.current === null) return;
     const dx = ev.clientX - dragStartX.current;
     dragStartX.current = null;
     if (Math.abs(dx) < 40) return;
-    if (dx < 0) setCurrent((c) => Math.min(c + 1, entries.length - 1));
-    else        setCurrent((c) => Math.max(c - 1, 0));
+    if (dx < 0) navigate(Math.min(current + 1, entries.length - 1));
+    else        navigate(Math.max(current - 1, 0));
   }
+
+  const entry = entries[current];
 
   return (
     <Card>
@@ -319,64 +322,64 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
           <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today</p>
         ) : (
           <div
-            className="select-none overflow-hidden"
+            className="select-none"
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
           >
-            {/* Slide track — translateX moves all slides; overflow-hidden on parent clips perfectly */}
+            {/* key=current forces React to remount on every change → triggers fresh animation.
+                Only ONE entry is ever in the DOM — zero bleed possible by design. */}
             <div
-              className="flex transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(-${current * 100}%)` }}
+              key={current}
+              className="flex items-center gap-2.5 py-1"
+              style={{
+                animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} 260ms ease-out both`,
+              }}
             >
-              {entries.map((entry) => (
-                <div key={entry.id} className="flex min-w-full items-center gap-2.5 py-1">
-                  {entry.avatarUrl ? (
-                    <img
-                      src={entry.avatarUrl}
-                      alt={`${entry.firstName} ${entry.lastName}`}
-                      className="h-11 w-11 shrink-0 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold">
-                      {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{entry.firstName} {entry.lastName}</p>
-                    {entry.designation && (
-                      <p className="text-muted-foreground truncate text-xs">{entry.designation}</p>
-                    )}
-                  </div>
-                  <button
-                    disabled={wished.has(entry.id) || giveKudos.isPending}
-                    onClick={() => {
-                      if (wished.has(entry.id) || giveKudos.isPending) return;
-                      giveKudos.mutate(
-                        { toEmployeeId: entry.id, category: 'OTHER', message: `Happy Birthday ${entry.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
-                        { onSuccess: () => setWished((prev) => new Set(prev).add(entry.id)) },
-                      );
-                    }}
-                    className={cn(
-                      'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-colors',
-                      wished.has(entry.id)
-                        ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
-                        : 'border-pink-200 bg-transparent text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
-                      'disabled:cursor-not-allowed disabled:opacity-60',
-                    )}
-                  >
-                    {wished.has(entry.id) ? '🎂 Wished!' : 'Wish 🎂'}
-                  </button>
+              {entry.avatarUrl ? (
+                <img
+                  src={entry.avatarUrl}
+                  alt={`${entry.firstName} ${entry.lastName}`}
+                  className="h-11 w-11 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="bg-primary/10 text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold">
+                  {`${entry.firstName[0]}${entry.lastName[0]}`.toUpperCase()}
                 </div>
-              ))}
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{entry.firstName} {entry.lastName}</p>
+                {entry.designation && (
+                  <p className="text-muted-foreground truncate text-xs">{entry.designation}</p>
+                )}
+              </div>
+              <button
+                disabled={wished.has(entry.id) || giveKudos.isPending}
+                onClick={() => {
+                  if (wished.has(entry.id) || giveKudos.isPending) return;
+                  giveKudos.mutate(
+                    { toEmployeeId: entry.id, category: 'OTHER', message: `Happy Birthday ${entry.firstName}! 🎂 Wishing you a wonderful day!`, isPublic: true },
+                    { onSuccess: () => setWished((prev) => new Set(prev).add(entry.id)) },
+                  );
+                }}
+                className={cn(
+                  'h-7 shrink-0 rounded-md border px-3 text-xs font-medium transition-colors',
+                  wished.has(entry.id)
+                    ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
+                    : 'border-pink-200 bg-transparent text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                )}
+              >
+                {wished.has(entry.id) ? '🎂 Wished!' : 'Wish 🎂'}
+              </button>
             </div>
             {entries.length > 1 && (
               <div className="flex justify-center gap-1.5 pt-2">
                 {entries.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setCurrent(i)}
+                    onClick={() => navigate(i)}
                     className={cn(
                       'h-1.5 rounded-full transition-all duration-300',
                       i === current ? 'w-4 bg-pink-400' : 'w-1.5 bg-pink-200 dark:bg-pink-800',
