@@ -288,34 +288,32 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
       </CardHeader>
       <CardContent className="pt-0">
         {loading ? (
-          <div className="flex gap-3 overflow-hidden">
-            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-36 w-28 shrink-0 rounded-xl" />)}
+          <div className="flex flex-col items-center gap-3 py-2">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-7 w-full" />
           </div>
         ) : entries.length === 0 ? (
           <p className="text-muted-foreground py-4 text-center text-sm">No birthdays today</p>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-1">
+          <div className="flex snap-x snap-mandatory overflow-x-auto">
             {entries.map((e) => (
               <div
                 key={e.id}
-                className="flex w-28 shrink-0 flex-col items-center gap-2.5 rounded-xl border border-pink-100 bg-pink-50/60 p-3 dark:border-pink-900/40 dark:bg-pink-950/20"
+                className="flex min-w-full snap-start flex-col items-center gap-3 py-2"
               >
                 <PersonAvatar name={`${e.firstName} ${e.lastName}`} url={e.avatarUrl} />
                 <div className="w-full text-center">
-                  <p className="truncate text-xs font-semibold leading-snug">
-                    {e.firstName} {e.lastName}
-                  </p>
+                  <p className="text-sm font-semibold">{e.firstName} {e.lastName}</p>
                   {e.designation && (
-                    <p className="text-muted-foreground mt-0.5 truncate text-[10px]">
-                      {e.designation}
-                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">{e.designation}</p>
                   )}
                 </div>
                 <button
                   disabled={wished.has(e.id) || giveKudos.isPending}
                   onClick={() => handleWish(e)}
                   className={cn(
-                    'h-7 w-full rounded-md border text-[11px] font-medium transition-colors',
+                    'h-8 w-full rounded-md border text-xs font-medium transition-colors',
                     wished.has(e.id)
                       ? 'cursor-default border-pink-200 bg-pink-100 text-pink-500 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-400'
                       : 'border-pink-200 bg-white text-pink-600 hover:border-pink-300 hover:bg-pink-100 hover:text-pink-700 dark:border-pink-800 dark:bg-transparent dark:text-pink-400 dark:hover:bg-pink-900/50 dark:hover:text-pink-300',
@@ -324,6 +322,19 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
                 >
                   {wished.has(e.id) ? '🎂 Wished!' : 'Wish 🎂'}
                 </button>
+                {entries.length > 1 && (
+                  <div className="flex gap-1">
+                    {entries.map((_, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          'h-1.5 w-1.5 rounded-full',
+                          entries[i].id === e.id ? 'bg-pink-400' : 'bg-pink-200 dark:bg-pink-800',
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
