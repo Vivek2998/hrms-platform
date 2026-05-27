@@ -304,7 +304,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
       if (pausedRef.current) return;
       setDirection('left');
       setCurrent((c) => (c + 1) % entriesLenRef.current);
-    }, 3500);
+    }, 5000);
   }, []);
 
   React.useEffect(() => {
@@ -409,7 +409,7 @@ function BirthdayWidget({ entries, loading }: { entries: BirthdayEntry[]; loadin
             <div
               key={current}
               className="flex items-center gap-2.5 py-1"
-              style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} 260ms ease-out both` }}
+              style={{ animation: `${direction === 'left' ? 'bday-slide-from-right' : 'bday-slide-from-left'} 480ms cubic-bezier(0.22, 1, 0.36, 1) both` }}
             >
               {entry.avatarUrl ? (
                 <img src={entry.avatarUrl} alt={`${entry.firstName} ${entry.lastName}`}

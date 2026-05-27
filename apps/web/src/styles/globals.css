@@ -76,11 +76,11 @@
 }
 
 @keyframes bday-slide-from-right {
-  from { transform: translateX(32px); opacity: 0; }
+  from { transform: translateX(48px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 @keyframes bday-slide-from-left {
-  from { transform: translateX(-32px); opacity: 0; }
+  from { transform: translateX(-48px); opacity: 0; }
   to   { transform: translateX(0);     opacity: 1; }
 }
 @keyframes bday-twinkle {
