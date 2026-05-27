@@ -22,12 +22,12 @@ export function AppShell() {
         )}
       >
         <Header />
-        <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-10">
+        <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-8">
           <div key={location.pathname} className="animate-page-enter h-full">
             <Outlet />
           </div>
         </main>
-        <footer className="hidden md:flex h-10 shrink-0 items-center justify-between border-t bg-background px-6">
+        <footer className="hidden md:flex shrink-0 items-center justify-between border-t bg-background px-6 py-2">
           <span className="text-[11px] text-muted-foreground">
             © {new Date().getFullYear()} WorkAxis · All rights reserved
           </span>

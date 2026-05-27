@@ -687,13 +687,6 @@ export function Sidebar() {
               })}
             </ul>
           </nav>
-
-          {/* Footer strip — aligns with AppShell content footer for a full-width appearance */}
-          <div className="hidden md:flex h-10 shrink-0 items-center border-t overflow-hidden px-3">
-            {sidebarVisible && (
-              <span className="text-[10px] text-sidebar-foreground/40 truncate">WorkAxis</span>
-            )}
-          </div>
         </aside>
       </>
     </TooltipProvider>
