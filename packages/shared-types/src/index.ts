@@ -54,12 +54,22 @@ export type DocumentType =
   | 'APPOINTMENT_LETTER'
   | 'ID_PROOF'
   | 'ADDRESS_PROOF'
-  | 'EDUCATION_CERTIFICATE'
+  | 'EDUCATIONAL'
   | 'EXPERIENCE_LETTER'
+  | 'RELIEVING_LETTER'
   | 'PAYSLIP'
   | 'FORM_16'
   | 'PF_STATEMENT'
+  | 'ID_CARD'
+  | 'INSURANCE'
+  | 'NDA'
+  | 'AGREEMENT'
+  | 'COMPANY_POLICY'
+  | 'BACKGROUND_CHECK'
+  | 'MEDICAL_CERTIFICATE'
   | 'OTHER';
+
+export type DocumentStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
 export type NotificationType =
   | 'LEAVE_APPLIED'

@@ -109,7 +109,21 @@ enum DocumentType {
   ID_PROOF
   ADDRESS_PROOF
   EDUCATIONAL
+  ID_CARD
+  INSURANCE
+  NDA
+  AGREEMENT
+  COMPANY_POLICY
+  BACKGROUND_CHECK
+  MEDICAL_CERTIFICATE
+  PF_STATEMENT
   OTHER
+}
+
+enum DocumentStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
 }
 
 enum CycleFrequency {
@@ -1133,17 +1147,20 @@ model Announcement {
 // ─────────────────────────────────────────────────────────────
 
 model Document {
-  id             String       @id @default(uuid())
+  id             String         @id @default(uuid())
   organizationId String
   employeeId     String
   type           DocumentType
   name           String
-  url            String       // Cloudinary URL
+  url            String         // Cloudinary URL
   size           Int?
   mimeType       String?
   uploadedBy     String
+  status         DocumentStatus @default(APPROVED)
+  expiresAt      DateTime?
+  notes          String?
   deletedAt      DateTime?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime       @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id])
 

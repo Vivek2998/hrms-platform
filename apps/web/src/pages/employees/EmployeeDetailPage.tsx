@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Pencil, Upload, Trash2, FileText, ExternalLink, IndianRupee, ScrollText } from 'lucide-react';
+import { ArrowLeft, Camera, Pencil, IndianRupee, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,37 +15,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useEmployee, useUpdateEmployee } from '@/hooks/useEmployees';
 import { useOfficeLocations, useAssignEmployeeLocation } from '@/hooks/useOfficeLocations';
 import { useAuthStore } from '@/stores/auth.store';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
 import { useUploadFile } from '@/hooks/useUpload';
-import { useDocuments, useCreateDocument, useDeleteDocument, type DocumentType } from '@/hooks/useDocuments';
+import { EmployeeDocuments } from '@/components/documents/EmployeeDocuments';
 import { useSalaryRevisions, useCreateSalaryRevision } from '@/hooks/useSalary';
 import { fetchExperienceLetter, fetchSalaryCertificate } from '@/hooks/useLetters';
 import { printLetter } from '@/lib/printLetter';
 import { toast } from 'sonner';
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  OFFER_LETTER: 'Offer Letter',
-  APPOINTMENT_LETTER: 'Appointment Letter',
-  ID_PROOF: 'ID Proof',
-  ADDRESS_PROOF: 'Address Proof',
-  EDUCATIONAL: 'Educational Certificate',
-  PAYSLIP: 'Payslip',
-  FORM_16: 'Form 16',
-  EXPERIENCE_LETTER: 'Experience Letter',
-  RELIEVING_LETTER: 'Relieving Letter',
-  OTHER: 'Other',
-};
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null | undefined }) {
   return (
@@ -77,13 +58,6 @@ function formatDate(iso?: string | null) {
 function formatAddress(addr?: { line1?: string; line2?: string; city?: string; state?: string; pincode?: string } | null) {
   if (!addr) return undefined;
   return [addr.line1, addr.line2, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ') || undefined;
-}
-
-function formatBytes(bytes?: number) {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function previewComponents(ctc: number) {
@@ -316,19 +290,12 @@ export default function EmployeeDetailPage() {
   const { data: employee, isLoading } = useEmployee(id ?? '');
   const currentUser = useAuthStore((s) => s.user);
   const [showEdit, setShowEdit] = useState(false);
-  const [showDocUpload, setShowDocUpload] = useState(false);
-  const [docType, setDocType] = useState<DocumentType>('ID_PROOF');
-  const [docFile, setDocFile] = useState<File | null>(null);
   const [showSetSalary, setShowSetSalary] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { mutate: updateEmployee } = useUpdateEmployee(id ?? '');
   const { mutate: uploadFile, isPending: isUploadingAvatar } = useUploadFile('avatars');
-  const { data: documents = [] } = useDocuments(id ?? '');
-  const { mutate: createDocument, isPending: isSavingDoc } = useCreateDocument();
-  const { mutate: deleteDocument } = useDeleteDocument(id ?? '');
-  const { mutate: uploadDocFile, isPending: isUploadingDoc } = useUploadFile('documents');
   const { data: salaryRevisions = [] } = useSalaryRevisions(id ?? '');
   const { mutate: createSalaryRevision, isPending: isSavingSalary } = useCreateSalaryRevision(id ?? '');
   const [letterPending, setLetterPending] = useState<'experience' | 'salary' | null>(null);
@@ -440,30 +407,6 @@ export default function EmployeeDetailPage() {
     e.target.value = '';
   }
 
-  function handleDocSubmit() {
-    if (!docFile || !id) return;
-    uploadDocFile(docFile, {
-      onSuccess: ({ url }) => {
-        createDocument(
-          {
-            employeeId: id,
-            type: docType,
-            name: docFile.name,
-            url,
-            size: docFile.size,
-            ...(docFile.type ? { mimeType: docFile.type } : {}),
-          },
-          {
-            onSuccess: () => {
-              setShowDocUpload(false);
-              setDocFile(null);
-            },
-          },
-        );
-      },
-      onError: () => toast.error('Failed to upload document'),
-    });
-  }
 
   return (
     <div className="space-y-6">
@@ -639,57 +582,7 @@ export default function EmployeeDetailPage() {
           </div>
 
           {/* Documents section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Documents
-              </CardTitle>
-              <Button size="sm" variant="outline" onClick={() => setShowDocUpload(true)}>
-                <Upload className="mr-1.5 h-3.5 w-3.5" />
-                Upload
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {documents.length === 0 ? (
-                <p className="text-muted-foreground py-4 text-center text-sm">
-                  No documents uploaded yet.
-                </p>
-              ) : (
-                <div className="divide-y">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center gap-3 py-3">
-                      <FileText className="text-muted-foreground h-5 w-5 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{doc.name}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {DOC_TYPE_LABELS[doc.type] ?? doc.type}
-                          {doc.size ? ` · ${formatBytes(doc.size)}` : ''}
-                          {' · '}
-                          {new Date(doc.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </p>
-                      </div>
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-foreground"
-                        title="Open document"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                      <button
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteDocument(doc.id)}
-                        title="Delete document"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <EmployeeDocuments employeeId={id ?? ''} isHRView />
 
           {/* Salary section */}
           <Card>
@@ -782,7 +675,9 @@ export default function EmployeeDetailPage() {
 
           <ChangeLocationDialog
             employeeId={id ?? ''}
-            currentLocationId={(employee as { officeLocationId?: string }).officeLocationId}
+            {...((employee as { officeLocationId?: string }).officeLocationId !== undefined
+              ? { currentLocationId: (employee as { officeLocationId?: string }).officeLocationId }
+              : {})}
             open={showLocationDialog}
             onClose={() => setShowLocationDialog(false)}
           />
@@ -801,57 +696,6 @@ export default function EmployeeDetailPage() {
             isPending={isSavingSalary}
           />
 
-          {/* Upload Document Dialog */}
-          <Dialog open={showDocUpload} onOpenChange={setShowDocUpload}>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Upload Document</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-2">
-                <div>
-                  <Label className="mb-1.5 block">Document Type</Label>
-                  <Select
-                    value={docType}
-                    onValueChange={(v) => setDocType(v as DocumentType)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="mb-1.5 block">File</Label>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                    onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
-                  />
-                  {docFile && (
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {docFile.name} · {formatBytes(docFile.size)}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => { setShowDocUpload(false); setDocFile(null); }}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDocSubmit}
-                  disabled={!docFile || isUploadingDoc || isSavingDoc}
-                >
-                  {isUploadingDoc || isSavingDoc ? 'Uploading...' : 'Upload'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </>
       )}
     </div>

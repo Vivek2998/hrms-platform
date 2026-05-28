@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { cn } from '@/lib/utils';
-import { Building2, Camera, CreditCard, Home, Loader2, MapPin, Pencil, Phone, User, X } from 'lucide-react';
+import { Building2, Camera, CreditCard, FileText, Home, Loader2, MapPin, Pencil, Phone, User, X } from 'lucide-react';
+import { EmployeeDocuments } from '@/components/documents/EmployeeDocuments';
 import { DateSelectPicker } from '@/components/ui/date-select-picker';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMyProfile, useUpdateMyProfile, type MyProfile } from '@/hooks/useProfile';
@@ -118,7 +119,7 @@ function SectionCard({
   );
 }
 
-type SettingsTab = 'profile' | 'organisation';
+type SettingsTab = 'profile' | 'organisation' | 'documents';
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -212,6 +213,7 @@ export default function SettingsPage() {
       <div className="flex gap-1 border-b">
         {([
           { key: 'profile', label: 'My Profile', icon: User },
+          { key: 'documents', label: 'My Documents', icon: FileText },
           ...(isAdmin ? [{ key: 'organisation', label: 'Organisation', icon: Building2 }] : []),
         ] as { key: SettingsTab; label: string; icon: React.ElementType }[]).map((tab) => (
           <button
@@ -237,8 +239,15 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Documents tab */}
+      {activeTab === 'documents' && (
+        <div className="max-w-3xl">
+          <EmployeeDocuments employeeId={user?.id ?? ''} isHRView={false} />
+        </div>
+      )}
+
       {/* Profile tab */}
-      {activeTab !== 'organisation' && (
+      {activeTab === 'profile' && (
         <>
 
       {/* ── Profile hero ── */}
@@ -494,7 +503,7 @@ export default function SettingsPage() {
         </>
       )}
 
-      {/* end profile tab conditional */}
+      {/* end profile tab */}
       </>)}
 
     </div>
