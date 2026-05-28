@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -876,7 +876,6 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
   const { mutateAsync: deleteGoal } = useDeleteGoal();
   const { data: employeesData } = useEmployees({ limit: 200 });
 
-  // ⚠️ useMemo must be above any early return (Rules of Hooks)
   const weightedAvg = useMemo(() => {
     if (!goals?.length) return 0;
     const totalW = goals.reduce((s, g) => s + g.weightage, 0);
@@ -884,9 +883,6 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
       ? Math.round(goals.reduce((s, g) => s + g.progress * g.weightage, 0) / totalW)
       : 0;
   }, [goals]);
-
-  if (!cycleId)
-    return <p className="text-muted-foreground text-sm py-8 text-center">Select a cycle to view goals.</p>;
 
   return (
     <div className="space-y-4">
@@ -916,13 +912,32 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
             </span>
           )}
         </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        <Button
+          size="sm"
+          onClick={() => {
+            if (!cycleId) {
+              toast.info('Please select a performance cycle from the dropdown above');
+              return;
+            }
+            setAddOpen(true);
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" />
           {isManagerView ? 'Add / Assign Goal' : 'Add Goal'}
         </Button>
       </div>
 
-      {isLoading ? (
+      {!cycleId ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12">
+            <Target className="h-10 w-10 text-muted-foreground" />
+            <p className="text-muted-foreground text-sm font-medium">No performance cycle selected</p>
+            <p className="text-muted-foreground text-xs text-center max-w-xs">
+              Select a cycle from the dropdown at the top of the page to view and add goals.
+            </p>
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-muted h-20 animate-pulse rounded-lg" />)}
         </div>
@@ -931,6 +946,7 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
           <CardContent className="flex flex-col items-center gap-3 py-12">
             <Target className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground text-sm">No goals set yet.</p>
+            <p className="text-xs text-muted-foreground">Click "Add Goal" above to create your first goal.</p>
           </CardContent>
         </Card>
       ) : (
@@ -1006,7 +1022,7 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
           ))}
         </div>
       )}
-      {addOpen && <AddGoalDialog cycleId={cycleId} open={addOpen} onClose={() => setAddOpen(false)} />}
+      {cycleId && addOpen && <AddGoalDialog cycleId={cycleId} open={addOpen} onClose={() => setAddOpen(false)} />}
     </div>
   );
 }
@@ -1453,11 +1469,13 @@ export default function PerformancePage() {
   const [activeTab, setActiveTab] = useSessionStorageState<string>('performance_tab', isEmployee ? 'scorecard' : 'overview');
   const { data: cycles } = useCycles();
 
-  // Auto-select active cycle on load
-  if (cycles?.length && !selectedCycleId) {
+  // Auto-select the active cycle (or the first one) when cycles first load.
+  // useEffect is the correct place for this — calling setState during render is a React anti-pattern.
+  useEffect(() => {
+    if (!cycles?.length || selectedCycleId) return;
     const active = cycles.find((c) => c.status === 'ACTIVE') ?? cycles[0];
     if (active) setSelectedCycleId(active.id);
-  }
+  }, [cycles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-6">
