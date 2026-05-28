@@ -116,12 +116,20 @@ function ExpiryBadge({ expiresAt }: { expiresAt?: string | null | undefined }) {
   return null;
 }
 
+// Hierarchy: Admin approves HR docs; HR approves Employee/Manager docs
+function canApproveDoc(viewerRole: string | undefined, uploaderRole: string): boolean {
+  if (viewerRole === 'SUPER_ADMIN' || viewerRole === 'ORG_ADMIN') return true;
+  if (viewerRole === 'HR' && (uploaderRole === 'EMPLOYEE' || uploaderRole === 'MANAGER')) return true;
+  return false;
+}
+
 export function EmployeeDocuments({ employeeId, isHRView = false }: Props) {
   const currentUser = useAuthStore((s) => s.user);
   const { data: documents = [], isLoading } = useDocuments(employeeId);
   const { mutate: deleteDoc, isPending: isDeleting } = useDeleteDocument(employeeId);
   const { mutate: approveDoc, isPending: isApproving } = useApproveDocument(employeeId);
   const { mutate: rejectDoc, isPending: isRejecting } = useRejectDocument(employeeId);
+  const viewerRole = currentUser?.role;
 
   const [showUpload, setShowUpload] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -151,7 +159,9 @@ export function EmployeeDocuments({ employeeId, isHRView = false }: Props) {
   }
 
   function canDelete(doc: EmployeeDocument) {
-    if (isHRView) return true;
+    if (viewerRole === 'SUPER_ADMIN' || viewerRole === 'ORG_ADMIN') return true;
+    if (viewerRole === 'HR' && canApproveDoc(viewerRole, doc.uploaderRole ?? 'EMPLOYEE')) return true;
+    // Employees/Managers can only delete their own pending docs
     return doc.employeeId === currentUser?.id && doc.status === 'PENDING_APPROVAL';
   }
 
@@ -210,6 +220,13 @@ export function EmployeeDocuments({ employeeId, isHRView = false }: Props) {
                         day: '2-digit', month: 'short', year: 'numeric',
                       })}
                     </p>
+                    {doc.status === 'PENDING_APPROVAL' && !isHRView && (
+                      <p className="mt-0.5 text-[11px] text-amber-600">
+                        {doc.uploaderRole === 'HR'
+                          ? 'Awaiting Admin approval'
+                          : 'Awaiting HR / Admin approval'}
+                      </p>
+                    )}
                     {doc.status === 'REJECTED' && doc.notes && (
                       <p className="mt-1 text-xs text-red-600 italic">Reason: {doc.notes}</p>
                     )}
@@ -217,31 +234,42 @@ export function EmployeeDocuments({ employeeId, isHRView = false }: Props) {
 
                   {/* Actions */}
                   <div className="flex shrink-0 items-center gap-1">
-                    {/* Approve / Reject — HR view on pending docs */}
-                    {isHRView && doc.status === 'PENDING_APPROVAL' && (
-                      <>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
-                          title="Approve"
-                          disabled={isApproving}
-                          onClick={() => approveDoc(doc.id)}
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
-                          title="Reject"
-                          disabled={isRejecting}
-                          onClick={() => { setRejectTarget(doc); setRejectNotes(''); }}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
+                    {/* Approve / Reject — hierarchy-aware */}
+                    {isHRView && doc.status === 'PENDING_APPROVAL' && (() => {
+                      const hasAuthority = canApproveDoc(viewerRole, doc.uploaderRole ?? 'EMPLOYEE');
+                      if (hasAuthority) {
+                        return (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Approve"
+                              disabled={isApproving}
+                              onClick={() => approveDoc(doc.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
+                              title="Reject"
+                              disabled={isRejecting}
+                              onClick={() => { setRejectTarget(doc); setRejectNotes(''); }}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        );
+                      }
+                      // HR viewing an HR-uploaded doc — only Admin can approve
+                      return (
+                        <span className="text-[10px] text-amber-600 font-medium px-1">
+                          Admin only
+                        </span>
+                      );
+                    })()}
 
                     {/* Preview (images) */}
                     {isImage(doc.mimeType, doc.url) && (

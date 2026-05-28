@@ -79,6 +79,8 @@ export interface EmployeeDocument {
   size?: number;
   mimeType?: string;
   uploadedBy: string;
+  /** Role of whoever uploaded this document — used for hierarchy-based approval */
+  uploaderRole: 'SUPER_ADMIN' | 'ORG_ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
   status: DocumentStatus;
   expiresAt?: string | null;
   notes?: string | null;
