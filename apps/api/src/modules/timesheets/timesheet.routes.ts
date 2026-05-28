@@ -126,6 +126,65 @@ export async function timesheetRoutes(app: FastifyInstance) {
     return reply.send(ok(null));
   });
 
+  // PUT /timesheets/upsert — create or update entry for an employee+project+date
+  // Used by the timesheet grid cell so editing an existing value updates rather than duplicates.
+  app.put('/timesheets/upsert', auth, async (req, reply) => {
+    const input = entrySchema.parse(req.body);
+    const ws = weekStart(input.date);
+
+    const existing = await app.prisma.timesheetEntry.findFirst({
+      where: {
+        organizationId: req.user.orgId,
+        employeeId: req.user.sub,
+        projectId: input.projectId,
+        date: new Date(input.date),
+      },
+    });
+
+    if (existing) {
+      if (existing.status !== 'DRAFT') throw fail('Entry already submitted, cannot edit', 400);
+      const updated = await app.prisma.timesheetEntry.update({
+        where: { id: existing.id },
+        data: { hours: input.hours, description: input.description, isBillable: input.isBillable },
+        include: { project: { select: { id: true, name: true, code: true } } },
+      });
+      return reply.send(ok(updated));
+    }
+
+    const entry = await app.prisma.timesheetEntry.create({
+      data: {
+        organizationId: req.user.orgId,
+        employeeId: req.user.sub,
+        projectId: input.projectId,
+        date: new Date(input.date),
+        hours: input.hours,
+        description: input.description,
+        isBillable: input.isBillable,
+        weekStart: ws,
+      },
+      include: { project: { select: { id: true, name: true, code: true } } },
+    });
+    return reply.status(201).send(ok(entry));
+  });
+
+  // PATCH /timesheets/approve-week — bulk-approve all SUBMITTED entries for an employee's week
+  app.patch('/timesheets/approve-week', auth, async (req, reply) => {
+    if (!(HR_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
+    const { employeeId, weekStartDate } = z
+      .object({ employeeId: z.string().uuid(), weekStartDate: z.string() })
+      .parse(req.body);
+    const result = await app.prisma.timesheetEntry.updateMany({
+      where: {
+        organizationId: req.user.orgId,
+        employeeId,
+        weekStart: new Date(weekStartDate),
+        status: 'SUBMITTED',
+      },
+      data: { status: 'APPROVED', approvedById: req.user.sub, approvedAt: new Date() },
+    });
+    return reply.send(ok({ approved: result.count }));
+  });
+
   // POST /timesheets/submit-week — submit all DRAFT entries for a week
   app.post('/timesheets/submit-week', auth, async (req, reply) => {
     const { weekStartDate } = z.object({ weekStartDate: z.string() }).parse(req.body);
