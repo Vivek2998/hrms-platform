@@ -3,9 +3,10 @@ import { toast } from 'sonner';
 import { apiClient } from '@/lib/axios';
 import type { ApiResponse, ApprovalInboxItem, ApprovalItemType } from '@hrms/shared-types';
 
-export function useApprovalInbox(type?: ApprovalItemType) {
+export function useApprovalInbox(type?: ApprovalItemType, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['approval-inbox', type],
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       const res = await apiClient.get<ApiResponse<ApprovalInboxItem[]>>('/approval-inbox', {
         params: type ? { type } : undefined,

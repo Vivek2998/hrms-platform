@@ -671,7 +671,8 @@ function MyRequestsWidget({
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role;
-  const isHR = role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(role);
+  // Matches backend APPROVER_ROLES — the four roles allowed to call /approval-inbox
+  const isApprover = !!role && ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(role);
   const { state: guideState } = useSetupGuide();
   const { start: startTour } = useProductTour();
 
@@ -681,7 +682,7 @@ export default function DashboardPage() {
     isLoading: inboxLoading,
     isError: inboxError,
     refetch: refetchInbox,
-  } = useApprovalInbox();
+  } = useApprovalInbox(undefined, { enabled: isApprover });
 
   return (
     <div className="space-y-4">
@@ -718,7 +719,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {isHR && (
+      {isApprover && (
         <PendingRequestsWidget
           items={inboxItems}
           loading={inboxLoading}
