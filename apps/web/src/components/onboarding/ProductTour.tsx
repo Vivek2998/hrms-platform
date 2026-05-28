@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from 'react';
 import { driver } from 'driver.js';
-import 'driver.js/dist/driver.css';
 import { useSetupGuide } from '@/hooks/useSetupGuide';
 import { useAuthStore } from '@/stores/auth.store';
 

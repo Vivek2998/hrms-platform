@@ -168,139 +168,140 @@
 }
 
 /* ── driver.js tour popover overrides ─────────────────────────────────────────
-   Root-cause note: driver.js ships its own CSS (background-color:#fff, color:#2d2d2d
-   etc.) and Vite injects component-level CSS *after* globals.css in the bundle.
-   Equal specificity → driver.js wins without !important on colour properties.
-   All colour/background/border rules below therefore carry !important.
+   Cascade strategy: driver.js CSS is imported in main.tsx BEFORE globals.css,
+   so globals.css wins by source order for equal-specificity selectors.
+   Nested selectors (.hrms-tour-popover .driver-popover-*) carry specificity
+   (0,2,0), which beats driver.js single-class rules (0,1,0) — no !important
+   required anywhere. All sizing uses rem for accessibility (respects the
+   browser's user-set base font size).
    ─────────────────────────────────────────────────────────────────────────── */
 .hrms-tour-popover {
-  background: var(--background) !important;   /* defeat driver.js #fff default */
-  border: 1px solid var(--border) !important;
+  background: var(--background);
+  border: 0.0625rem solid var(--border);
   border-radius: var(--radius);
   /* stronger shadow so the popover lifts off the page in dark mode */
-  box-shadow: 0 8px 32px -4px rgb(0 0 0 / 0.35), 0 0 0 1px var(--border) !important;
+  box-shadow: 0 0.5rem 2rem -0.25rem rgb(0 0 0 / 0.35), 0 0 0 0.0625rem var(--border);
   padding: 1rem;
-  min-width: 260px;
-  max-width: 320px;
+  min-width: 16.25rem;
+  max-width: 20rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 .hrms-tour-popover .driver-popover-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--foreground) !important;        /* defeat driver.js #2d2d2d default */
+  color: var(--foreground);
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 .hrms-tour-popover .driver-popover-description {
   font-size: 0.8125rem;
-  color: var(--muted-foreground) !important;  /* defeat driver.js inherited colour */
+  color: var(--muted-foreground);
   line-height: 1.5;
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 /* Base for ALL footer buttons — dark-mode-aware background/colour */
 .hrms-tour-popover .driver-popover-footer button {
-  border-radius: calc(var(--radius) - 2px) !important;
-  font-size: 0.75rem !important;
-  font-weight: 500 !important;
-  font-family: Inter, system-ui, -apple-system, sans-serif !important;
-  letter-spacing: 0 !important;
-  padding: 0.3rem 0.75rem !important;
-  text-shadow: none !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: optimizeLegibility !important;
-  /* colour reset so dark mode inherits from variables, not driver.js hardcodes */
-  background: var(--secondary) !important;
-  color: var(--secondary-foreground) !important;
-  border: 1px solid var(--border) !important;
+  border-radius: calc(var(--radius) - 0.125rem);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  letter-spacing: 0;
+  padding: 0.3rem 0.75rem;
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 0.0625rem solid var(--border);
   transition: opacity 0.15s;
 }
 .hrms-tour-popover .driver-popover-footer button:hover { opacity: 0.8; }
 /* Next / Done — filled primary style */
 .hrms-tour-popover .driver-popover-next-btn,
 .hrms-tour-popover .driver-popover-done-btn {
-  background: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-  border: none !important;
-  font-weight: 500 !important;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  font-weight: 500;
 }
 /* Prev — ghost style */
 .hrms-tour-popover .driver-popover-prev-btn {
-  background: transparent !important;
-  color: var(--muted-foreground) !important;
-  border: 1px solid var(--border) !important;
+  background: transparent;
+  color: var(--muted-foreground);
+  border: 0.0625rem solid var(--border);
 }
-/* Close button — fix font-size from px to rem (accessibility) */
+/* Close button */
 .hrms-tour-popover .driver-popover-close-btn {
-  position: absolute !important;
-  top: 10px !important;
-  right: 10px !important;
-  width: 20px !important;
-  height: 20px !important;
-  font-size: 0.875rem !important;             /* was 14px — now rem for accessibility */
-  background: transparent !important;
-  color: var(--muted-foreground) !important;
-  border: none !important;
-  border-radius: 4px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  border: none;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 .hrms-tour-popover .driver-popover-close-btn:hover,
 .hrms-tour-popover .driver-popover-close-btn:focus {
-  color: var(--foreground) !important;
+  color: var(--foreground);
 }
 .hrms-tour-popover .driver-popover-progress-text {
   font-size: 0.7rem;
-  color: var(--muted-foreground) !important;
+  color: var(--muted-foreground);
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
 /* ── Arrow ──────────────────────────────────────────────────────────────────
-   driver.js default arrow: border:5px solid #fff (all 4 sides white).
-   Direction classes make 3 sides transparent; visible side → triangle.
+   driver.js default arrow: border solid #fff on all 4 sides.
+   Direction classes make 3 sides transparent; visible side → CSS triangle.
    We override the visible side colour to match var(--background).
-   Using 7px for slightly bolder arrow without layout shift.
+   0.4375rem (≈7px) gives a slightly bolder arrow without layout shift.
    ─────────────────────────────────────────────────────────────────────────── */
 .hrms-tour-popover .driver-popover-arrow {
   filter: none;
-  border-width: 7px !important;
+  border-width: 0.4375rem;
 }
 /* Popover BELOW target → ▲ upward arrow at top of popover */
 .hrms-tour-popover .driver-popover-arrow-side-bottom {
-  border-bottom-color: var(--background) !important;
-  border-top-color: transparent !important;
-  border-left-color: transparent !important;
-  border-right-color: transparent !important;
-  bottom: calc(100% - 1px) !important;
+  border-bottom-color: var(--background);
+  border-top-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  bottom: calc(100% - 0.0625rem);
 }
 /* Popover ABOVE target → ▼ downward arrow at bottom of popover */
 .hrms-tour-popover .driver-popover-arrow-side-top {
-  border-top-color: var(--background) !important;
-  border-bottom-color: transparent !important;
-  border-left-color: transparent !important;
-  border-right-color: transparent !important;
-  top: calc(100% - 1px) !important;
+  border-top-color: var(--background);
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  top: calc(100% - 0.0625rem);
 }
 /* Popover RIGHT of target → ◄ left-pointing arrow */
 .hrms-tour-popover .driver-popover-arrow-side-right {
-  border-right-color: var(--background) !important;
-  border-top-color: transparent !important;
-  border-bottom-color: transparent !important;
-  border-left-color: transparent !important;
-  right: calc(100% - 1px) !important;
+  border-right-color: var(--background);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  right: calc(100% - 0.0625rem);
 }
 /* Popover LEFT of target → ► right-pointing arrow */
 .hrms-tour-popover .driver-popover-arrow-side-left {
-  border-left-color: var(--background) !important;
-  border-top-color: transparent !important;
-  border-bottom-color: transparent !important;
-  border-right-color: transparent !important;
-  left: calc(100% - 1px) !important;
+  border-left-color: var(--background);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-right-color: transparent;
+  left: calc(100% - 0.0625rem);
 }
 /* Hide arrow entirely on fixed-position header elements */
-.hrms-tour-no-arrow .driver-popover-arrow { display: none !important; }
+.hrms-tour-no-arrow .driver-popover-arrow { display: none; }
 
 /* ── Spotlight ring ─────────────────────────────────────────────────────────
    driver.js adds .driver-active-element to the highlighted DOM node.
@@ -308,7 +309,7 @@
    overlay cutout is otherwise hard to distinguish.
    ─────────────────────────────────────────────────────────────────────────── */
 .driver-active .driver-active-element {
-  outline: 2px solid var(--ring) !important;
-  outline-offset: 4px !important;
-  border-radius: var(--radius-sm) !important;
+  outline: 0.125rem solid var(--ring);
+  outline-offset: 0.25rem;
+  border-radius: var(--radius-sm);
 }
