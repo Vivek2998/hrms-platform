@@ -7,9 +7,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserPlus, UserMinus, TrendingDown } from 'lucide-react';
+import { Users, UserPlus, UserMinus, TrendingDown, Lock, AlertTriangle } from 'lucide-react';
 import { ChartSkeleton } from '@/components/ui/skeleton-patterns';
 import { useCountUp } from '@/hooks/useCountUp';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   useAnalyticsOverview,
   useHeadcountTrend,
@@ -202,6 +203,38 @@ function PayrollTrendChart() {
 }
 
 export default function AnalyticsPage() {
+  const user = useAuthStore((s) => s.user);
+  const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(user?.role ?? '');
+  // Analytics endpoints require GROWTH plan or higher (plan-guard on backend)
+  const hasPlan = ['GROWTH', 'ENTERPRISE'].includes(user?.orgPlan ?? '');
+
+  // Guard 1 — role: non-HR users must not trigger HR-only API calls
+  if (!isHR) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center">
+        <AlertTriangle className="w-12 h-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold">Access Restricted</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Analytics is available to HR and administrators only.
+        </p>
+      </div>
+    );
+  }
+
+  // Guard 2 — plan: backend returns 402 for FREE/STARTER; stop queries before they fire
+  if (!hasPlan) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center">
+        <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold">GROWTH Plan Required</h3>
+        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+          Workforce Analytics is available on the GROWTH plan and above.
+          Please upgrade your subscription to unlock this feature.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
