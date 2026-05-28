@@ -88,15 +88,19 @@ export function useProductTour() {
     // X-button clicks never set this, so closing early never triggers completion.
     let completedByDone = false;
 
-    // In dark mode, a higher opacity makes the spotlight cutout more visible
-    // because the page background is already dark (close to the overlay colour).
-    const isDark = document.documentElement.classList.contains('dark');
+    // Industry-standard approach: run the tour in light mode regardless of the
+    // user's current theme. Notion, Figma, and Linear all do this — the tour runs
+    // once and maximum contrast/readability matters more than theme consistency.
+    // We restore the original theme in onDestroyStarted.
+    const htmlEl = document.documentElement;
+    const wasDark = htmlEl.classList.contains('dark');
+    if (wasDark) htmlEl.classList.remove('dark');
 
     const driverObj = driver({
       showProgress: true,
       animate: true,
       smoothScroll: true,
-      overlayOpacity: isDark ? 0.72 : 0.6,
+      overlayOpacity: 0.6,
       stagePadding: 6,        // breathing room around the highlighted element
       stageRadius: 6,         // rounded spotlight corners
       popoverClass: 'hrms-tour-popover',
@@ -123,6 +127,8 @@ export function useProductTour() {
         });
       },
       onDestroyStarted: () => {
+        // Restore dark mode before any UI updates so the transition feels natural.
+        if (wasDark) htmlEl.classList.add('dark');
         if (completedByDone) {
           markTourDone();
           collapseGuide();
