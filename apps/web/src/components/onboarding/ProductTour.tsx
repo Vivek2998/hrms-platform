@@ -89,11 +89,17 @@ export function useProductTour() {
     // X-button clicks never set this, so closing early never triggers completion.
     let completedByDone = false;
 
+    // In dark mode, a higher opacity makes the spotlight cutout more visible
+    // because the page background is already dark (close to the overlay colour).
+    const isDark = document.documentElement.classList.contains('dark');
+
     const driverObj = driver({
       showProgress: true,
       animate: true,
       smoothScroll: true,
-      overlayOpacity: 0.6,
+      overlayOpacity: isDark ? 0.72 : 0.6,
+      stagePadding: 6,        // breathing room around the highlighted element
+      stageRadius: 6,         // rounded spotlight corners
       popoverClass: 'hrms-tour-popover',
       progressText: '{{current}} of {{total}}',
       nextBtnText: 'Next →',

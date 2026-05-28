@@ -167,12 +167,18 @@
   --animate-stagger-5: stagger-fade-in 0.25s ease-out 0.25s both;
 }
 
-/* ── driver.js tour popover overrides ─────────────────────────── */
+/* ── driver.js tour popover overrides ─────────────────────────────────────────
+   Root-cause note: driver.js ships its own CSS (background-color:#fff, color:#2d2d2d
+   etc.) and Vite injects component-level CSS *after* globals.css in the bundle.
+   Equal specificity → driver.js wins without !important on colour properties.
+   All colour/background/border rules below therefore carry !important.
+   ─────────────────────────────────────────────────────────────────────────── */
 .hrms-tour-popover {
-  background: var(--background);
-  border: 1px solid var(--border);
+  background: var(--background) !important;   /* defeat driver.js #fff default */
+  border: 1px solid var(--border) !important;
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.12);
+  /* stronger shadow so the popover lifts off the page in dark mode */
+  box-shadow: 0 8px 32px -4px rgb(0 0 0 / 0.35), 0 0 0 1px var(--border) !important;
   padding: 1rem;
   min-width: 260px;
   max-width: 320px;
@@ -182,15 +188,16 @@
 .hrms-tour-popover .driver-popover-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--foreground);
+  color: var(--foreground) !important;        /* defeat driver.js #2d2d2d default */
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 .hrms-tour-popover .driver-popover-description {
   font-size: 0.8125rem;
-  color: var(--muted-foreground);
+  color: var(--muted-foreground) !important;  /* defeat driver.js inherited colour */
   line-height: 1.5;
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
+/* Base for ALL footer buttons — dark-mode-aware background/colour */
 .hrms-tour-popover .driver-popover-footer button {
   border-radius: calc(var(--radius) - 2px) !important;
   font-size: 0.75rem !important;
@@ -198,32 +205,39 @@
   font-family: Inter, system-ui, -apple-system, sans-serif !important;
   letter-spacing: 0 !important;
   padding: 0.3rem 0.75rem !important;
-  transition: opacity 0.15s;
   text-shadow: none !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
+  /* colour reset so dark mode inherits from variables, not driver.js hardcodes */
+  background: var(--secondary) !important;
+  color: var(--secondary-foreground) !important;
+  border: 1px solid var(--border) !important;
+  transition: opacity 0.15s;
 }
 .hrms-tour-popover .driver-popover-footer button:hover { opacity: 0.8; }
-.hrms-tour-popover .driver-popover-next-btn {
+/* Next / Done — filled primary style */
+.hrms-tour-popover .driver-popover-next-btn,
+.hrms-tour-popover .driver-popover-done-btn {
   background: var(--primary) !important;
   color: var(--primary-foreground) !important;
   border: none !important;
   font-weight: 500 !important;
 }
+/* Prev — ghost style */
 .hrms-tour-popover .driver-popover-prev-btn {
-  background: transparent;
-  color: var(--muted-foreground);
-  border: 1px solid var(--border);
+  background: transparent !important;
+  color: var(--muted-foreground) !important;
+  border: 1px solid var(--border) !important;
 }
-/* Close button: inset from corner so it doesn't cover the rounded corner */
+/* Close button — fix font-size from px to rem (accessibility) */
 .hrms-tour-popover .driver-popover-close-btn {
   position: absolute !important;
   top: 10px !important;
   right: 10px !important;
   width: 20px !important;
   height: 20px !important;
-  font-size: 14px !important;
+  font-size: 0.875rem !important;             /* was 14px — now rem for accessibility */
   background: transparent !important;
   color: var(--muted-foreground) !important;
   border: none !important;
@@ -233,25 +247,35 @@
   justify-content: center !important;
   padding: 0 !important;
 }
+.hrms-tour-popover .driver-popover-close-btn:hover,
+.hrms-tour-popover .driver-popover-close-btn:focus {
+  color: var(--foreground) !important;
+}
 .hrms-tour-popover .driver-popover-progress-text {
   font-size: 0.7rem;
-  color: var(--muted-foreground);
+  color: var(--muted-foreground) !important;
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
-/* Arrow — per-direction rules so color and overlap are correct */
+
+/* ── Arrow ──────────────────────────────────────────────────────────────────
+   driver.js default arrow: border:5px solid #fff (all 4 sides white).
+   Direction classes make 3 sides transparent; visible side → triangle.
+   We override the visible side colour to match var(--background).
+   Using 7px for slightly bolder arrow without layout shift.
+   ─────────────────────────────────────────────────────────────────────────── */
 .hrms-tour-popover .driver-popover-arrow {
   filter: none;
-  border-width: 8px !important;
+  border-width: 7px !important;
 }
-/* Popover below element → ▲ upward arrow sits above popover */
+/* Popover BELOW target → ▲ upward arrow at top of popover */
 .hrms-tour-popover .driver-popover-arrow-side-bottom {
   border-bottom-color: var(--background) !important;
   border-top-color: transparent !important;
   border-left-color: transparent !important;
   border-right-color: transparent !important;
-  bottom: calc(100% - 2px) !important;
+  bottom: calc(100% - 1px) !important;
 }
-/* Popover above element → ▼ downward arrow sits below popover */
+/* Popover ABOVE target → ▼ downward arrow at bottom of popover */
 .hrms-tour-popover .driver-popover-arrow-side-top {
   border-top-color: var(--background) !important;
   border-bottom-color: transparent !important;
@@ -259,7 +283,7 @@
   border-right-color: transparent !important;
   top: calc(100% - 1px) !important;
 }
-/* Popover right of element → ◄ left-pointing arrow */
+/* Popover RIGHT of target → ◄ left-pointing arrow */
 .hrms-tour-popover .driver-popover-arrow-side-right {
   border-right-color: var(--background) !important;
   border-top-color: transparent !important;
@@ -267,7 +291,7 @@
   border-left-color: transparent !important;
   right: calc(100% - 1px) !important;
 }
-/* Popover left of element → ► right-pointing arrow */
+/* Popover LEFT of target → ► right-pointing arrow */
 .hrms-tour-popover .driver-popover-arrow-side-left {
   border-left-color: var(--background) !important;
   border-top-color: transparent !important;
@@ -277,9 +301,14 @@
 }
 /* Hide arrow entirely on fixed-position header elements */
 .hrms-tour-no-arrow .driver-popover-arrow { display: none !important; }
-/* Done button matches Next button */
-.hrms-tour-popover .driver-popover-done-btn {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border: none;
+
+/* ── Spotlight ring ─────────────────────────────────────────────────────────
+   driver.js adds .driver-active-element to the highlighted DOM node.
+   A visible ring improves contrast on dark backgrounds where the SVG
+   overlay cutout is otherwise hard to distinguish.
+   ─────────────────────────────────────────────────────────────────────────── */
+.driver-active .driver-active-element {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 4px !important;
+  border-radius: var(--radius-sm) !important;
 }
