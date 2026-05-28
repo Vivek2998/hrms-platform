@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  FileText, Image, ExternalLink, Trash2, CheckCircle2, XCircle,
+  FileText, Image, ExternalLink, Download, Trash2, CheckCircle2, XCircle,
   Upload, AlertTriangle, Clock, ShieldCheck, Building2, User,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -203,13 +203,22 @@ function DocRow({
           </Button>
         )}
 
-        {/* Open / Download */}
+        {/* View in new tab */}
         <a
           href={doc.url} target="_blank" rel="noopener noreferrer"
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          title="Open document"
+          title="View document"
         >
           <ExternalLink className="h-4 w-4" />
+        </a>
+
+        {/* Download to disk */}
+        <a
+          href={doc.url} download={doc.name}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="Download document"
+        >
+          <Download className="h-4 w-4" />
         </a>
 
         {/* Delete */}
