@@ -2,9 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/axios';
 
-export function useAttritionScores() {
+export function useAttritionScores(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['attrition'],
+    enabled: options?.enabled ?? true,
     queryFn: () => apiClient.get('/attrition').then((r) => r.data.data),
   });
 }

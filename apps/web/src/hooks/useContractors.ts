@@ -2,9 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/axios';
 
-export function useContractors() {
+export function useContractors(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['contractors'],
+    enabled: options?.enabled ?? true,
     queryFn: () => apiClient.get('/contractors').then((r) => r.data.data),
   });
 }

@@ -44,7 +44,7 @@ export default function AttritionPage() {
   const user = useAuthStore((s) => s.user);
   const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(user?.role ?? '');
 
-  const { data: scores = [], isLoading } = useAttritionScores();
+  const { data: scores = [], isLoading } = useAttritionScores({ enabled: isHR });
   const compute = useComputeAttrition();
   const [computing, setComputing] = useState(false);
 

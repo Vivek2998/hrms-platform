@@ -247,7 +247,7 @@ export default function ContractorsPage() {
   const user = useAuthStore((s) => s.user);
   const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(user?.role ?? '');
 
-  const { data: contractors = [], isLoading } = useContractors();
+  const { data: contractors = [], isLoading } = useContractors({ enabled: isHR });
   const createContractor = useCreateContractor();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);

@@ -97,12 +97,16 @@ export function useSetupGuide() {
   const update = useCallback(
     (patch: Partial<GuideState>) => {
       if (!userId) return;
+      // persist runs inside the updater so localStorage is written before we notify.
+      // notifyListeners() is intentionally OUTSIDE the updater: calling setState on
+      // other hook instances from inside a setState updater triggers React's
+      // "Cannot update a component while rendering a different component" warning.
       setState((prev) => {
         const next = { ...prev, ...patch };
         persist(userId, next);
-        notifyListeners();
         return next;
       });
+      notifyListeners();
     },
     [userId],
   );
@@ -114,9 +118,9 @@ export function useSetupGuide() {
         if (prev.completedSteps.includes(stepId)) return prev;
         const next = { ...prev, completedSteps: [...prev.completedSteps, stepId] };
         persist(userId, next);
-        notifyListeners();
         return next;
       });
+      notifyListeners();
     },
     [userId],
   );

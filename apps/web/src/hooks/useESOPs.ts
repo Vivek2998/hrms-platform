@@ -2,9 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/axios';
 
-export function useESOPs() {
+export function useESOPs(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['esop', 'all'],
+    enabled: options?.enabled ?? true,
     queryFn: () => apiClient.get('/esop').then((r) => r.data.data),
   });
 }

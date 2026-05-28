@@ -71,7 +71,8 @@ export default function ESOPPage() {
   const user = useAuthStore((s) => s.user);
   const isHR = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(user?.role ?? '');
 
-  const { data: allGrants = [], isLoading: hrLoading } = useESOPs();
+  // GET /esop is HR-only — guard with enabled so non-HR roles never hit a 403
+  const { data: allGrants = [], isLoading: hrLoading } = useESOPs({ enabled: isHR });
   const { data: myGrants = [], isLoading: myLoading } = useMyESOPs();
   const createGrant = useCreateGrant();
   const exerciseOptions = useExerciseOptions();
