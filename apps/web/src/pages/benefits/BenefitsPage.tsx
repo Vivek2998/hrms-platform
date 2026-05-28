@@ -13,14 +13,15 @@ import {
 import { useBenefitPlans, useCreateBenefitPlan, useEnrollBenefit } from '@/hooks/useBenefits';
 import { useAuthStore } from '@/stores/auth.store';
 
+// Must match the BenefitType enum in the Prisma schema exactly
 const TYPE_META: Record<string, { label: string; color: string }> = {
-  HEALTH: { label: 'Health', color: 'bg-red-100 text-red-700' },
-  DENTAL: { label: 'Dental', color: 'bg-pink-100 text-pink-700' },
-  VISION: { label: 'Vision', color: 'bg-purple-100 text-purple-700' },
-  LIFE: { label: 'Life', color: 'bg-blue-100 text-blue-700' },
-  RETIREMENT: { label: 'Retirement', color: 'bg-green-100 text-green-700' },
-  WELLNESS: { label: 'Wellness', color: 'bg-teal-100 text-teal-700' },
-  OTHER: { label: 'Other', color: 'bg-gray-100 text-gray-600' },
+  HEALTH_INSURANCE: { label: 'Health Insurance', color: 'bg-red-100 text-red-700' },
+  LIFE_INSURANCE:   { label: 'Life Insurance',   color: 'bg-blue-100 text-blue-700' },
+  NPS:              { label: 'NPS',               color: 'bg-green-100 text-green-700' },
+  GYM:              { label: 'Gym & Wellness',    color: 'bg-teal-100 text-teal-700' },
+  MEAL_ALLOWANCE:   { label: 'Meal Allowance',    color: 'bg-orange-100 text-orange-700' },
+  TRANSPORT:        { label: 'Transport',          color: 'bg-purple-100 text-purple-700' },
+  OTHER:            { label: 'Other',              color: 'bg-gray-100 text-gray-600' },
 };
 
 export default function BenefitsPage() {
@@ -71,7 +72,6 @@ export default function BenefitsPage() {
                         <h3 className="font-semibold">{plan.name}</h3>
                         <Badge variant="outline" className={`text-xs ${meta.color}`}>{meta.label}</Badge>
                       </div>
-                      {plan.provider && <p className="text-xs text-muted-foreground">{plan.provider}</p>}
                     </div>
                     {enrolled && <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />}
                     {waived && <XCircle className="w-5 h-5 text-gray-400 shrink-0" />}
@@ -80,14 +80,14 @@ export default function BenefitsPage() {
                   {plan.description && <p className="text-sm text-muted-foreground">{plan.description}</p>}
 
                   <div className="flex items-center justify-between text-sm">
-                    {plan.employeeContribution != null && (
+                    {plan.maxAmount != null && (
                       <span className="text-muted-foreground">
-                        Employee: <strong>₹{plan.employeeContribution?.toLocaleString()}/mo</strong>
+                        Max benefit: <strong>₹{plan.maxAmount.toLocaleString('en-IN')}/yr</strong>
                       </span>
                     )}
-                    {plan.employerContribution != null && (
-                      <span className="text-muted-foreground">
-                        Employer: <strong>₹{plan.employerContribution?.toLocaleString()}/mo</strong>
+                    {plan.enrollmentDeadline && (
+                      <span className="text-xs text-muted-foreground">
+                        Deadline: {new Date(plan.enrollmentDeadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     )}
                   </div>
@@ -117,26 +117,36 @@ export default function BenefitsPage() {
   );
 }
 
-const BENEFIT_TYPES = ['HEALTH', 'DENTAL', 'VISION', 'LIFE', 'RETIREMENT', 'WELLNESS', 'OTHER'];
+// Must match BenefitType enum in Prisma schema
+const BENEFIT_TYPES: { value: string; label: string }[] = [
+  { value: 'HEALTH_INSURANCE', label: 'Health Insurance' },
+  { value: 'LIFE_INSURANCE',   label: 'Life Insurance' },
+  { value: 'NPS',              label: 'NPS (National Pension Scheme)' },
+  { value: 'GYM',              label: 'Gym & Wellness' },
+  { value: 'MEAL_ALLOWANCE',   label: 'Meal Allowance' },
+  { value: 'TRANSPORT',        label: 'Transport' },
+  { value: 'OTHER',            label: 'Other' },
+];
 
 function CreateBenefitDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState('');
-  const [type, setType] = useState('HEALTH');
-  const [provider, setProvider] = useState('');
+  const [type, setType] = useState('HEALTH_INSURANCE');
   const [description, setDescription] = useState('');
-  const [employeeContribution, setEmployeeContribution] = useState('');
-  const [employerContribution, setEmployerContribution] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [enrollmentDeadline, setEnrollmentDeadline] = useState('');
   const create = useCreateBenefitPlan();
 
   async function handleSubmit() {
     if (!name) return;
     await create.mutateAsync({
-      name, type, provider: provider || undefined, description: description || undefined,
-      employeeContribution: employeeContribution ? Number(employeeContribution) : undefined,
-      employerContribution: employerContribution ? Number(employerContribution) : undefined,
+      name,
+      type,
+      description: description || undefined,
+      maxAmount: maxAmount ? Number(maxAmount) : undefined,
+      enrollmentDeadline: enrollmentDeadline || undefined,
     });
-    setName(''); setType('HEALTH'); setProvider(''); setDescription('');
-    setEmployeeContribution(''); setEmployerContribution('');
+    setName(''); setType('HEALTH_INSURANCE'); setDescription('');
+    setMaxAmount(''); setEnrollmentDeadline('');
     onClose();
   }
 
@@ -145,19 +155,18 @@ function CreateBenefitDialog({ open, onClose }: { open: boolean; onClose: () => 
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Add Benefit Plan</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Plan Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div><Label>Plan Name *</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Group Health Insurance" /></div>
           <div>
-            <Label>Type</Label>
+            <Label>Type *</Label>
             <select value={type} onChange={(e) => setType(e.target.value)}
               className="w-full border rounded-md p-2 text-sm mt-1">
-              {BENEFIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {BENEFIT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
-          <div><Label>Provider</Label><Input value={provider} onChange={(e) => setProvider(e.target.value)} /></div>
-          <div><Label>Description</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} /></div>
+          <div><Label>Description</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Brief description of the benefit" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Employee Contribution (₹/mo)</Label><Input type="number" value={employeeContribution} onChange={(e) => setEmployeeContribution(e.target.value)} /></div>
-            <div><Label>Employer Contribution (₹/mo)</Label><Input type="number" value={employerContribution} onChange={(e) => setEmployerContribution(e.target.value)} /></div>
+            <div><Label>Max Benefit Amount (₹/yr)</Label><Input type="number" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} placeholder="e.g. 300000" /></div>
+            <div><Label>Enrollment Deadline</Label><Input type="date" value={enrollmentDeadline} onChange={(e) => setEnrollmentDeadline(e.target.value)} /></div>
           </div>
         </div>
         <DialogFooter>

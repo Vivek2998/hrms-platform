@@ -22,7 +22,9 @@ export function useEnrollBenefit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ planId, action }: { planId: string; action: 'enroll' | 'waive' }) =>
-      apiClient.post(`/benefits/${planId}/enroll`, { action }).then((r) => r.data.data),
+      action === 'waive'
+        ? apiClient.patch(`/benefits/${planId}/waive`).then((r) => r.data.data)
+        : apiClient.post(`/benefits/${planId}/enroll`, {}).then((r) => r.data.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['benefit-plans'] }); toast.success('Enrollment updated'); },
     onError: () => toast.error('Failed to update enrollment'),
   });
