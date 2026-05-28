@@ -13,9 +13,13 @@ export function useMyExpenses() {
   });
 }
 
-export function useAllExpenses(params?: { status?: string; employeeId?: string }) {
+export function useAllExpenses(
+  params?: { status?: string; employeeId?: string },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['expenses', 'all', params],
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       const res = await apiClient.get<ApiResponse<ExpenseClaim[]>>('/expenses', { params });
       return res.data.data;

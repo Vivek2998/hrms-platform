@@ -48,7 +48,7 @@ export default function ExpensesPage() {
   const isHR = HR_ROLES.includes(user?.role as typeof HR_ROLES[number]);
 
   const myExpenses = useMyExpenses();
-  const allExpenses = useAllExpenses();
+  const allExpenses = useAllExpenses(undefined, { enabled: isHR });
   const submitExpense = useSubmitExpense();
   const reviewExpense = useReviewExpense();
   const markPaid = useMarkExpensePaid();
