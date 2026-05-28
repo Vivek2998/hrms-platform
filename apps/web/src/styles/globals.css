@@ -167,6 +167,16 @@
   --animate-stagger-5: stagger-fade-in 0.25s ease-out 0.25s both;
 }
 
+/* ── Utility: hide scrollbar while keeping scroll behaviour ───────────────────
+   Used by horizontal-scroll pill rows (e.g. EAP category filter).          */
+.scrollbar-hide {
+  -ms-overflow-style: none;   /* IE / Edge */
+  scrollbar-width: none;      /* Firefox  */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;              /* Chrome / Safari / Opera */
+}
+
 /* ── driver.js tour popover overrides ─────────────────────────────────────────
    Cascade strategy: driver.js CSS is imported in main.tsx BEFORE globals.css,
    so globals.css wins by source order for equal-specificity selectors.

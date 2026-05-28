@@ -127,28 +127,29 @@ export default function EAPPage() {
   const isSaving = createResource.isPending || updateResource.isPending;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-100">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Header — stacks on mobile, side-by-side on sm+ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-100">
             <Heart className="h-5 w-5 text-pink-600" />
           </div>
-          <div>
-            <h1 className="text-xl font-semibold">Employee Assistance Program</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-semibold truncate">Employee Assistance Program</h1>
             <p className="text-sm text-muted-foreground">
               Mental health, wellness, and support resources
             </p>
           </div>
         </div>
         {isHR && (
-          <Button onClick={openCreate} className="gap-2">
+          <Button onClick={openCreate} className="gap-2 shrink-0 self-start sm:self-auto">
             <Plus className="h-4 w-4" /> Add Resource
           </Button>
         )}
       </div>
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
+      {/* Category Filter — horizontal scroll on small screens, no wrapping */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const catMeta = cat !== 'ALL' ? CATEGORY_META[cat] : null;
           const Icon = catMeta?.icon;
@@ -156,7 +157,7 @@ export default function EAPPage() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 activeCategory === cat
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
