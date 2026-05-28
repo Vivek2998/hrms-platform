@@ -46,6 +46,18 @@ export const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   OTHER: 'Other',
 };
 
+// Types an employee can upload themselves (personal identity / personal docs)
+export const PERSONAL_DOC_TYPES: DocumentType[] = [
+  'ID_PROOF', 'ADDRESS_PROOF', 'EDUCATIONAL', 'MEDICAL_CERTIFICATE', 'OTHER',
+];
+
+// Types that are company-issued (HR/Admin uploads for the employee)
+export const COMPANY_DOC_TYPES: DocumentType[] = [
+  'OFFER_LETTER', 'APPOINTMENT_LETTER', 'ID_CARD', 'INSURANCE', 'COMPANY_POLICY',
+  'EXPERIENCE_LETTER', 'RELIEVING_LETTER', 'PAYSLIP', 'FORM_16', 'PF_STATEMENT',
+  'NDA', 'AGREEMENT', 'BACKGROUND_CHECK',
+];
+
 export const DOC_CATEGORIES: { label: string; types: DocumentType[] }[] = [
   {
     label: 'Company Issued',
@@ -62,6 +74,22 @@ export const DOC_CATEGORIES: { label: string; types: DocumentType[] }[] = [
   {
     label: 'Legal & Compliance',
     types: ['NDA', 'AGREEMENT', 'BACKGROUND_CHECK'],
+  },
+  {
+    label: 'Other',
+    types: ['OTHER'],
+  },
+];
+
+// Categories shown in upload dialog for employee self-service (personal docs only)
+export const PERSONAL_DOC_CATEGORIES: { label: string; types: DocumentType[] }[] = [
+  {
+    label: 'Identity',
+    types: ['ID_PROOF', 'ADDRESS_PROOF'],
+  },
+  {
+    label: 'Education & Health',
+    types: ['EDUCATIONAL', 'MEDICAL_CERTIFICATE'],
   },
   {
     label: 'Other',

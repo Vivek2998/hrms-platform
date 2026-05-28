@@ -20,12 +20,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useUploadFile } from '@/hooks/useUpload';
-import { useCreateDocument, DOC_CATEGORIES, DOC_TYPE_LABELS, type DocumentType } from '@/hooks/useDocuments';
+import {
+  useCreateDocument,
+  DOC_CATEGORIES,
+  PERSONAL_DOC_CATEGORIES,
+  DOC_TYPE_LABELS,
+  type DocumentType,
+} from '@/hooks/useDocuments';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employeeId: string;
+  /** When true, restricts doc types to personal documents only (PAN, Aadhaar, etc.) */
+  personalOnly?: boolean;
 }
 
 function formatBytes(bytes?: number) {
@@ -35,7 +43,7 @@ function formatBytes(bytes?: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function DocumentUploadDialog({ open, onOpenChange, employeeId }: Props) {
+export function DocumentUploadDialog({ open, onOpenChange, employeeId, personalOnly = false }: Props) {
   const [docType, setDocType] = useState<DocumentType>('ID_PROOF');
   const [docName, setDocName] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
@@ -47,9 +55,12 @@ export function DocumentUploadDialog({ open, onOpenChange, employeeId }: Props) 
 
   const isPending = isUploading || isSaving;
 
+  // Reset to first allowed type when personalOnly changes
+  const defaultType: DocumentType = personalOnly ? 'ID_PROOF' : 'OFFER_LETTER';
+
   function handleClose() {
     if (isPending) return;
-    setDocType('ID_PROOF');
+    setDocType(defaultType);
     setDocName('');
     setExpiresAt('');
     setFile(null);
@@ -93,7 +104,12 @@ export function DocumentUploadDialog({ open, onOpenChange, employeeId }: Props) 
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle>{personalOnly ? 'Upload Personal Document' : 'Upload Document'}</DialogTitle>
+          {personalOnly && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Upload your personal identity and supporting documents. These will be reviewed by HR.
+            </p>
+          )}
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -105,7 +121,7 @@ export function DocumentUploadDialog({ open, onOpenChange, employeeId }: Props) 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {DOC_CATEGORIES.map((cat) => (
+                {(personalOnly ? PERSONAL_DOC_CATEGORIES : DOC_CATEGORIES).map((cat) => (
                   <SelectGroup key={cat.label}>
                     <SelectLabel className="text-xs text-muted-foreground">{cat.label}</SelectLabel>
                     {cat.types.map((t) => (
@@ -115,6 +131,11 @@ export function DocumentUploadDialog({ open, onOpenChange, employeeId }: Props) 
                 ))}
               </SelectContent>
             </Select>
+            {personalOnly && (
+              <p className="text-[11px] text-muted-foreground">
+                e.g. name your document "PAN Card" or "Aadhaar Card" in the name field below
+              </p>
+            )}
           </div>
 
           {/* File picker */}
