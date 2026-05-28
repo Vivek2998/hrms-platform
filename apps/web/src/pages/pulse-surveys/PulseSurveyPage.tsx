@@ -43,9 +43,9 @@ import { cn } from '@/lib/utils';
 import { DialogContentSkeleton } from '@/components/ui/skeleton-patterns';
 
 const STATUS_COLORS: Record<SurveyStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-600',
-  ACTIVE: 'bg-green-100 text-green-700',
-  CLOSED: 'bg-slate-100 text-slate-600',
+  DRAFT: 'bg-muted text-muted-foreground',
+  ACTIVE: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300',
+  CLOSED: 'bg-muted text-muted-foreground',
 };
 
 const questionSchema = z.object({

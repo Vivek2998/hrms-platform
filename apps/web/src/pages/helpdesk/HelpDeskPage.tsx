@@ -61,17 +61,17 @@ const PRIORITIES: { value: TicketPriority; label: string }[] = [
 ];
 
 const STATUS_COLORS: Record<TicketStatus, string> = {
-  OPEN: 'bg-blue-100 text-blue-800',
-  IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-  RESOLVED: 'bg-green-100 text-green-800',
-  CLOSED: 'bg-gray-100 text-gray-600',
+  OPEN: 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300',
+  IN_PROGRESS: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-300',
+  RESOLVED: 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300',
+  CLOSED: 'bg-muted text-muted-foreground',
 };
 
 const PRIORITY_COLORS: Record<TicketPriority, string> = {
-  LOW: 'bg-slate-100 text-slate-600',
-  MEDIUM: 'bg-blue-100 text-blue-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  URGENT: 'bg-red-100 text-red-700',
+  LOW: 'bg-muted text-muted-foreground',
+  MEDIUM: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
+  HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300',
+  URGENT: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
 };
 
 function StatusBadge({ status }: { status: TicketStatus }) {

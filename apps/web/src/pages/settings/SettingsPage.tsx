@@ -73,8 +73,8 @@ function fmtDate(iso: string) {
 // Read-only value display used when not in edit mode
 function ReadValue({ value, placeholder = 'Not provided' }: { value?: string; placeholder?: string }) {
   return (
-    <p className="flex h-9 items-center text-sm font-medium text-slate-800">
-      {value?.trim() ? value : <span className="italic text-slate-400">{placeholder}</span>}
+    <p className="flex h-9 items-center text-sm font-medium text-foreground">
+      {value?.trim() ? value : <span className="italic text-muted-foreground">{placeholder}</span>}
     </p>
   );
 }
@@ -82,7 +82,7 @@ function ReadValue({ value, placeholder = 'Not provided' }: { value?: string; pl
 function F({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs font-medium text-slate-500">{label}</Label>
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       {children}
     </div>
   );
@@ -105,12 +105,12 @@ function SectionCard({
     <Card className={cn('overflow-hidden shadow-sm', className)}>
       <CardHeader className="border-b bg-muted/40 px-6 pb-4 pt-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800">
-            <Icon className="h-4 w-4 text-white" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground">
+            <Icon className="h-4 w-4 text-background" />
           </div>
           <div>
-            <CardTitle className="text-sm font-semibold text-slate-800">{title}</CardTitle>
-            {description && <p className="mt-0.5 text-xs text-slate-400">{description}</p>}
+            <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
+            {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
           </div>
         </div>
       </CardHeader>
@@ -222,7 +222,7 @@ export default function SettingsPage() {
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
               activeTab === tab.key
-                ? 'border-slate-800 text-slate-800'
+                ? 'border-foreground text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
@@ -319,7 +319,7 @@ export default function SettingsPage() {
       {/* Always-rendered row — opacity swaps, never layout shifts */}
       <div className="flex items-center justify-between gap-4">
         <div className={cn(
-          'flex h-9 flex-1 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm text-blue-700 transition-opacity duration-150',
+          'flex h-9 flex-1 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300 transition-opacity duration-150',
           !isEditing && 'pointer-events-none opacity-0',
         )}>
           <Pencil className="h-3.5 w-3.5 shrink-0 text-blue-600" />
@@ -340,7 +340,7 @@ export default function SettingsPage() {
             <Button
               size="sm"
               onClick={() => setIsEditing(true)}
-              className="h-9 w-[130px] justify-center gap-2 bg-slate-800 text-white hover:bg-slate-700 shadow-sm"
+              className="h-9 w-[130px] justify-center gap-2 bg-foreground text-background hover:bg-foreground/90 shadow-sm"
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit Profile
@@ -350,7 +350,7 @@ export default function SettingsPage() {
               size="sm"
               onClick={handleSave}
               disabled={isPending}
-              className="h-9 w-[130px] justify-center bg-slate-800 text-white hover:bg-slate-700 shadow-sm"
+              className="h-9 w-[130px] justify-center bg-foreground text-background hover:bg-foreground/90 shadow-sm"
             >
               {isPending ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</>

@@ -73,8 +73,8 @@ function RequestChangeModal({ currentPrefix, onClose }: RequestModalProps) {
           <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-4">
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-1">Current</p>
-              <p className="font-mono font-bold text-base text-slate-700">
-                {currentPrefix}-<span className="text-slate-400">473</span>
+              <p className="font-mono font-bold text-base text-foreground">
+                {currentPrefix}-<span className="text-muted-foreground">473</span>
               </p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -122,11 +122,11 @@ function RequestChangeModal({ currentPrefix, onClose }: RequestModalProps) {
             </div>
 
             {applyToExisting ? (
-              <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+              <div className="rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
                 ⚠️ All existing employee codes will be renamed. E.g. <span className="font-mono">{currentPrefix}-5</span> → <span className="font-mono">{prefix || '???'}-5</span>. Sequence numbers stay the same.
               </div>
             ) : (
-              <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-800">
+              <div className="rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-800 dark:text-blue-300">
                 ℹ️ Only new employees added after approval will get the new prefix. Existing codes are untouched.
               </div>
             )}
@@ -180,14 +180,14 @@ export function EmployeeCodeCard() {
       <Card className="overflow-hidden shadow-sm">
         <CardHeader className="border-b bg-muted/40 px-6 pb-4 pt-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800">
-              <Hash className="h-4 w-4 text-white" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground">
+              <Hash className="h-4 w-4 text-background" />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold text-slate-800">
+              <CardTitle className="text-sm font-semibold text-foreground">
                 Employee Code Format
               </CardTitle>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 The prefix used in all employee IDs for your organisation
               </p>
             </div>
@@ -203,10 +203,10 @@ export function EmployeeCodeCard() {
           ) : data ? (
             <>
               {/* Current format display */}
-              <div className="flex items-center gap-6 rounded-xl border bg-slate-50 p-5">
+              <div className="flex items-center gap-6 rounded-xl border bg-muted/50 p-5">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Current Prefix</p>
-                  <p className="font-mono text-3xl font-bold text-slate-800">
+                  <p className="font-mono text-3xl font-bold text-foreground">
                     {data.currentPrefix}
                   </p>
                 </div>
@@ -221,27 +221,27 @@ export function EmployeeCodeCard() {
 
               {/* Pending request notice */}
               {pending ? (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 p-4">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-amber-800">Change Request Pending</p>
-                    <p className="text-xs text-amber-700 mt-0.5">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Change Request Pending</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
                       Requested prefix: <span className="font-mono font-bold">{pending.requestedPrefix}</span>
                       {pending.applyToExisting && ' (retroactive)'}
                       {' · '} Submitted {new Date(pending.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
                       Awaiting review from the platform administrator.
                     </p>
                   </div>
-                  <Badge variant="outline" className="shrink-0 border-amber-300 text-amber-700 text-xs">
+                  <Badge variant="outline" className="shrink-0 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-xs">
                     Pending
                   </Badge>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-green-700">
+                <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/40 p-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-green-700 dark:text-green-400">
                     No pending changes. Your employee code format is active.
                   </p>
                 </div>

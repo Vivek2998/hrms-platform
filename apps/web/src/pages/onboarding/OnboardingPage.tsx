@@ -48,17 +48,17 @@ import type { AssignedRole, OnboardingAssignment, TaskStatus } from '@/hooks/use
 import { cn } from '@/lib/utils';
 
 const ROLE_COLORS: Record<AssignedRole, string> = {
-  HR: 'bg-purple-100 text-purple-700',
-  IT: 'bg-blue-100 text-blue-700',
-  FINANCE: 'bg-green-100 text-green-700',
-  MANAGER: 'bg-orange-100 text-orange-700',
-  EMPLOYEE: 'bg-slate-100 text-slate-700',
+  HR: 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300',
+  IT: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
+  FINANCE: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300',
+  MANAGER: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300',
+  EMPLOYEE: 'bg-muted text-muted-foreground',
 };
 
 const TASK_STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
   PENDING: <Circle className="h-4 w-4 text-muted-foreground" />,
   COMPLETED: <CheckCircle2 className="h-4 w-4 text-green-600" />,
-  SKIPPED: <Circle className="h-4 w-4 text-slate-400 opacity-50" />,
+  SKIPPED: <Circle className="h-4 w-4 text-muted-foreground opacity-50" />,
 };
 
 const taskDefSchema = z.object({

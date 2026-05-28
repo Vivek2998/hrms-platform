@@ -64,7 +64,7 @@ function isImage(mimeType?: string, url?: string) {
 function DocIcon({ mimeType, url }: { mimeType?: string | undefined; url: string }) {
   return isImage(mimeType, url)
     ? <Image className="h-5 w-5 shrink-0 text-blue-500" />
-    : <FileText className="h-5 w-5 shrink-0 text-slate-400" />;
+    : <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />;
 }
 
 function StatusBadge({ status }: { status: DocumentStatus }) {
