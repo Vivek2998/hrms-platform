@@ -42,6 +42,16 @@ const registerSchema = z.object({
     .string()
     .regex(/^[A-Z]{2,5}$/, 'Employee code prefix must be 2–5 uppercase letters (e.g. SSI, TCS, INFY)')
     .optional(),
+  // ── Branding — collected at signup, all optional ─────────────────────────
+  logoUrl: z.string().url('Must be a valid URL').optional(),
+  industryType: z
+    .enum(['IT_SOFTWARE', 'MANUFACTURING', 'HEALTHCARE', 'FINANCIAL_SERVICES', 'RETAIL', 'EDUCATIONAL', 'SERVICE_BASED', 'GENERAL'])
+    .optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex colour e.g. #3B82F6')
+    .optional(),
+  sidebarStyle: z.enum(['light', 'dark', 'branded']).optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -81,8 +91,11 @@ export function authRoutes(app: FastifyInstance) {
       adminLastName: input.adminLastName,
       adminEmail: input.adminEmail,
       passwordHash,
-      // Passed if the admin explicitly provided it; otherwise auto-derived from name
       employeeCodePrefix: input.employeeCodePrefix,
+      logoUrl:      input.logoUrl,
+      industryType: input.industryType,
+      primaryColor: input.primaryColor,
+      sidebarStyle: input.sidebarStyle,
     });
 
     const jwtPayload = { sub: admin.id, orgId: org.id, role: admin.role, orgPlan: org.plan };
@@ -99,7 +112,7 @@ export function authRoutes(app: FastifyInstance) {
           id: admin.id,
           organizationId: org.id,
           orgName: org.name,
-          orgLogoUrl: null,
+          orgLogoUrl: org.logoUrl ?? null,
           orgPlan: org.plan,
           role: admin.role,
           firstName: admin.firstName,

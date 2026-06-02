@@ -12,6 +12,11 @@ export interface ProvisionInput {
   /** Optional employee code prefix (e.g. "SSI" → SSI-1, SSI-473).
    *  If omitted, auto-derived from the organisation name. */
   employeeCodePrefix?: string;
+  // ── Branding (collected at signup, all optional) ──────────────────────────
+  logoUrl?: string;
+  industryType?: string;
+  primaryColor?: string;
+  sidebarStyle?: string;
 }
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -62,10 +67,9 @@ export async function provisionOrganization(prisma: PrismaClient, input: Provisi
         plan,
         maxEmployees,
         employeeCodePrefix,
-        // Start the sequence at 1 because we're about to create the first employee (admin)
-        // inline in this same transaction.  The next employee added via createEmployee()
-        // will atomically increment from 1 → 2 and get {prefix}-2.
         employeeSequence: 1,
+        ...(input.logoUrl     && { logoUrl:      input.logoUrl }),
+        ...(input.industryType && { industryType: input.industryType }),
       },
     });
 
@@ -123,6 +127,27 @@ export async function provisionOrganization(prisma: PrismaClient, input: Provisi
       { name: 'TDS',                            code: 'TDS',        type: 'DEDUCTION' as const,                     isTaxable: false, displayOrder: 13 },
     ]) {
       await tx.salaryComponent.create({ data: { organizationId: org.id, ...c } });
+    }
+
+    // If a primary colour was provided at signup, apply the theme immediately —
+    // no super-admin approval needed for the initial setup.
+    if (input.primaryColor) {
+      await tx.orgThemeConfig.create({
+        data: {
+          organizationId: org.id,
+          primaryColor:   input.primaryColor,
+          sidebarStyle:   input.sidebarStyle ?? 'light',
+          appliedById:    admin.id,
+        },
+      });
+    } else if (input.sidebarStyle && input.sidebarStyle !== 'light') {
+      await tx.orgThemeConfig.create({
+        data: {
+          organizationId: org.id,
+          sidebarStyle:   input.sidebarStyle,
+          appliedById:    admin.id,
+        },
+      });
     }
 
     return { org, admin };
