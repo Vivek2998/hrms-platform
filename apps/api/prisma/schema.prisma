@@ -507,6 +507,8 @@ model Organization {
   eapResources            EapResource[]
   employeeCodeRequests    EmployeeCodeChangeRequest[]
   orgChartChangeRequests  OrgChartChangeRequest[]
+  themeConfig             OrgThemeConfig?
+  themeRequests           OrgThemeRequest[]
   // KPI / KRA
   kras                    KRA[]
   kpis                    KPI[]
@@ -532,6 +534,58 @@ model SuperAdmin {
   updatedAt    DateTime @updatedAt
 
   @@map("super_admins")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORGANISATION THEME
+// Applied config (set by super admin) + admin requests.
+// ─────────────────────────────────────────────────────────────
+
+model OrgThemeConfig {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // Colors stored as CSS-compatible values (hex or any CSS color string)
+  primaryColor       String?  // e.g. "#3B82F6"  → --primary
+  primaryForeground  String?  // auto-calculated  → --primary-foreground
+  sidebarStyle       String   @default("light")   // "light" | "dark" | "branded"
+  bgImageUrl         String?  // background image on main content area
+  backgroundColor    String?  // e.g. "#F8FAFC"  → --background
+  cardColor          String?  // e.g. "#FFFFFF"  → --card
+
+  appliedAt      DateTime @default(now())
+  appliedById    String?  // super admin id (not FK — cross-model boundary)
+
+  @@map("org_theme_configs")
+}
+
+model OrgThemeRequest {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  requestedById  String
+  requestedBy    Employee     @relation(fields: [requestedById], references: [id])
+
+  // Preferences expressed by the org admin
+  preferredPrimaryHex  String?   // hex color picker value
+  sidebarStyle         String?   // "light" | "dark" | "branded"
+  wantsBgImage         Boolean   @default(false)
+  bgImageUrl           String?   // uploaded background image
+  backgroundColor      String?   // hex background color preference
+  logoUrl              String?   // uploaded org logo
+
+  notes          String?   @db.Text
+  attachmentUrls String[]  // branding guide PDFs, etc.
+
+  status         String    @default("PENDING") // "PENDING" | "IMPLEMENTED" | "REJECTED"
+  superAdminNote String?
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("org_theme_requests")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -773,6 +827,7 @@ model Employee {
   esopGrants               EsopGrant[]
   employeeCodeRequests     EmployeeCodeChangeRequest[]
   orgChartChangeRequests   OrgChartChangeRequest[]
+  themeRequests            OrgThemeRequest[]
   leaveBalances            LeaveBalance[]
   designationRef           Designation? @relation("EmployeeDesignation", fields: [designationId], references: [id], onDelete: SetNull)
   // KPI / KRA
@@ -1534,6 +1589,7 @@ model PasswordResetToken {
 
   employee Employee @relation(fields: [employeeId], references: [id])
 
+  @@index([employeeId])
   @@map("password_reset_tokens")
 }
 

@@ -261,6 +261,7 @@ function flyoutItemClass(isActive: boolean) {
 export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
+  const orgLogoUrl = useAuthStore((s) => s.user?.orgLogoUrl);
   const orgPlan = useAuthStore((s) => s.user?.orgPlan);
   const { sidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore();
   const location = useLocation();
@@ -353,7 +354,15 @@ export function Sidebar() {
             {sidebarVisible ? (
               <>
                 <div className="flex flex-1 items-center gap-2.5 overflow-hidden">
-                  <div className="bg-primary h-8 w-8 shrink-0 rounded-lg" />
+                  {orgLogoUrl ? (
+                    <img
+                      src={orgLogoUrl}
+                      alt={orgName ?? 'Logo'}
+                      className="h-8 w-8 shrink-0 rounded-lg object-contain"
+                    />
+                  ) : (
+                    <div className="bg-primary h-8 w-8 shrink-0 rounded-lg" />
+                  )}
                   <span className="text-sidebar-foreground truncate text-sm font-semibold">
                     {orgName ?? 'WorkAxis'}
                   </span>

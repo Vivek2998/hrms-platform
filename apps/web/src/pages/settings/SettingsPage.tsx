@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EmployeeCodeCard } from '@/components/settings/EmployeeCodeCard';
+import { OrgThemeCard } from '@/components/settings/OrgThemeCard';
 
 interface FormState {
   phone: string;
@@ -236,6 +237,7 @@ export default function SettingsPage() {
       {activeTab === 'organisation' && (
         <div className="space-y-4">
           <EmployeeCodeCard />
+          <OrgThemeCard />
         </div>
       )}
 
@@ -353,7 +355,7 @@ export default function SettingsPage() {
               className="h-9 w-[130px] justify-center bg-foreground text-background hover:bg-foreground/90 shadow-sm"
             >
               {isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</>
+                <><Loader2 className="h-4 w-4 animate-spin" />Saving…</>
               ) : 'Save Changes'}
             </Button>
           )}

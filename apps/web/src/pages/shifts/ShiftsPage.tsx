@@ -426,7 +426,7 @@ function AssignmentsPanel({ shifts }: { shifts: Shift[] }) {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button onClick={() => { setShowAssign(true); }}>
-          <UserPlus className="mr-2 h-4 w-4" />
+          <UserPlus className="h-4 w-4" />
           Assign Shift
         </Button>
       </div>
@@ -538,7 +538,7 @@ export default function ShiftsPage() {
         <div className="flex items-center gap-3">
           {tab === 'shifts' && (
             <Button onClick={() => { setShowAdd(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Add Shift
             </Button>
           )}
@@ -616,7 +616,7 @@ export default function ShiftsPage() {
                         </span>
                       ))}
                     </div>
-                    <Badge variant="secondary" className="ml-2">{shift.code}</Badge>
+                    <Badge variant="secondary" className="ml-2 w-16 justify-center truncate">{shift.code}</Badge>
                     <Button
                       variant="ghost"
                       size="icon"

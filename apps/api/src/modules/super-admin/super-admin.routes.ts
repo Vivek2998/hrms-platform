@@ -1,11 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { signAccessToken } from '../../lib/jwt.js';
+import { env } from '../../config/env.js';
 import { ok, fail } from '../../lib/response.js';
 import { provisionOrganization } from '../../lib/provision-org.js';
 import { sendEmail, empCodeDecisionEmail, orgChartDecisionEmail } from '../../lib/email.js';
 import { INDUSTRY_TEMPLATES, type IndustryType } from '../../lib/industry-templates.js';
+import { superAdminRateLimit } from '../../lib/rate-limits.js';
+import { planCacheKey } from '../../lib/plan-guard.js';
 
 const PLAN_LIMITS: Record<string, number> = {
   FREE: 10,
@@ -17,8 +20,8 @@ const PLAN_LIMITS: Record<string, number> = {
 export function superAdminRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticateSuperAdmin] };
 
-  // POST /super-admin/auth/login
-  app.post('/super-admin/auth/login', async (req, reply) => {
+  // POST /super-admin/auth/login  — rate-limited: 3 attempts per 30 minutes (BUG-H01)
+  app.post('/super-admin/auth/login', superAdminRateLimit, async (req, reply) => {
     const { email, password } = z
       .object({ email: z.string().email(), password: z.string().min(1) })
       .parse(req.body);
@@ -29,11 +32,14 @@ export function superAdminRoutes(app: FastifyInstance) {
     const valid = await bcrypt.compare(password, admin.passwordHash);
     if (!valid) throw fail('Invalid credentials', 401);
 
-    const accessToken = signAccessToken({
-      sub: admin.id,
-      orgId: 'super',
-      role: 'SUPER_ADMIN',
-    });
+    // BUG-L01: Super admin sessions use a 4-hour token (not the default 15-minute
+    // access token) because there is no refresh mechanism for super admin yet.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    const accessToken = jwt.sign(
+      { sub: admin.id, orgId: 'super', role: 'SUPER_ADMIN' },
+      env.JWT_SECRET,
+      { expiresIn: '4h' as any },
+    );
 
     return reply.send(
       ok({ accessToken, admin: { id: admin.id, name: admin.name, email: admin.email } }),
@@ -470,6 +476,132 @@ export function superAdminRoutes(app: FastifyInstance) {
       select: { id: true, name: true, plan: true, isActive: true, maxEmployees: true },
     });
 
+    // QUALITY-01: Invalidate the plan cache so the change takes effect immediately
+    if (input.plan) {
+      await app.redis.del(planCacheKey(id));
+    }
+
     return reply.send(ok(org));
+  });
+
+  // ── Theme Requests ─────────────────────────────────────────────────────────
+
+  // GET /super-admin/theme-requests
+  app.get('/super-admin/theme-requests', auth, async (req, reply) => {
+    const { status } = z
+      .object({ status: z.enum(['PENDING', 'IMPLEMENTED', 'REJECTED', 'ALL']).default('PENDING') })
+      .parse(req.query);
+
+    const requests = await app.prisma.orgThemeRequest.findMany({
+      where: status === 'ALL' ? {} : { status },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        preferredPrimaryHex: true,
+        sidebarStyle: true,
+        wantsBgImage: true,
+        bgImageUrl: true,
+        backgroundColor: true,
+        logoUrl: true,
+        notes: true,
+        attachmentUrls: true,
+        status: true,
+        superAdminNote: true,
+        createdAt: true,
+        resolvedAt: true,
+        organization: { select: { id: true, name: true, slug: true } },
+        requestedBy: { select: { id: true, firstName: true, lastName: true, workEmail: true } },
+      },
+    });
+
+    return reply.send(ok(requests));
+  });
+
+  // PATCH /super-admin/theme-requests/:id/apply — apply theme to org
+  app.patch('/super-admin/theme-requests/:id/apply', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const input = z.object({
+      primaryColor:     z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+      primaryForeground:z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+      sidebarStyle:     z.enum(['light', 'dark', 'branded']).optional().nullable(),
+      bgImageUrl:       z.string().url().optional().nullable(),
+      backgroundColor:  z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+      cardColor:        z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+      logoUrl:          z.string().url().optional().nullable(),
+      superAdminNote:   z.string().max(500).optional(),
+    }).parse(req.body);
+
+    const request = await app.prisma.orgThemeRequest.findUnique({
+      where: { id },
+      select: { id: true, organizationId: true, status: true },
+    });
+    if (!request) throw fail('Theme request not found', 404);
+    if (request.status !== 'PENDING') throw fail('This request has already been resolved', 409);
+
+    await app.prisma.$transaction(async (tx) => {
+      // Upsert the org's theme config
+      await tx.orgThemeConfig.upsert({
+        where: { organizationId: request.organizationId },
+        create: {
+          organizationId: request.organizationId,
+          primaryColor: input.primaryColor ?? null,
+          primaryForeground: input.primaryForeground ?? null,
+          sidebarStyle: input.sidebarStyle ?? 'light',
+          bgImageUrl: input.bgImageUrl ?? null,
+          backgroundColor: input.backgroundColor ?? null,
+          cardColor: input.cardColor ?? null,
+          appliedById: req.user.sub,
+        },
+        update: {
+          primaryColor: input.primaryColor ?? null,
+          primaryForeground: input.primaryForeground ?? null,
+          sidebarStyle: input.sidebarStyle ?? 'light',
+          bgImageUrl: input.bgImageUrl ?? null,
+          backgroundColor: input.backgroundColor ?? null,
+          cardColor: input.cardColor ?? null,
+          appliedAt: new Date(),
+          appliedById: req.user.sub,
+        },
+      });
+
+      // If a logo was provided, update the org's main logoUrl
+      if (input.logoUrl !== undefined) {
+        await tx.organization.update({
+          where: { id: request.organizationId },
+          data: { logoUrl: input.logoUrl },
+        });
+      }
+
+      // Mark request as implemented
+      await tx.orgThemeRequest.update({
+        where: { id },
+        data: {
+          status: 'IMPLEMENTED',
+          superAdminNote: input.superAdminNote,
+          resolvedAt: new Date(),
+        },
+      });
+    });
+
+    return reply.send(ok({ message: 'Theme applied successfully' }));
+  });
+
+  // PATCH /super-admin/theme-requests/:id/reject
+  app.patch('/super-admin/theme-requests/:id/reject', auth, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { superAdminNote } = z
+      .object({ superAdminNote: z.string().max(500).optional() })
+      .parse(req.body);
+
+    const request = await app.prisma.orgThemeRequest.findUnique({ where: { id } });
+    if (!request) throw fail('Theme request not found', 404);
+    if (request.status !== 'PENDING') throw fail('This request has already been resolved', 409);
+
+    await app.prisma.orgThemeRequest.update({
+      where: { id },
+      data: { status: 'REJECTED', superAdminNote, resolvedAt: new Date() },
+    });
+
+    return reply.send(ok({ message: 'Theme request rejected' }));
   });
 }

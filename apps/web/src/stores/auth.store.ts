@@ -12,6 +12,7 @@ export interface AuthUser {
   lastName: string;
   workEmail: string;
   employeeCode: string;
+  orgLogoUrl?: string | null;
   avatarUrl?: string | null;
   mustChangePassword?: boolean;
 }

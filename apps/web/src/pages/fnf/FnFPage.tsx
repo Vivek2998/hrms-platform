@@ -49,15 +49,15 @@ export default function FnFPage() {
   const paidMutation = useMarkFnFPaid();
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Full & Final Settlement</h1>
           <p className="text-muted-foreground text-sm">Calculate and process exit settlements for departing employees</p>
         </div>
         {isHr && (
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="mr-2 h-4 w-4" /> New Settlement
+          <Button onClick={() => setShowCreate(true)} className="shrink-0">
+            <Plus className="h-4 w-4" /> New Settlement
           </Button>
         )}
       </div>
@@ -76,23 +76,23 @@ export default function FnFPage() {
           {settlements.map((s: any) => (
             <Card key={s.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelected(s)}>
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 rounded-full p-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="bg-primary/10 rounded-full p-2 shrink-0">
                       <IndianRupee className="text-primary h-5 w-5" />
                     </div>
-                    <div>
-                      <p className="font-medium">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
                         {s.employee?.firstName} {s.employee?.lastName}
                         <span className="text-muted-foreground text-xs ml-1">({s.employee?.employeeCode})</span>
                       </p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-muted-foreground text-xs truncate">
                         {s.employee?.designation} · Last working: {fmtDate(s.lastWorkingDate)}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <div className="text-right mr-1">
                       <p className="font-bold text-lg">{fmtCurrency(s.netPayable)}</p>
                       <p className="text-muted-foreground text-xs">Net Payable</p>
                     </div>

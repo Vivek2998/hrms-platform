@@ -39,6 +39,7 @@
     "date-fns": "catalog:",
     "fastify": "^5.3.2",
     "fastify-plugin": "^5.0.1",
+    "file-type": "^22.0.1",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.16",
     "zod": "catalog:",

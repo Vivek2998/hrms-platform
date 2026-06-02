@@ -75,6 +75,7 @@ import { contractorsRoutes } from './modules/contractors/contractors.routes.js';
 import { esopRoutes } from './modules/esop/esop.routes.js';
 import { eapRoutes } from './modules/eap/eap.routes.js';
 import { orgSettingsRoutes } from './modules/organizations/org-settings.routes.js';
+import { orgThemeRoutes } from './modules/org/org-theme.routes.js';
 import { kpiKraRoutes } from './modules/kpi-kra/kpi-kra.routes.js';
 import { skillsRoutes } from './modules/skills/skills.routes.js';
 
@@ -173,6 +174,7 @@ export async function buildApp() {
   await app.register(esopRoutes, { prefix });
   await app.register(eapRoutes, { prefix });
   await app.register(orgSettingsRoutes, { prefix });
+  await app.register(orgThemeRoutes, { prefix });
   await app.register(kpiKraRoutes, { prefix });
   await app.register(skillsRoutes, { prefix });
 

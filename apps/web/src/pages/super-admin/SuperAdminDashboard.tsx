@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/table';
 
 type Plan = 'FREE' | 'STARTER' | 'GROWTH' | 'ENTERPRISE';
-type Tab = 'organizations' | 'assets' | 'code-requests' | 'org-chart-requests';
+type Tab = 'organizations' | 'assets' | 'code-requests' | 'org-chart-requests' | 'theme-requests';
 type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 interface OrgChartRequest {
@@ -56,6 +56,24 @@ interface CodeRequest {
   requestedPrefix: string;
   applyToExisting: boolean;
   reason: string | null;
+  status: RequestStatus;
+  superAdminNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  organization: { id: string; name: string; slug: string };
+  requestedBy: { id: string; firstName: string; lastName: string; workEmail: string };
+}
+
+interface ThemeRequest {
+  id: string;
+  preferredPrimaryHex: string | null;
+  sidebarStyle: string | null;
+  wantsBgImage: boolean;
+  bgImageUrl: string | null;
+  backgroundColor: string | null;
+  logoUrl: string | null;
+  notes: string | null;
+  attachmentUrls: string[];
   status: RequestStatus;
   superAdminNote: string | null;
   resolvedAt: string | null;
@@ -627,6 +645,298 @@ function ReviewOrgChartDialog({ request, onClose }: { request: OrgChartRequest; 
   );
 }
 
+// ── Apply Theme Dialog ─────────────────────────────────────────────────────────
+
+interface ApplyThemeDialogProps {
+  request: ThemeRequest;
+  onClose: () => void;
+}
+
+function ApplyThemeDialog({ request, onClose }: ApplyThemeDialogProps) {
+  const qc = useQueryClient();
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+
+  const apply = useMutation({
+    mutationFn: () =>
+      superAdminApi.patch(`/super-admin/theme-requests/${request.id}/apply`, {
+        superAdminNote: note.trim() || undefined,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['super-admin', 'theme-requests'] });
+      onClose();
+    },
+    onError: () => setError('Failed to apply theme. Please try again.'),
+  });
+
+  const reject = useMutation({
+    mutationFn: () =>
+      superAdminApi.patch(`/super-admin/theme-requests/${request.id}/reject`, {
+        superAdminNote: note.trim() || undefined,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['super-admin', 'theme-requests'] });
+      onClose();
+    },
+    onError: () => setError('Failed to reject request. Please try again.'),
+  });
+
+  const isPending = apply.isPending || reject.isPending;
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Review Theme Request</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-1">
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Organisation</span>
+              <span className="font-semibold">{request.organization.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Requested by</span>
+              <span>{request.requestedBy.firstName} {request.requestedBy.lastName}</span>
+            </div>
+            {request.preferredPrimaryHex && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Primary colour</span>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-5 w-5 rounded border border-border shadow-sm"
+                    style={{ backgroundColor: request.preferredPrimaryHex }}
+                  />
+                  <span className="font-mono text-xs">{request.preferredPrimaryHex}</span>
+                </div>
+              </div>
+            )}
+            {request.sidebarStyle && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Sidebar style</span>
+                <span className="capitalize font-medium">{request.sidebarStyle}</span>
+              </div>
+            )}
+            {request.wantsBgImage && request.bgImageUrl && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground shrink-0">Background image</span>
+                <a href={request.bgImageUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-xs truncate underline">{request.bgImageUrl}</a>
+              </div>
+            )}
+            {!request.wantsBgImage && request.backgroundColor && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Background colour</span>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-5 w-5 rounded border border-border shadow-sm"
+                    style={{ backgroundColor: request.backgroundColor }}
+                  />
+                  <span className="font-mono text-xs">{request.backgroundColor}</span>
+                </div>
+              </div>
+            )}
+            {request.logoUrl && (
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground shrink-0">Logo</span>
+                <img src={request.logoUrl} alt="Logo" className="h-10 w-20 object-contain rounded border bg-white" />
+              </div>
+            )}
+            {request.notes && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground shrink-0">Notes</span>
+                <span className="italic text-right text-xs">"{request.notes}"</span>
+              </div>
+            )}
+            {request.attachmentUrls.length > 0 && (
+              <div>
+                <span className="text-muted-foreground">Attachments ({request.attachmentUrls.length})</span>
+                <ul className="mt-1 space-y-0.5">
+                  {request.attachmentUrls.map((url, i) => (
+                    <li key={i}>
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline truncate block">{url}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+            Clicking <strong>Apply</strong> will immediately update this organisation's live theme.
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">
+              Note to admin <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. Theme applied as requested. or Request rejected — please resubmit with a valid logo URL."
+              className="resize-none text-sm"
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+          {error && <p className="text-destructive text-sm">{error}</p>}
+        </div>
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <Button variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
+          <Button variant="destructive" onClick={() => reject.mutate()} disabled={isPending}>
+            Reject
+          </Button>
+          <Button
+            onClick={() => apply.mutate()}
+            disabled={isPending}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {apply.isPending ? 'Applying…' : 'Apply Theme'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Theme Requests Tab ─────────────────────────────────────────────────────────
+
+function ThemeRequestsTab() {
+  const qc = useQueryClient();
+  const [filter, setFilter] = useSessionStorageState<'PENDING' | 'ALL'>('super_admin_theme_filter', 'PENDING');
+  const [reviewing, setReviewing] = useState<ThemeRequest | null>(null);
+
+  const { data: requests = [], isLoading } = useQuery<ThemeRequest[]>({
+    queryKey: ['super-admin', 'theme-requests', filter],
+    queryFn: async () => {
+      const res = await superAdminApi.get<{ data: ThemeRequest[] }>(
+        `/super-admin/theme-requests?status=${filter}`,
+      );
+      return res.data.data;
+    },
+  });
+
+  const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
+
+  const statusColors: Record<RequestStatus, string> = {
+    PENDING: 'outline',
+    APPROVED: 'default',
+    REJECTED: 'destructive',
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-base">Organisation Theme Requests</CardTitle>
+            {pendingCount > 0 && (
+              <Badge variant="destructive" className="text-xs">{pendingCount} pending</Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Show:</span>
+            {(['PENDING', 'ALL'] as const).map((f) => (
+              <button key={f} onClick={() => setFilter(f)}
+                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filter === f ? 'bg-slate-800 text-white border-slate-800' : 'border-muted-foreground/30 text-muted-foreground hover:border-slate-400'}`}>
+                {f === 'PENDING' ? 'Pending' : 'All'}
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-10">Loading…</p>
+          ) : requests.length === 0 ? (
+            <p className="text-center text-muted-foreground py-10">
+              {filter === 'PENDING' ? 'No pending theme requests — all clear! ✅' : 'No requests yet.'}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Organisation</TableHead>
+                  <TableHead>Requested By</TableHead>
+                  <TableHead>Primary Colour</TableHead>
+                  <TableHead>Sidebar</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  {filter === 'PENDING' && <TableHead className="w-24 text-right">Action</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {requests.map((req) => (
+                  <TableRow key={req.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-sm">{req.organization.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{req.organization.slug}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-sm">{req.requestedBy.firstName} {req.requestedBy.lastName}</p>
+                        <p className="text-xs text-muted-foreground">{req.requestedBy.workEmail}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {req.preferredPrimaryHex ? (
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="h-4 w-4 rounded border border-border shadow-sm shrink-0"
+                            style={{ backgroundColor: req.preferredPrimaryHex }}
+                          />
+                          <span className="font-mono text-xs">{req.preferredPrimaryHex}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs capitalize">{req.sidebarStyle ?? '—'}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[req.status] as 'default' | 'outline' | 'destructive'} className="text-xs">
+                        {req.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(req.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </TableCell>
+                    {filter === 'PENDING' && (
+                      <TableCell className="w-24">
+                        <div className="flex justify-end">
+                          {req.status === 'PENDING' && (
+                            <Button size="sm" variant="outline" className="text-xs h-7"
+                              onClick={() => setReviewing(req)}>
+                              Review
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {reviewing && (
+        <ApplyThemeDialog
+          request={reviewing}
+          onClose={() => {
+            setReviewing(null);
+            void qc.invalidateQueries({ queryKey: ['super-admin', 'theme-requests'] });
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 function OrgChartRequestsTab() {
   const qc = useQueryClient();
   const [filter, setFilter] = useSessionStorageState<'PENDING' | 'ALL'>('super_admin_chart_filter', 'PENDING');
@@ -779,7 +1089,18 @@ export default function SuperAdminDashboard() {
       );
       return res.data.data.length;
     },
-    refetchInterval: 60_000, // refresh every minute for live badge
+    refetchInterval: 60_000,
+  });
+
+  const { data: pendingThemeCount = 0 } = useQuery<number>({
+    queryKey: ['super-admin', 'theme-requests', 'pending-count'],
+    queryFn: async () => {
+      const res = await superAdminApi.get<{ data: { id: string }[] }>(
+        '/super-admin/theme-requests?status=PENDING',
+      );
+      return res.data.data.length;
+    },
+    refetchInterval: 60_000,
   });
 
   const { data: orgs = [], isLoading } = useQuery<OrgRow[]>({
@@ -897,6 +1218,7 @@ export default function SuperAdminDashboard() {
             { key: 'assets', label: 'Assets' },
             { key: 'code-requests', label: 'Code Requests' },
             { key: 'org-chart-requests', label: 'Org Chart Requests', badge: pendingOrgChartCount },
+            { key: 'theme-requests', label: 'Theme Requests', badge: pendingThemeCount },
           ] as { key: Tab; label: string; badge?: number }[]).map((tab) => (
             <button
               key={tab.key}
@@ -1022,6 +1344,7 @@ export default function SuperAdminDashboard() {
 
         {/* Org Chart Requests tab */}
         {activeTab === 'org-chart-requests' && <OrgChartRequestsTab />}
+        {activeTab === 'theme-requests' && <ThemeRequestsTab />}
       </main>
 
       {/* Create Organization Dialog */}

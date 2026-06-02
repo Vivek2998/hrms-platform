@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { randomBytes, createHash } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -14,23 +14,9 @@ import { signAccessToken, signRefreshToken } from '../../lib/jwt.js';
 import { provisionOrganization } from '../../lib/provision-org.js';
 import { sendEmail, passwordResetEmail } from '../../lib/email.js';
 import { env } from '../../config/env.js';
+import { authRateLimit } from '../../lib/rate-limits.js';
 
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
-
-// ── Per-route rate limit config for sensitive auth endpoints ──────────────────
-// 5 attempts per 15 minutes, keyed by IP + email to prevent per-account brute force
-const authRateLimit = {
-  config: {
-    rateLimit: {
-      max: 5,
-      timeWindow: '15 minutes',
-      keyGenerator: (req: FastifyRequest) => {
-        const email = (req.body as Record<string, unknown>)?.['email'] as string | undefined;
-        return email ? `auth:${req.ip}:${email.toLowerCase()}` : `auth:${req.ip}`;
-      },
-    },
-  },
-};
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -113,6 +99,7 @@ export function authRoutes(app: FastifyInstance) {
           id: admin.id,
           organizationId: org.id,
           orgName: org.name,
+          orgLogoUrl: null,
           orgPlan: org.plan,
           role: admin.role,
           firstName: admin.firstName,

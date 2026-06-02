@@ -154,7 +154,7 @@ function RequestChangeModal({ currentPrefix, onClose }: RequestModalProps) {
           </Button>
           <Button onClick={handleSubmit} disabled={isPending || prefix.length < 2}>
             {isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting…</>
+              <><Loader2 className="h-4 w-4 animate-spin" />Submitting…</>
             ) : (
               'Submit Request'
             )}
@@ -239,9 +239,9 @@ export function EmployeeCodeCard() {
                   </Badge>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/40 p-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-green-700 dark:text-green-400">
+                <div className="flex items-center gap-3 rounded-lg border border-emerald-500 bg-white dark:bg-transparent dark:border-emerald-500 p-3">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                     No pending changes. Your employee code format is active.
                   </p>
                 </div>
