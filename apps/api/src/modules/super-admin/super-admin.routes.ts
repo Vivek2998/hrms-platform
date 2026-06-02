@@ -71,6 +71,16 @@ export function superAdminRoutes(app: FastifyInstance) {
         isActive: true,
         createdAt: true,
         logoUrl: true,
+        themeConfig: {
+          select: {
+            primaryColor: true,
+            sidebarStyle: true,
+            bgImageUrl: true,
+            backgroundColor: true,
+            cardColor: true,
+            appliedAt: true,
+          },
+        },
         _count: {
           select: { employees: { where: { deletedAt: null, status: 'ACTIVE' } } },
         },
@@ -87,6 +97,7 @@ export function superAdminRoutes(app: FastifyInstance) {
       isActive: o.isActive,
       createdAt: o.createdAt,
       logoUrl: o.logoUrl ?? null,
+      themeConfig: o.themeConfig ?? null,
       employeeCount: o._count.employees,
     }));
 
@@ -509,7 +520,23 @@ export function superAdminRoutes(app: FastifyInstance) {
         superAdminNote: true,
         createdAt: true,
         resolvedAt: true,
-        organization: { select: { id: true, name: true, slug: true } },
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            themeConfig: {
+              select: {
+                primaryColor: true,
+                sidebarStyle: true,
+                bgImageUrl: true,
+                backgroundColor: true,
+                cardColor: true,
+                appliedAt: true,
+              },
+            },
+          },
+        },
         requestedBy: { select: { id: true, firstName: true, lastName: true, workEmail: true } },
       },
     });

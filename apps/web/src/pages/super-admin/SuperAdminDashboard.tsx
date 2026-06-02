@@ -64,6 +64,15 @@ interface CodeRequest {
   requestedBy: { id: string; firstName: string; lastName: string; workEmail: string };
 }
 
+interface AppliedTheme {
+  primaryColor: string | null;
+  sidebarStyle: string | null;
+  bgImageUrl: string | null;
+  backgroundColor: string | null;
+  cardColor: string | null;
+  appliedAt: string;
+}
+
 interface ThemeRequest {
   id: string;
   preferredPrimaryHex: string | null;
@@ -78,7 +87,7 @@ interface ThemeRequest {
   superAdminNote: string | null;
   resolvedAt: string | null;
   createdAt: string;
-  organization: { id: string; name: string; slug: string };
+  organization: { id: string; name: string; slug: string; themeConfig: AppliedTheme | null };
   requestedBy: { id: string; firstName: string; lastName: string; workEmail: string };
 }
 
@@ -93,6 +102,7 @@ interface OrgRow {
   createdAt: string;
   employeeCount: number;
   logoUrl: string | null;
+  themeConfig: AppliedTheme | null;
 }
 
 const PLAN_COLORS: Record<Plan, string> = {
@@ -685,81 +695,140 @@ function ApplyThemeDialog({ request, onClose }: ApplyThemeDialogProps) {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Review Theme Request</DialogTitle>
+          <DialogTitle>Review Theme Request — {request.organization.name}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Requested by {request.requestedBy.firstName} {request.requestedBy.lastName} · {new Date(request.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
         </DialogHeader>
         <div className="space-y-4 py-1">
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Organisation</span>
-              <span className="font-semibold">{request.organization.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Requested by</span>
-              <span>{request.requestedBy.firstName} {request.requestedBy.lastName}</span>
-            </div>
-            {request.preferredPrimaryHex && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Primary colour</span>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-5 w-5 rounded border border-border shadow-sm"
-                    style={{ backgroundColor: request.preferredPrimaryHex }}
-                  />
-                  <span className="font-mono text-xs">{request.preferredPrimaryHex}</span>
+
+          {/* Current vs Requested — side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Current applied theme */}
+            <div className="rounded-lg border bg-muted/20 p-4 space-y-2.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Currently Applied</p>
+              {request.organization.themeConfig ? (
+                <div className="space-y-2 text-sm">
+                  {request.organization.themeConfig.primaryColor && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">Primary</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 rounded border border-border shadow-sm shrink-0" style={{ backgroundColor: request.organization.themeConfig.primaryColor }} />
+                        <span className="font-mono text-xs">{request.organization.themeConfig.primaryColor}</span>
+                      </div>
+                    </div>
+                  )}
+                  {request.organization.themeConfig.sidebarStyle && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">Sidebar</span>
+                      <span className="text-xs capitalize font-medium">{request.organization.themeConfig.sidebarStyle}</span>
+                    </div>
+                  )}
+                  {request.organization.themeConfig.backgroundColor && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">Background</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 rounded border border-border shadow-sm shrink-0" style={{ backgroundColor: request.organization.themeConfig.backgroundColor }} />
+                        <span className="font-mono text-xs">{request.organization.themeConfig.backgroundColor}</span>
+                      </div>
+                    </div>
+                  )}
+                  {request.organization.themeConfig.bgImageUrl && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground text-xs shrink-0">Bg image</span>
+                      <a href={request.organization.themeConfig.bgImageUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline truncate">View</a>
+                    </div>
+                  )}
+                  {request.organization.themeConfig.cardColor && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">Card</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 rounded border border-border shadow-sm shrink-0" style={{ backgroundColor: request.organization.themeConfig.cardColor }} />
+                        <span className="font-mono text-xs">{request.organization.themeConfig.cardColor}</span>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground pt-1 border-t">
+                    Applied {new Date(request.organization.themeConfig.appliedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
                 </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Default WorkAxis theme — no custom theme applied yet.</p>
+              )}
+            </div>
+
+            {/* Requested changes */}
+            <div className="rounded-lg border border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 p-4 space-y-2.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">Requested Changes</p>
+              <div className="space-y-2 text-sm">
+                {request.preferredPrimaryHex && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">Primary</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-4 w-4 rounded border border-border shadow-sm shrink-0" style={{ backgroundColor: request.preferredPrimaryHex }} />
+                      <span className="font-mono text-xs">{request.preferredPrimaryHex}</span>
+                    </div>
+                  </div>
+                )}
+                {request.sidebarStyle && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">Sidebar</span>
+                    <span className="text-xs capitalize font-medium">{request.sidebarStyle}</span>
+                  </div>
+                )}
+                {request.wantsBgImage && request.bgImageUrl && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground text-xs shrink-0">Bg image</span>
+                    <a href={request.bgImageUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline truncate">View</a>
+                  </div>
+                )}
+                {!request.wantsBgImage && request.backgroundColor && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">Background</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-4 w-4 rounded border border-border shadow-sm shrink-0" style={{ backgroundColor: request.backgroundColor }} />
+                      <span className="font-mono text-xs">{request.backgroundColor}</span>
+                    </div>
+                  </div>
+                )}
+                {request.logoUrl && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground text-xs shrink-0">Logo</span>
+                    <img src={request.logoUrl} alt="Logo" className="h-8 w-16 object-contain rounded border bg-white" />
+                  </div>
+                )}
+                {!request.preferredPrimaryHex && !request.sidebarStyle && !request.bgImageUrl && !request.backgroundColor && !request.logoUrl && (
+                  <p className="text-xs text-muted-foreground">No specific values — see notes below.</p>
+                )}
               </div>
-            )}
-            {request.sidebarStyle && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sidebar style</span>
-                <span className="capitalize font-medium">{request.sidebarStyle}</span>
-              </div>
-            )}
-            {request.wantsBgImage && request.bgImageUrl && (
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground shrink-0">Background image</span>
-                <a href={request.bgImageUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-xs truncate underline">{request.bgImageUrl}</a>
-              </div>
-            )}
-            {!request.wantsBgImage && request.backgroundColor && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Background colour</span>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-5 w-5 rounded border border-border shadow-sm"
-                    style={{ backgroundColor: request.backgroundColor }}
-                  />
-                  <span className="font-mono text-xs">{request.backgroundColor}</span>
-                </div>
-              </div>
-            )}
-            {request.logoUrl && (
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground shrink-0">Logo</span>
-                <img src={request.logoUrl} alt="Logo" className="h-10 w-20 object-contain rounded border bg-white" />
-              </div>
-            )}
-            {request.notes && (
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground shrink-0">Notes</span>
-                <span className="italic text-right text-xs">"{request.notes}"</span>
-              </div>
-            )}
-            {request.attachmentUrls.length > 0 && (
-              <div>
-                <span className="text-muted-foreground">Attachments ({request.attachmentUrls.length})</span>
-                <ul className="mt-1 space-y-0.5">
-                  {request.attachmentUrls.map((url, i) => (
-                    <li key={i}>
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline truncate block">{url}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            </div>
           </div>
+
+          {/* Notes + attachments */}
+          {(request.notes || request.attachmentUrls.length > 0) && (
+            <div className="rounded-lg border bg-muted/20 p-4 space-y-2 text-sm">
+              {request.notes && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Admin notes</p>
+                  <p className="italic text-sm">"{request.notes}"</p>
+                </div>
+              )}
+              {request.attachmentUrls.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Branding files ({request.attachmentUrls.length})</p>
+                  <ul className="space-y-0.5">
+                    {request.attachmentUrls.map((url, i) => (
+                      <li key={i}>
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline truncate block">{url}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
             Clicking <strong>Apply</strong> will immediately update this organisation's live theme.
@@ -1260,6 +1329,7 @@ export default function SuperAdminDashboard() {
                       <TableHead>Organization</TableHead>
                       <TableHead>Plan</TableHead>
                       <TableHead>Employees</TableHead>
+                      <TableHead>Theme</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -1302,6 +1372,27 @@ export default function SuperAdminDashboard() {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm">{org.employeeCount} / {org.maxEmployees}</span>
+                        </TableCell>
+                        <TableCell>
+                          {org.themeConfig ? (
+                            <div className="flex items-center gap-1.5">
+                              {org.themeConfig.primaryColor && (
+                                <div
+                                  className="h-4 w-4 rounded-full border border-border shadow-sm shrink-0"
+                                  style={{ backgroundColor: org.themeConfig.primaryColor }}
+                                  title={`Primary: ${org.themeConfig.primaryColor}`}
+                                />
+                              )}
+                              <span className="text-xs capitalize text-muted-foreground">
+                                {org.themeConfig.sidebarStyle ?? 'light'}
+                              </span>
+                              {org.themeConfig.bgImageUrl && (
+                                <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">img</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Default</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={org.isActive ? 'default' : 'secondary'}>
