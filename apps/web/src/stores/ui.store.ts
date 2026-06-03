@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 interface UiState {
   theme: Theme;
@@ -14,18 +14,13 @@ interface UiState {
 function applyThemeClass(theme: Theme) {
   const root = document.documentElement;
   root.classList.remove('light', 'dark');
-  if (theme === 'system') {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    root.classList.add(isDark ? 'dark' : 'light');
-  } else {
-    root.classList.add(theme);
-  }
+  root.classList.add(theme);
 }
 
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
-      theme: 'system',
+      theme: 'light',
       sidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
 
       setTheme: (theme) => {
@@ -51,11 +46,3 @@ export const useUiStore = create<UiState>()(
     },
   ),
 );
-
-// Keep system theme in sync when user changes OS preference
-if (typeof window !== 'undefined') {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    const { theme } = useUiStore.getState();
-    if (theme === 'system') applyThemeClass('system');
-  });
-}

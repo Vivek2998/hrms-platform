@@ -10,20 +10,16 @@
       content="HRMS Platform — Complete HR Management for Indian Businesses"
     />
     <title>HRMS Platform</title>
-    <!-- Apply saved theme before React hydrates to prevent white flash -->
+    <!-- Apply saved theme before React hydrates to prevent flash. Default is always light — never follow OS dark mode. -->
     <script>
       (function () {
         try {
           var stored = JSON.parse(localStorage.getItem('hrms-ui') || '{}');
-          var theme = (stored.state && stored.state.theme) || 'system';
-          var root = document.documentElement;
-          if (theme === 'system') {
-            var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            root.classList.add(isDark ? 'dark' : 'light');
-          } else {
-            root.classList.add(theme);
-          }
-        } catch (e) {}
+          var theme = (stored.state && stored.state.theme) || 'light';
+          document.documentElement.classList.add(theme === 'dark' ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.classList.add('light');
+        }
       })();
     </script>
   </head>

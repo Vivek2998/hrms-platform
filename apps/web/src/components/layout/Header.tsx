@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Moon, Sun, Monitor, LogOut, User, Loader2, Menu, Check, Search } from 'lucide-react';
+import { Bell, Moon, Sun, LogOut, User, Loader2, Menu, Check, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
@@ -158,13 +158,7 @@ export function Header() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" aria-label="Toggle theme">
-            {theme === 'dark' ? (
-              <Moon className="h-5 w-5" />
-            ) : theme === 'light' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Monitor className="h-5 w-5" />
-            )}
+            {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-36">
@@ -172,22 +166,15 @@ export function Header() {
             onClick={() => { setTheme('light'); }}
             className={theme === 'light' ? 'bg-accent font-medium' : ''}
           >
-            <Sun className="mr-2 h-4 w-4" /> Light
+            <Sun className="h-4 w-4" /> Light
             {theme === 'light' && <Check className="ml-auto h-4 w-4" />}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => { setTheme('dark'); }}
             className={theme === 'dark' ? 'bg-accent font-medium' : ''}
           >
-            <Moon className="mr-2 h-4 w-4" /> Dark
+            <Moon className="h-4 w-4" /> Dark
             {theme === 'dark' && <Check className="ml-auto h-4 w-4" />}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => { setTheme('system'); }}
-            className={theme === 'system' ? 'bg-accent font-medium' : ''}
-          >
-            <Monitor className="mr-2 h-4 w-4" /> System
-            {theme === 'system' && <Check className="ml-auto h-4 w-4" />}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -219,7 +206,7 @@ export function Header() {
               void navigate('/settings');
             }}
           >
-            <User className="mr-2 h-4 w-4" />
+            <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -227,7 +214,7 @@ export function Header() {
             onClick={handleLogout}
             className="text-destructive focus:text-destructive"
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="h-4 w-4" />
             Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
