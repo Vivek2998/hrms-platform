@@ -310,7 +310,7 @@ export default function RoomsPage() {
         </div>
         {isHr && (
           <Button onClick={() => setAddRoomOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Room
+            <Plus className="h-4 w-4" /> Add Room
           </Button>
         )}
       </div>

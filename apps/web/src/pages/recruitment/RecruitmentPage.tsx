@@ -98,7 +98,7 @@ function CreateJobDialog({ open, onClose }: { open: boolean; onClose: () => void
           <div className="space-y-1"><Label>Closing Date</Label><Input type="date" {...register('closingDate')} /></div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Post Job</Button>
+            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="h-4 w-4 animate-spin" />}Post Job</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -135,7 +135,7 @@ function ApplyDialog({ jobId, jobTitle, open, onClose }: { jobId: string; jobTit
           <div className="space-y-1"><Label>Cover Letter</Label><Textarea {...register('coverLetter')} rows={3} /></div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit</Button>
+            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="h-4 w-4 animate-spin" />}Submit</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -156,7 +156,7 @@ function JobOpeningsTab() {
     <div className="space-y-4">
       {isHR && (
         <div className="flex justify-end">
-          <Button size="sm" onClick={() => { setCreateOpen(true); }}><Plus className="mr-2 h-4 w-4" />Post Job</Button>
+          <Button size="sm" onClick={() => { setCreateOpen(true); }}><Plus className="h-4 w-4" />Post Job</Button>
         </div>
       )}
       {isLoading ? (

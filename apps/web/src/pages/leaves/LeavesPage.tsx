@@ -330,7 +330,7 @@ function LeaveBalancesPanel() {
             title={`Copy unused balance from ${year - 1} → ${year} for carry-forward leave types`}
             onClick={() => { carryMutation.mutate({ fromYear: year - 1, toYear: year }); }}
           >
-            <ArrowRightLeft className="mr-2 h-4 w-4" />
+            <ArrowRightLeft className="h-4 w-4" />
             {carryMutation.isPending ? 'Carrying…' : `Carry Forward from ${year - 1}`}
           </Button>
           <Button
@@ -339,7 +339,7 @@ function LeaveBalancesPanel() {
             disabled={initMutation.isPending}
             onClick={() => { initMutation.mutate(year); }}
           >
-            <Zap className="mr-2 h-4 w-4" />
+            <Zap className="h-4 w-4" />
             {initMutation.isPending ? 'Initializing…' : 'Initialize Balances'}
           </Button>
         </div>
@@ -388,7 +388,7 @@ function LeaveBalancesPanel() {
         <div className="flex flex-col items-center gap-3 rounded-lg border py-14">
           <p className="text-muted-foreground text-sm">No balance records for {year}.</p>
           <Button variant="outline" size="sm" onClick={() => { initMutation.mutate(year); }}>
-            <Zap className="mr-2 h-4 w-4" />
+            <Zap className="h-4 w-4" />
             Initialize for all employees
           </Button>
         </div>
@@ -604,7 +604,7 @@ export default function LeavesPage() {
           )}
           {section === 'types' && (
             <Button onClick={() => { setShowAddType(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Add Leave Type
             </Button>
           )}

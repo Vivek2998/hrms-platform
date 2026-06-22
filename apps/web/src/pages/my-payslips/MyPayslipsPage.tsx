@@ -136,13 +136,13 @@ function PayslipDetailDialog({
 
             <div className="flex gap-2">
               <Button className="flex-1" variant="outline" onClick={() => printPayslip(payslip)}>
-                <Printer className="mr-2 h-4 w-4" />
+                <Printer className="h-4 w-4" />
                 Print / Save PDF
               </Button>
               {payslip.pdfUrl && (
                 <Button asChild className="flex-1" variant="outline">
                   <a href={payslip.pdfUrl} target="_blank" rel="noreferrer">
-                    <Download className="mr-2 h-4 w-4" />
+                    <Download className="h-4 w-4" />
                     Download PDF
                   </a>
                 </Button>

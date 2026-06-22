@@ -63,7 +63,7 @@ export default function ReferralPage() {
           <p className="text-muted-foreground text-sm">Refer great people to your team and earn rewards</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Refer Someone
+          <Plus className="h-4 w-4" /> Refer Someone
         </Button>
       </div>
 

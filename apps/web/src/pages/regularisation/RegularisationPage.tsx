@@ -209,7 +209,7 @@ export default function RegularisationPage() {
           </p>
         </div>
         <Button onClick={() => { setShowApply(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           New Request
         </Button>
       </div>

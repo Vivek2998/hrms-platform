@@ -26,7 +26,7 @@ export default function EmployeesPage() {
           <p className="text-muted-foreground">{data?.meta.total ?? '—'} total employees</p>
         </div>
         <Button onClick={() => { setShowAdd(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Add Employee
         </Button>
       </div>

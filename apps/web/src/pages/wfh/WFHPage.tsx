@@ -61,7 +61,7 @@ export default function WFHPage() {
           <p className="text-muted-foreground text-sm">Request WFH days — auto-marks attendance on approval</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Request WFH
+          <Plus className="h-4 w-4" /> Request WFH
         </Button>
       </div>
 

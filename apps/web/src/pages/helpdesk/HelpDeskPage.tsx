@@ -162,7 +162,7 @@ function CreateDialog({ open, onClose }: { open: boolean; onClose: () => void })
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Submit
             </Button>
           </div>
@@ -299,7 +299,7 @@ function TicketDetailDialog({
                     onClick={submitComment}
                     disabled={addingComment || !comment.trim()}
                   >
-                    {addingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {addingComment && <Loader2 className="h-4 w-4 animate-spin" />}
                     Add Comment
                   </Button>
                 </div>
@@ -329,7 +329,7 @@ export default function HelpDeskPage() {
           </p>
         </div>
         <Button onClick={() => { setShowCreate(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           New Ticket
         </Button>
       </div>

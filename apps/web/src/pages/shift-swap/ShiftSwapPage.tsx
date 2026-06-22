@@ -74,7 +74,7 @@ export default function ShiftSwapPage() {
           <p className="text-muted-foreground text-sm">Request shift swaps with colleagues</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Request Swap
+          <Plus className="h-4 w-4" /> Request Swap
         </Button>
       </div>
 

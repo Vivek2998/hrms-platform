@@ -460,7 +460,7 @@ export default function EmployeeDetailPage() {
               {employee.status}
             </Badge>
             <Button className="ml-auto" onClick={() => { setShowEdit(true); }}>
-              <Pencil className="mr-2 h-4 w-4" />
+              <Pencil className="h-4 w-4" />
               Edit
             </Button>
           </>

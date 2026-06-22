@@ -147,7 +147,7 @@ function CreateCycleDialog({ open, onClose }: { open: boolean; onClose: () => vo
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Create
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}Create
             </Button>
           </DialogFooter>
         </form>
@@ -251,7 +251,7 @@ function AddGoalDialog({
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Add Goal
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}Add Goal
             </Button>
           </DialogFooter>
         </form>
@@ -712,8 +712,8 @@ function TeamOverviewTab({ cycleId }: { cycleId: string | null }) {
           disabled={initializing}
         >
           {initializing
-            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            : <RefreshCw className="mr-2 h-4 w-4" />}
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <RefreshCw className="h-4 w-4" />}
           Initialize All Reviews
         </Button>
       </div>
@@ -922,7 +922,7 @@ function GoalsTab({ cycleId, isManagerView }: { cycleId: string | null; isManage
             setAddOpen(true);
           }}
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           {isManagerView ? 'Add / Assign Goal' : 'Add Goal'}
         </Button>
       </div>
@@ -1157,7 +1157,7 @@ function ReviewsTab({ cycleId }: { cycleId: string | null }) {
                       }
                     }}
                   >
-                    {selfPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {selfPending && <Loader2 className="h-4 w-4 animate-spin" />}
                     Submit Self Review
                   </Button>
                 </div>
@@ -1203,7 +1203,7 @@ function ReviewsTab({ cycleId }: { cycleId: string | null }) {
                       }
                     }}
                   >
-                    {managerPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {managerPending && <Loader2 className="h-4 w-4 animate-spin" />}
                     Submit Manager Review
                   </Button>
                 </div>
@@ -1293,7 +1293,7 @@ function PeerFeedbackTab({ cycleId }: { cycleId: string | null }) {
               }
             }}
           >
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Submit Feedback
           </Button>
         </CardContent>
@@ -1370,7 +1370,7 @@ function CyclesTab({
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />New Cycle
+          <Plus className="h-4 w-4" />New Cycle
         </Button>
       </div>
       {isLoading ? (

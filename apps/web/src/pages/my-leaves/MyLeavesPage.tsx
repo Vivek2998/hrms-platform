@@ -214,7 +214,7 @@ export default function MyLeavesPage() {
           <p className="text-muted-foreground">View your leave balance and apply for leave</p>
         </div>
         <Button onClick={() => { setShowApply(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Apply Leave
         </Button>
       </div>

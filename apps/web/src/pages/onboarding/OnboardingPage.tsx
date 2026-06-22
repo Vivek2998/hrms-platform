@@ -190,7 +190,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Create Template
             </Button>
           </div>
@@ -258,7 +258,7 @@ function AssignDialog({ open, onClose }: { open: boolean; onClose: () => void })
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={onSubmit} disabled={isPending || !templateId || !employeeId}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Assign
             </Button>
           </div>
@@ -379,13 +379,13 @@ export default function OnboardingPage() {
           <div className="flex gap-2">
             {tab === 'templates' && (
               <Button variant="outline" onClick={() => { setShowCreate(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 New Template
               </Button>
             )}
             {tab === 'assignments' && (
               <Button onClick={() => { setShowAssign(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 Assign Onboarding
               </Button>
             )}

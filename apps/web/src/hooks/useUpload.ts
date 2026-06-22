@@ -7,7 +7,7 @@ interface UploadResult {
   publicId: string;
 }
 
-export function useUploadFile(folder: 'avatars' | 'documents' | 'logos' = 'documents') {
+export function useUploadFile(folder: 'avatars' | 'documents' | 'logos' | 'backgrounds' = 'documents') {
   return useMutation({
     mutationFn: async (file: File): Promise<UploadResult> => {
       const form = new FormData();

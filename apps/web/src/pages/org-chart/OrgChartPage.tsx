@@ -326,7 +326,7 @@ function AssignEmployeeDialog({ open, positionName, designationId, onClose }: {
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button disabled={!selectedEmpId || isPending} onClick={handleAssign}>
-            {isPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}Assign
+            {isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}Assign
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -833,7 +833,7 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowIndustryModal(false)}>Cancel</Button>
               <Button disabled={seeding} onClick={handleConfirmReinit}>
-                {seeding && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}Initialize
+                {seeding && <RefreshCw className="h-4 w-4 animate-spin" />}Initialize
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -870,7 +870,7 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowIndustryModal(false)}>Cancel</Button>
               <Button disabled={submitting} onClick={handleSubmitRequest}>
-                {submitting && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}Submit Request
+                {submitting && <RefreshCw className="h-4 w-4 animate-spin" />}Submit Request
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -902,7 +902,7 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowApproveModal(false)}>Cancel</Button>
               <Button disabled={approving} className="bg-green-600 hover:bg-green-700 text-white" onClick={handleApprove}>
-                {approving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                {approving && <RefreshCw className="h-4 w-4 animate-spin" />}
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />Approve
               </Button>
             </DialogFooter>
@@ -931,7 +931,7 @@ export default function OrgChartPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
               <Button variant="destructive" disabled={rejecting} onClick={handleReject}>
-                {rejecting && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                {rejecting && <RefreshCw className="h-4 w-4 animate-spin" />}
                 <XCircle className="mr-1.5 h-4 w-4" />Reject Request
               </Button>
             </DialogFooter>

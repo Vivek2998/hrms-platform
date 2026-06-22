@@ -372,7 +372,7 @@ export default function TaxDeclarationPage() {
                       onClick={handleSave}
                       disabled={saveDeclaration.isPending}
                     >
-                      <Save className="mr-2 h-4 w-4" />
+                      <Save className="h-4 w-4" />
                       {saveDeclaration.isPending ? 'Saving…' : 'Save Draft'}
                     </Button>
                     {current && (
@@ -381,7 +381,7 @@ export default function TaxDeclarationPage() {
                         onClick={handleSubmit}
                         disabled={submitDeclaration.isPending}
                       >
-                        <Send className="mr-2 h-4 w-4" />
+                        <Send className="h-4 w-4" />
                         {submitDeclaration.isPending ? 'Submitting…' : 'Submit to HR'}
                       </Button>
                     )}

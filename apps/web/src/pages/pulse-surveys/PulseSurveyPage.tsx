@@ -184,7 +184,7 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Create Survey
             </Button>
           </div>
@@ -275,7 +275,7 @@ function FillSurveyDialog({ surveyId, onClose }: { surveyId: string | null; onCl
         <div className="flex justify-end gap-2 pt-2 border-t">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={submit} disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Submit Response
           </Button>
         </div>
@@ -361,7 +361,7 @@ export default function PulseSurveyPage() {
         </div>
         {isHR && (
           <Button onClick={() => { setShowCreate(true); }}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             New Survey
           </Button>
         )}

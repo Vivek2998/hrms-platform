@@ -187,9 +187,9 @@ export function DocumentUploadDialog({ open, onOpenChange, employeeId, personalO
           </Button>
           <Button onClick={handleSubmit} disabled={!file || !docName.trim() || isPending}>
             {isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Uploading…</>
+              <><Loader2 className="h-4 w-4 animate-spin" />Uploading…</>
             ) : (
-              <><Upload className="mr-2 h-4 w-4" />Upload</>
+              <><Upload className="h-4 w-4" />Upload</>
             )}
           </Button>
         </DialogFooter>

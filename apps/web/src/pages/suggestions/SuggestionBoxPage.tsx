@@ -105,7 +105,7 @@ function SubmitDialog({ open, onClose }: { open: boolean; onClose: () => void })
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Submit
             </Button>
           </div>
@@ -181,7 +181,7 @@ function RespondDialog({
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Save Response
             </Button>
           </div>
@@ -209,7 +209,7 @@ export default function SuggestionBoxPage() {
         </div>
         {!isHR && (
           <Button onClick={() => { setShowSubmit(true); }}>
-            <Lightbulb className="mr-2 h-4 w-4" />
+            <Lightbulb className="h-4 w-4" />
             Submit Suggestion
           </Button>
         )}

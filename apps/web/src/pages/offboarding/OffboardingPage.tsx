@@ -109,7 +109,7 @@ function CreateTemplateDialog({ open, onClose }: { open: boolean; onClose: () =>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Create</Button>
+            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="h-4 w-4 animate-spin" />}Create</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -165,7 +165,7 @@ function AssignDialog({ open, onClose }: { open: boolean; onClose: () => void })
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isPending || !watch('employeeId') || !watch('templateId')}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Initiate
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}Initiate
             </Button>
           </DialogFooter>
         </form>
@@ -243,7 +243,7 @@ function ExitInterviewDialog({ assignmentId, open, onClose }: { assignmentId: st
             <div className="space-y-1"><Label>Suggestions for Improvement</Label><Textarea {...register('suggestions')} rows={3} /></div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Submit</Button>
+              <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="h-4 w-4 animate-spin" />}Submit</Button>
             </DialogFooter>
           </form>
         )}
@@ -334,7 +334,7 @@ function AssignmentsTab() {
     <div className="space-y-4">
       {isHR && (
         <div className="flex justify-end">
-          <Button size="sm" onClick={() => { setAssignOpen(true); }}><Plus className="mr-2 h-4 w-4" />Initiate Offboarding</Button>
+          <Button size="sm" onClick={() => { setAssignOpen(true); }}><Plus className="h-4 w-4" />Initiate Offboarding</Button>
         </div>
       )}
       {isLoading ? (
@@ -395,7 +395,7 @@ function TemplatesTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => { setCreateOpen(true); }}><Plus className="mr-2 h-4 w-4" />New Template</Button>
+        <Button size="sm" onClick={() => { setCreateOpen(true); }}><Plus className="h-4 w-4" />New Template</Button>
       </div>
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="bg-muted h-20 animate-pulse rounded-lg" />)}</div>

@@ -321,7 +321,7 @@ export default function SalaryStructurePage() {
           </p>
         </div>
         <Button onClick={openAdd}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Add Component
         </Button>
       </div>
@@ -352,7 +352,7 @@ export default function SalaryStructurePage() {
           </CardHeader>
           <CardContent>
             <Button variant="outline" onClick={openAdd}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Add First Component
             </Button>
           </CardContent>
