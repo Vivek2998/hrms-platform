@@ -113,9 +113,13 @@ export function payrollRoutes(app: FastifyInstance) {
 
   // POST /payroll/runs/:id/process  (calculate and finalize)
   app.post('/payroll/runs/:id/process', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const { id } = req.params as { id: string };
-    const run = await processPayrollRun(req.user.orgId, id, req.user.sub, app.prisma);
-    return reply.send(ok(run));
+    // BUG-M02: result includes skippedEmployees so HR knows who was excluded
+    const result = await processPayrollRun(req.user.orgId, id, req.user.sub, app.prisma);
+    return reply.send(ok(result));
   });
 
   // GET /payroll/runs/:id/payslips  (all payslips for a specific run)

@@ -52,6 +52,7 @@ const registerSchema = z.object({
     .regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex colour e.g. #3B82F6')
     .optional(),
   sidebarStyle: z.enum(['light', 'dark', 'branded']).optional(),
+  bgImageUrl: z.string().url('Must be a valid URL').optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -96,6 +97,7 @@ export function authRoutes(app: FastifyInstance) {
       industryType: input.industryType,
       primaryColor: input.primaryColor,
       sidebarStyle: input.sidebarStyle,
+      bgImageUrl:   input.bgImageUrl,
     });
 
     const jwtPayload = { sub: admin.id, orgId: org.id, role: admin.role, orgPlan: org.plan };

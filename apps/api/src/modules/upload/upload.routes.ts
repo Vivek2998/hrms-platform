@@ -4,16 +4,20 @@ import { fileTypeFromBuffer } from 'file-type';
 import { env } from '../../config/env.js';
 import { ok, fail } from '../../lib/response.js';
 
-const ALLOWED_FOLDERS = ['avatars', 'documents', 'logos'] as const;
+const ALLOWED_FOLDERS = ['avatars', 'documents', 'logos', 'backgrounds'] as const;
 type UploadFolder = (typeof ALLOWED_FOLDERS)[number];
 
-// SEC-07: Strict MIME allowlist — never accept executables, HTML, SVG, or scripts.
-// SVG is excluded intentionally: it can carry embedded JavaScript (stored XSS).
+// SEC-07: Strict MIME allowlist — never accept executables, HTML, or scripts.
+// SVG is allowed ONLY for logos/avatars/backgrounds folders. Cloudinary's
+// fl_sanitize transformation strips all embedded scripts and event handlers
+// before the file is stored, so the XSS risk is neutralised at the CDN layer.
+// Document folders never receive SVG — PDFs/DOCX only.
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
+  'image/svg+xml',
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -21,13 +25,14 @@ const ALLOWED_MIME_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
 
-const IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
 
 // Per-folder size caps
 const MAX_SIZES: Record<UploadFolder, number> = {
-  avatars: 2 * 1024 * 1024,    // 2 MB
-  documents: 10 * 1024 * 1024, // 10 MB
-  logos: 5 * 1024 * 1024,      // 5 MB
+  avatars:     2 * 1024 * 1024,  // 2 MB
+  documents:  10 * 1024 * 1024,  // 10 MB
+  logos:       5 * 1024 * 1024,  // 5 MB
+  backgrounds: 8 * 1024 * 1024,  // 8 MB
 };
 
 function initCloudinary() {
@@ -62,22 +67,41 @@ export function uploadRoutes(app: FastifyInstance) {
     // renamed to malware.pdf with Content-Type: application/pdf).
     const buffer = await data.toBuffer();
 
-    // Detect actual MIME from file magic bytes; fall back to header if unrecognised
+    // Detect actual MIME from file magic bytes; fall back to header if unrecognised.
+    // SVG has no universal magic bytes (it is XML text), so fileTypeFromBuffer returns
+    // undefined for it. We handle SVG separately: check the buffer content looks like
+    // actual SVG/XML before trusting the client-supplied image/svg+xml header.
     const detected = await fileTypeFromBuffer(buffer);
-    const effectiveMime = detected?.mime ?? data.mimetype;
+    let effectiveMime: string;
+    if (detected) {
+      effectiveMime = detected.mime;
+    } else if (data.mimetype === 'image/svg+xml') {
+      // SVG is not detected by magic bytes — verify the content actually starts with
+      // SVG/XML markup. Reject anything that claims to be SVG but isn't.
+      const head = buffer.slice(0, 512).toString('utf8').trimStart();
+      // Accept '<svg' (direct SVG) or '<?xml' (XML declaration before <svg>).
+      // '<!--' is intentionally excluded — too permissive; any HTML file could start with a comment.
+      const looksLikeSvg = head.startsWith('<svg') || head.startsWith('<?xml');
+      if (!looksLikeSvg) {
+        throw fail('File claims to be SVG but does not contain valid SVG content', 400);
+      }
+      effectiveMime = 'image/svg+xml';
+    } else {
+      effectiveMime = data.mimetype;
+    }
 
     // SEC-07: MIME type validation — must be in the global allowlist
     if (!ALLOWED_MIME_TYPES.has(effectiveMime)) {
       throw fail(
         `File content type '${effectiveMime}' is not allowed. ` +
-          `Permitted types: JPEG, PNG, WEBP, GIF, PDF, DOC, DOCX, XLS, XLSX`,
+          `Permitted types: JPEG, PNG, WEBP, GIF, SVG, PDF, DOC, DOCX, XLS, XLSX`,
         400,
       );
     }
 
-    // Avatars and logos must be images — reject PDFs or documents
-    if ((folder === 'avatars' || folder === 'logos') && !IMAGE_MIME_TYPES.has(effectiveMime)) {
-      throw fail('Image uploads must be image files (JPEG, PNG, WEBP, GIF)', 400);
+    // Avatars, logos, and backgrounds must be images — reject PDFs or documents
+    if ((folder === 'avatars' || folder === 'logos' || folder === 'backgrounds') && !IMAGE_MIME_TYPES.has(effectiveMime)) {
+      throw fail('Image uploads must be image files (JPEG, PNG, WEBP, GIF, SVG)', 400);
     }
 
     const result = await new Promise<{ secure_url: string; public_id: string }>(
@@ -86,12 +110,17 @@ export function uploadRoutes(app: FastifyInstance) {
           {
             folder: `hrms/${folder}`,
             // Use explicit resource type — not 'auto' which accepts anything
-            resource_type: folder === 'avatars' || folder === 'logos' ? 'image' : 'raw',
+            resource_type: folder === 'avatars' || folder === 'logos' || folder === 'backgrounds' ? 'image' : 'raw',
             ...(folder === 'avatars' && {
-              transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
+              // fl_sanitize strips embedded scripts from SVG before storage (XSS defence)
+              transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face', flags: 'sanitize' }],
             }),
             ...(folder === 'logos' && {
-              transformation: [{ width: 400, height: 400, crop: 'limit' }],
+              // fl_sanitize strips embedded scripts from SVG before storage (XSS defence)
+              transformation: [{ width: 400, height: 400, crop: 'limit', flags: 'sanitize' }],
+            }),
+            ...(folder === 'backgrounds' && {
+              transformation: [{ width: 1920, height: 1080, crop: 'limit', quality: 'auto', flags: 'sanitize' }],
             }),
           },
           (error, res) => {

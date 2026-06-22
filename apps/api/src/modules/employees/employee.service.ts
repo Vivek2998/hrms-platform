@@ -58,6 +58,38 @@ const EMPLOYEE_SELECT = {
   officeLocation: { select: { id: true, name: true } },
 } satisfies Prisma.EmployeeSelect;
 
+// Redacted select for MANAGER role — omits PII and financial fields
+const EMPLOYEE_SELECT_REDACTED = {
+  id: true,
+  organizationId: true,
+  employeeCode: true,
+  firstName: true,
+  lastName: true,
+  displayName: true,
+  workEmail: true,
+  phone: true,
+  role: true,
+  status: true,
+  employmentType: true,
+  designation: true,
+  designationId: true,
+  previousEmployeeCode: true,
+  departmentId: true,
+  teamId: true,
+  managerId: true,
+  avatarUrl: true,
+  dateOfJoining: true,
+  dateOfConfirmation: true,
+  noticePeriodDays: true,
+  createdAt: true,
+  updatedAt: true,
+  department: { select: { id: true, name: true } },
+  team: { select: { id: true, name: true } },
+  manager: { select: { id: true, firstName: true, lastName: true } },
+  officeLocationId: true,
+  officeLocation: { select: { id: true, name: true } },
+} satisfies Prisma.EmployeeSelect;
+
 // BUG-06 FIX: Atomic employee code generation.
 //
 // Old approach: count employees, add 1 → race condition when two requests
@@ -79,7 +111,9 @@ async function generateEmployeeCode(prisma: PrismaClient, organizationId: string
   return `${employeeCodePrefix}-${employeeSequence}`;
 }
 
-export async function listEmployees(orgId: string, query: EmployeeListQuery, prisma: PrismaClient) {
+export async function listEmployees(orgId: string, query: EmployeeListQuery, prisma: PrismaClient, role?: string) {
+  const selectFields = role === 'MANAGER' ? EMPLOYEE_SELECT_REDACTED : EMPLOYEE_SELECT;
+
   const where: Prisma.EmployeeWhereInput = {
     organizationId: orgId,
     deletedAt: null,
@@ -99,9 +133,9 @@ export async function listEmployees(orgId: string, query: EmployeeListQuery, pri
   const [employees, total] = await prisma.$transaction([
     prisma.employee.findMany({
       where,
-      select: EMPLOYEE_SELECT,
+      select: selectFields,
       ...paginationArgs(query),
-      orderBy: { createdAt: query.sortOrder },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.employee.count({ where }),
   ]);
@@ -109,10 +143,11 @@ export async function listEmployees(orgId: string, query: EmployeeListQuery, pri
   return paginated(employees, query.page, query.limit, total);
 }
 
-export async function getEmployee(id: string, orgId: string, prisma: PrismaClient) {
+export async function getEmployee(id: string, orgId: string, prisma: PrismaClient, role?: string) {
+  const selectFields = role === 'MANAGER' ? EMPLOYEE_SELECT_REDACTED : EMPLOYEE_SELECT;
   const employee = await prisma.employee.findFirst({
     where: { id, organizationId: orgId, deletedAt: null },
-    select: EMPLOYEE_SELECT,
+    select: selectFields,
   });
   if (!employee) throw fail('Employee not found', 404);
   return employee;

@@ -58,6 +58,18 @@ export function orgThemeRoutes(app: FastifyInstance) {
     return reply.send(ok({ themeConfig, pendingRequest }));
   });
 
+  // PATCH /org/theme/background — set bg image directly (initial setup, no super-admin gate)
+  app.patch('/org/theme/background', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
+    const { bgImageUrl } = z.object({ bgImageUrl: z.string().url().nullable() }).parse(req.body);
+    await app.prisma.orgThemeConfig.upsert({
+      where: { organizationId: req.user.orgId },
+      create: { organizationId: req.user.orgId, bgImageUrl: bgImageUrl ?? undefined, appliedById: req.user.sub },
+      update: { bgImageUrl },
+    });
+    return reply.send(ok({ bgImageUrl }));
+  });
+
   // POST /org/theme/request — org admin submits a theme change request
   app.post('/org/theme/request', auth, async (req, reply) => {
     const { orgId, sub: employeeId, role } = req.user;

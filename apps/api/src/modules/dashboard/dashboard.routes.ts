@@ -57,24 +57,35 @@ export function dashboardRoutes(app: FastifyInstance) {
     const thirtyDaysAgo = new Date(Date.UTC(todayYear, todayMonth, todayDay - 30));
 
     // ── Birthdays: today + next 6 days (7-day window) ──────────
-    const empWithDob = await app.prisma.employee.findMany({
-      where: { organizationId: orgId, deletedAt: null, status: 'ACTIVE', dateOfBirth: { not: null } },
-      select: { id: true, firstName: true, lastName: true, designation: true, avatarUrl: true, dateOfBirth: true },
-    });
-    const today00 = new Date(Date.UTC(todayYear, todayMonth, todayDay));
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const birthdays = empWithDob
-      .map((e) => {
-        const dob = new Date(e.dateOfBirth!);
-        let nextBday = new Date(Date.UTC(todayYear, dob.getUTCMonth(), dob.getUTCDate()));
-        if (nextBday < today00) {
-          nextBday = new Date(Date.UTC(todayYear + 1, dob.getUTCMonth(), dob.getUTCDate()));
-        }
-        const daysUntil = Math.round((nextBday.getTime() - today00.getTime()) / msPerDay);
-        return { ...e, daysUntil };
-      })
-      .filter((e) => e.daysUntil <= 6)
-      .sort((a, b) => a.daysUntil - b.daysUntil);
+    // BUG-M03: Use raw SQL to filter by month+day in DB instead of loading
+    // all employees and filtering in Node.js (was O(N) memory per request).
+    const upcomingDays: Array<{ month: number; day: number; daysUntil: number }> = [];
+    for (let offset = 0; offset <= 6; offset++) {
+      const d = new Date(Date.UTC(todayYear, todayMonth, todayDay + offset));
+      upcomingDays.push({ month: d.getUTCMonth() + 1, day: d.getUTCDate(), daysUntil: offset });
+    }
+
+    const caseExpr = upcomingDays
+      .map((d) => `WHEN EXTRACT(MONTH FROM e."dateOfBirth") = ${d.month} AND EXTRACT(DAY FROM e."dateOfBirth") = ${d.day} THEN ${d.daysUntil}`)
+      .join(' ');
+    const orExpr = upcomingDays
+      .map((d) => `(EXTRACT(MONTH FROM e."dateOfBirth") = ${d.month} AND EXTRACT(DAY FROM e."dateOfBirth") = ${d.day})`)
+      .join(' OR ');
+
+    const birthdays = await app.prisma.$queryRawUnsafe<
+      Array<{ id: string; firstName: string; lastName: string; designation: string | null; avatarUrl: string | null; dateOfBirth: Date; daysUntil: number }>
+    >(`
+      SELECT
+        e.id, e."firstName", e."lastName", e.designation, e."avatarUrl", e."dateOfBirth",
+        CASE ${caseExpr} ELSE 99 END AS "daysUntil"
+      FROM employees e
+      WHERE e."organizationId" = $1
+        AND e."deletedAt" IS NULL
+        AND e.status = 'ACTIVE'
+        AND e."dateOfBirth" IS NOT NULL
+        AND (${orExpr})
+      ORDER BY "daysUntil" ASC
+    `, orgId);
 
     // ── New joinees (last 30 days) ──────────────────────────────
     const newJoinees = await app.prisma.employee.findMany({
@@ -90,23 +101,29 @@ export function dashboardRoutes(app: FastifyInstance) {
     });
 
     // ── Work anniversaries (today's month + day, year before current) ──
-    const empWithJoining = await app.prisma.employee.findMany({
-      where: { organizationId: orgId, deletedAt: null, status: 'ACTIVE', dateOfJoining: { not: null } },
-      select: { id: true, firstName: true, lastName: true, designation: true, avatarUrl: true, dateOfJoining: true },
-    });
-    const workAnniversaries = empWithJoining
-      .filter((e) => {
-        const d = new Date(e.dateOfJoining!);
-        return (
-          d.getUTCMonth() === todayMonth &&
-          d.getUTCDate() === todayDay &&
-          d.getUTCFullYear() < todayYear
-        );
-      })
-      .map((e) => ({
-        ...e,
-        years: todayYear - new Date(e.dateOfJoining!).getUTCFullYear(),
-      }));
+    // Use raw SQL with EXTRACT so the DB filters — avoids loading every active
+    // employee into Node.js memory just to match today's month+day.
+    const workAnniversaries = await app.prisma.$queryRawUnsafe<
+      Array<{ id: string; firstName: string; lastName: string; designation: string | null; avatarUrl: string | null; dateOfJoining: Date; years: number }>
+    >(`
+      SELECT
+        e.id,
+        e."firstName",
+        e."lastName",
+        e.designation,
+        e."avatarUrl",
+        e."dateOfJoining",
+        (${todayYear} - EXTRACT(YEAR FROM e."dateOfJoining"))::int AS years
+      FROM employees e
+      WHERE e."organizationId" = $1
+        AND e."deletedAt" IS NULL
+        AND e.status = 'ACTIVE'
+        AND e."dateOfJoining" IS NOT NULL
+        AND EXTRACT(MONTH FROM e."dateOfJoining") = ${todayMonth + 1}
+        AND EXTRACT(DAY   FROM e."dateOfJoining") = ${todayDay}
+        AND EXTRACT(YEAR  FROM e."dateOfJoining") < ${todayYear}
+      ORDER BY years DESC
+    `, orgId);
 
     // ── My pending requests (employee self-view) ────────────────
     let myPendingRequests = null;

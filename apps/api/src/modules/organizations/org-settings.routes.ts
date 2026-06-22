@@ -43,11 +43,12 @@ export function orgSettingsRoutes(app: FastifyInstance) {
       currency: z.string().optional(),
       website: z.string().url().optional().nullable(),
       phone: z.string().optional().nullable(),
+      logoUrl: z.string().url().optional().nullable(),
     }).parse(req.body);
     const updated = await app.prisma.organization.update({
       where: { id: req.user.orgId },
       data: input,
-      select: { id: true, industryType: true, timezone: true },
+      select: { id: true, industryType: true, timezone: true, logoUrl: true },
     });
     return reply.send(ok(updated));
   });

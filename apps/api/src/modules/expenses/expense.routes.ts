@@ -39,11 +39,19 @@ export function expenseRoutes(app: FastifyInstance) {
   // HR: list all claims for org
   app.get('/expenses', auth, async (req, reply) => {
     if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
-    const qs = (req.query as { status?: string; employeeId?: string });
+
+    // QUALITY-03: Validate status and employeeId at the boundary to avoid `as any` casts
+    const EXPENSE_STATUSES = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'PAID'] as const;
+    const querySchema = z.object({
+      status: z.enum(EXPENSE_STATUSES).optional(),
+      employeeId: z.string().uuid().optional(),
+    });
+    const qs = querySchema.parse(req.query);
+
     const claims = await app.prisma.expenseClaim.findMany({
       where: {
         organizationId: req.user.orgId,
-        ...(qs.status ? { status: qs.status as any } : {}),
+        ...(qs.status ? { status: qs.status } : {}),
         ...(qs.employeeId ? { employeeId: qs.employeeId } : {}),
       },
       include: {

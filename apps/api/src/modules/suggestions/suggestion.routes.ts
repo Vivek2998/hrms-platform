@@ -44,10 +44,12 @@ export function suggestionRoutes(app: FastifyInstance) {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Hide employee info for anonymous suggestions when HR views them
+    // BUG-L04: Mask employeeId AND employee relation for anonymous suggestions.
+    // Spreading ...s exposes the employeeId field even when employee relation is nulled.
     const result = suggestions.map((s) => ({
       ...s,
-      employee: s.isAnonymous && isHR ? null : s.employee,
+      employeeId: s.isAnonymous ? null : s.employeeId,
+      employee: s.isAnonymous ? null : s.employee,
     }));
 
     return reply.status(200).send(ok(result));

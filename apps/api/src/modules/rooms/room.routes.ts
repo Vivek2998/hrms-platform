@@ -110,6 +110,7 @@ export function roomRoutes(app: FastifyInstance) {
     const start = new Date(body.startTime);
     const end = new Date(body.endTime);
     if (end <= start) throw fail('End time must be after start time', 400);
+    if (start < new Date()) throw fail('Cannot book a room in the past', 400);
 
     // Check room exists and belongs to org
     const room = await app.prisma.meetingRoom.findFirst({
@@ -122,33 +123,44 @@ export function roomRoutes(app: FastifyInstance) {
       throw fail(`Room capacity is ${room.capacity}`, 400);
     }
 
-    // Check for conflicts
-    const conflict = await app.prisma.roomBooking.findFirst({
-      where: {
-        roomId: body.roomId,
-        status: 'CONFIRMED',
-        OR: [
-          { startTime: { lt: end }, endTime: { gt: start } },
-        ],
-      },
-    });
-    if (conflict) throw fail('Room already booked for this time slot', 409);
+    // BUG-H04 + race-condition fix: conflict check AND booking creation run inside a
+    // single SERIALIZABLE transaction. Without this, two simultaneous requests for
+    // the same room/slot both read "no conflict" then both write — double-booking.
+    // Serializable isolation causes the losing transaction to retry; on retry it
+    // sees the winning booking as a conflict and throws 409.
+    const booking = await app.prisma.$transaction(
+      async (tx) => {
+        const conflict = await tx.roomBooking.findFirst({
+          where: {
+            roomId: body.roomId,
+            organizationId: req.user.orgId,
+            status: 'CONFIRMED',
+            AND: [
+              { startTime: { lt: end } },
+              { endTime: { gt: start } },
+            ],
+          },
+        });
+        if (conflict) throw fail('This room is already booked for the requested time slot. Please choose a different time.', 409);
 
-    const booking = await app.prisma.roomBooking.create({
-      data: {
-        organizationId: req.user.orgId,
-        roomId: body.roomId,
-        bookedById: req.user.sub,
-        title: body.title,
-        startTime: start,
-        endTime: end,
-        attendees: body.attendees,
-        notes: body.notes,
+        return tx.roomBooking.create({
+          data: {
+            organizationId: req.user.orgId,
+            roomId: body.roomId,
+            bookedById: req.user.sub,
+            title: body.title,
+            startTime: start,
+            endTime: end,
+            attendees: body.attendees,
+            notes: body.notes,
+          },
+          include: {
+            room: { select: { name: true, location: true } },
+          },
+        });
       },
-      include: {
-        room: { select: { name: true, location: true } },
-      },
-    });
+      { isolationLevel: 'Serializable' },
+    );
     return reply.status(201).send(ok(booking));
   });
 

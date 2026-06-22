@@ -17,6 +17,7 @@ export interface ProvisionInput {
   industryType?: string;
   primaryColor?: string;
   sidebarStyle?: string;
+  bgImageUrl?: string;
 }
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -129,22 +130,16 @@ export async function provisionOrganization(prisma: PrismaClient, input: Provisi
       await tx.salaryComponent.create({ data: { organizationId: org.id, ...c } });
     }
 
-    // If a primary colour was provided at signup, apply the theme immediately —
+    // If any theme preference was provided at signup, apply it immediately —
     // no super-admin approval needed for the initial setup.
-    if (input.primaryColor) {
+    const hasTheme = input.primaryColor || (input.sidebarStyle && input.sidebarStyle !== 'light') || input.bgImageUrl;
+    if (hasTheme) {
       await tx.orgThemeConfig.create({
         data: {
           organizationId: org.id,
-          primaryColor:   input.primaryColor,
+          ...(input.primaryColor  && { primaryColor:  input.primaryColor }),
+          ...(input.bgImageUrl    && { bgImageUrl:    input.bgImageUrl }),
           sidebarStyle:   input.sidebarStyle ?? 'light',
-          appliedById:    admin.id,
-        },
-      });
-    } else if (input.sidebarStyle && input.sidebarStyle !== 'light') {
-      await tx.orgThemeConfig.create({
-        data: {
-          organizationId: org.id,
-          sidebarStyle:   input.sidebarStyle,
           appliedById:    admin.id,
         },
       });

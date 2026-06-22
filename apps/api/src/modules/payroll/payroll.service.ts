@@ -53,23 +53,39 @@ export async function processPayrollRun(
   processedBy: string,
   prisma: PrismaClient,
 ) {
-  const run = await prisma.payrollRun.findFirst({
+  // BUG-H03: Atomic compare-and-swap to prevent concurrent double-processing.
+  // Two simultaneous requests could both pass a findFirst + status check, then
+  // both set status='PROCESSING' and compute duplicate payslips.
+  const runCheck = await prisma.payrollRun.findFirst({
     where: { id: payrollRunId, organizationId: orgId },
+  });
+  if (!runCheck) throw fail('Payroll run not found', 404);
+  if (runCheck.status !== 'DRAFT') throw fail('Only DRAFT payroll runs can be processed', 400);
+
+  // updateMany with status='DRAFT' in the WHERE is atomic — only one concurrent
+  // request can update the row; the other gets count=0 and returns 409.
+  const locked = await prisma.payrollRun.updateMany({
+    where: { id: payrollRunId, organizationId: orgId, status: 'DRAFT' },
+    data: { status: 'PROCESSING' },
+  });
+  if (locked.count === 0) {
+    throw fail('Payroll run is already being processed by another request', 409);
+  }
+
+  // Re-fetch with organization include (needed for PF/ESI/PT flags)
+  const run = await prisma.payrollRun.findUniqueOrThrow({
+    where: { id: payrollRunId },
     include: { organization: true },
   });
 
-  if (!run) throw fail('Payroll run not found', 404);
-  if (run.status !== 'DRAFT') throw fail('Only DRAFT payroll runs can be processed', 400);
-
-  await prisma.payrollRun.update({
-    where: { id: payrollRunId },
-    data: { status: 'PROCESSING' },
-  });
-
   try {
-    const monthStart  = new Date(run.year, run.month - 1, 1);
-    const monthEnd    = new Date(run.year, run.month, 0); // last calendar day of month
-    const daysInMonth = monthEnd.getDate();
+    // BUG-M01: Use Date.UTC so month boundaries are always midnight UTC,
+    // matching how @db.Date fields are stored in PostgreSQL. Using the local
+    // Date constructor on a UTC+5:30 server creates dates 5.5 hours offset
+    // from midnight UTC, which can include or exclude wrong days.
+    const monthStart  = new Date(Date.UTC(run.year, run.month - 1, 1));
+    const monthEnd    = new Date(Date.UTC(run.year, run.month, 0, 23, 59, 59, 999));
+    const daysInMonth = new Date(Date.UTC(run.year, run.month, 0)).getUTCDate();
 
     // ─── BUG-04 FIX: 4 parallel bulk queries instead of 2N+1 per-employee ──
     // Previously: every loop iteration fired 2 DB queries (salaryRevision +
@@ -129,13 +145,18 @@ export async function processPayrollRun(
     // Fix: iterate the month, skip Sun (0), Sat (6), and declared holidays.
     const holidayDateSet = new Set(holidays.map((h) => h.date.toISOString().slice(0, 10)));
     let calendarWorkingDays = 0;
+    // Build a Set of working-day date strings for use in presentDays filtering.
+    const workingDaySet = new Set<string>();
     {
       const cursor = new Date(Date.UTC(run.year, run.month - 1, 1));
       const end    = new Date(Date.UTC(run.year, run.month - 1, daysInMonth));
       while (cursor <= end) {
         const dow     = cursor.getUTCDay();
         const dateStr = cursor.toISOString().slice(0, 10);
-        if (dow !== 0 && dow !== 6 && !holidayDateSet.has(dateStr)) calendarWorkingDays++;
+        if (dow !== 0 && dow !== 6 && !holidayDateSet.has(dateStr)) {
+          calendarWorkingDays++;
+          workingDaySet.add(dateStr);
+        }
         cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
     }
@@ -146,18 +167,37 @@ export async function processPayrollRun(
     let totalNetPay     = 0;
     let processedCount  = 0;
 
-    // Build all payslip upserts first, then commit in one transaction (BUG-04)
-    const payslipOps: ReturnType<typeof prisma.payslip.upsert>[] = [];
+    // BUG-M02: Track employees skipped due to missing salary revision so HR is informed
+    const skippedEmployees: Array<{ id: string; employeeCode: string; firstName: string; lastName: string }> = [];
+
+    // BUG-H05: Collect upsert args (not promises) so we can run them inside an
+    // interactive transaction with chunking — avoids the 5-second array-form timeout.
+    const payslipArgs: Parameters<typeof prisma.payslip.upsert>[0][] = [];
 
     for (const emp of employees) {
       const revision = salaryRevisionMap.get(emp.id);
-      if (!revision) continue; // No salary structure configured for this employee — skip
+      if (!revision) {
+        // BUG-M02: Record who was skipped instead of silently continuing
+        skippedEmployees.push({
+          id: emp.id,
+          employeeCode: emp.employeeCode,
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+        });
+        continue;
+      }
 
       const attendance = attendanceMap.get(emp.id) ?? [];
 
-      // Present days (HALF_DAY counts as 0.5 towards attendance)
+      // Present days (HALF_DAY counts as 0.5 towards attendance).
+      // Only count records that fall on actual working days — an employee who
+      // punches in on a Saturday for comp-off should NOT reduce their LOP count
+      // because Saturday isn't in the attendance base (calendarWorkingDays).
       const presentDays = attendance
-        .filter((a) => ['PRESENT', 'LATE', 'WFH', 'HALF_DAY'].includes(a.status))
+        .filter((a) => {
+          const dateStr = (a.date as Date).toISOString().slice(0, 10);
+          return workingDaySet.has(dateStr) && ['PRESENT', 'LATE', 'WFH', 'HALF_DAY'].includes(a.status);
+        })
         .reduce((s, a) => s + (a.status === 'HALF_DAY' ? 0.5 : 1), 0);
 
       // ─── BUG-05 FIX: Use calendarWorkingDays as the attendance base ───────
@@ -236,19 +276,17 @@ export async function processPayrollRun(
         esiEmployer:     esi.employerContribution,
       };
 
-      payslipOps.push(
-        prisma.payslip.upsert({
-          where: {
-            organizationId_payrollRunId_employeeId: {
-              organizationId: orgId,
-              payrollRunId,
-              employeeId: emp.id,
-            },
+      payslipArgs.push({
+        where: {
+          organizationId_payrollRunId_employeeId: {
+            organizationId: orgId,
+            payrollRunId,
+            employeeId: emp.id,
           },
-          update: payslipData, // ← was `{}` before — now updates on re-run
-          create: payslipData,
-        }),
-      );
+        },
+        update: payslipData,
+        create: payslipData,
+      });
 
       totalGross      += grossAfterLop;
       totalDeductions += totalDeductionsForEmp;
@@ -256,27 +294,34 @@ export async function processPayrollRun(
       processedCount++;
     }
 
-    // ─── BUG-04 FIX: Commit all payslip upserts + run status in one shot ────
-    // Previously each upsert was fired inside the loop — N round-trips.
-    // Now everything is a single atomic transaction.
-    await prisma.$transaction([
-      ...payslipOps,
-      prisma.payrollRun.update({
-        where: { id: payrollRunId },
-        data: {
-          status:         'COMPLETED',
-          totalEmployees: processedCount,
-          totalGross,
-          totalDeductions,
-          totalNetPay,
-          processedBy,
-          processedAt:    new Date(),
-        },
-      }),
-    ]);
-    // ─────────────────────────────────────────────────────────────────────────
+    // BUG-H05: Chunked interactive transaction — avoids 5-second array-form timeout
+    // for large orgs (500+ employees). Processes payslips in batches of 50 and
+    // then commits the run status update in the same transaction.
+    await prisma.$transaction(
+      async (tx) => {
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < payslipArgs.length; i += CHUNK_SIZE) {
+          const chunk = payslipArgs.slice(i, i + CHUNK_SIZE);
+          await Promise.all(chunk.map((args) => tx.payslip.upsert(args)));
+        }
+        await tx.payrollRun.update({
+          where: { id: payrollRunId },
+          data: {
+            status:         'COMPLETED',
+            totalEmployees: processedCount,
+            totalGross,
+            totalDeductions,
+            totalNetPay,
+            processedBy,
+            processedAt:    new Date(),
+          },
+        });
+      },
+      { timeout: 120_000 }, // 2-minute timeout for large orgs
+    );
 
-    return await prisma.payrollRun.findUniqueOrThrow({ where: { id: payrollRunId } });
+    const completedRun = await prisma.payrollRun.findUniqueOrThrow({ where: { id: payrollRunId } });
+    return { run: completedRun, skippedEmployees };
   } catch (err) {
     // Mark run as FAILED so it can be retried once the underlying issue is fixed
     await prisma.payrollRun.update({

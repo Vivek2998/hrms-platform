@@ -91,8 +91,11 @@ export function leaveRoutes(app: FastifyInstance) {
     return reply.send(ok(leaveTypes));
   });
 
-  // POST /leave-types
+  // POST /leave-types  — HR and above only (BUG-C04)
   app.post('/leave-types', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const input = leaveTypeBodySchema.parse(req.body);
     const leaveType = await app.prisma.leaveType.create({
       data: { organizationId: req.user.orgId, ...input, code: input.code.toUpperCase() },
@@ -100,8 +103,11 @@ export function leaveRoutes(app: FastifyInstance) {
     return reply.status(201).send(ok(leaveType));
   });
 
-  // PATCH /leave-types/:id
+  // PATCH /leave-types/:id  — HR and above only (BUG-C04)
   app.patch('/leave-types/:id', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const { id } = req.params as { id: string };
     const input = leaveTypeBodySchema.partial().parse(req.body);
     const leaveType = await app.prisma.leaveType.update({
@@ -111,8 +117,11 @@ export function leaveRoutes(app: FastifyInstance) {
     return reply.send(ok(leaveType));
   });
 
-  // DELETE /leave-types/:id  (soft delete)
+  // DELETE /leave-types/:id  — HR and above only (BUG-C04)
   app.delete('/leave-types/:id', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const { id } = req.params as { id: string };
     await app.prisma.leaveType.update({
       where: { id, organizationId: req.user.orgId },
@@ -232,6 +241,11 @@ export function leaveRoutes(app: FastifyInstance) {
     if (input.session && from.getTime() !== to.getTime()) {
       throw fail('Half-day session requires start and end date to be the same', 400);
     }
+    // Leave requests that span two calendar years would deduct from the wrong year's
+    // balance — reject them so HR splits the request into two separate ones.
+    if (from.getUTCFullYear() !== to.getUTCFullYear()) {
+      throw fail('Leave requests cannot span two calendar years. Please split into separate requests.', 400);
+    }
 
     // BUG-02: Validate the leave type exists
     const leaveType = await app.prisma.leaveType.findFirst({
@@ -321,10 +335,16 @@ export function leaveRoutes(app: FastifyInstance) {
     return reply.status(201).send(ok(request));
   });
 
-  // PATCH /leaves/:id/approve  (manager/HR approve or reject)
+  // PATCH /leaves/:id/approve  (manager/HR approve or reject) — BUG-C03
   app.patch('/leaves/:id/approve', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
     const input = approveLeaveSchema.parse(req.body);
+
+    // Only managers and above can approve leaves
+    const APPROVER_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'];
+    if (!APPROVER_ROLES.includes(req.user.role)) {
+      throw fail('Forbidden — only managers can approve leave requests', 403);
+    }
 
     const request = await app.prisma.leaveRequest.findFirst({
       where: { id, organizationId: req.user.orgId, deletedAt: null },
@@ -336,6 +356,21 @@ export function leaveRoutes(app: FastifyInstance) {
 
     if (!request) throw fail('Leave request not found', 404);
     if (request.status !== 'PENDING') throw fail('Only pending requests can be actioned', 400);
+
+    // Managers can only approve their direct reports' leaves
+    if (req.user.role === 'MANAGER') {
+      const isDirectReport = await app.prisma.employee.findFirst({
+        where: {
+          id: request.employeeId,
+          managerId: req.user.sub,
+          organizationId: req.user.orgId,
+          deletedAt: null,
+        },
+      });
+      if (!isDirectReport) {
+        throw fail("Forbidden — you can only approve your direct reports' leaves", 403);
+      }
+    }
 
     // BUG-01 (part 2): Update balance atomically inside the same transaction
     await app.prisma.$transaction([
@@ -409,7 +444,27 @@ export function leaveRoutes(app: FastifyInstance) {
       throw fail('Cannot cancel this leave request', 400);
     }
 
-    // BUG-07: Reverse balance based on the current state of the request
+    // BUG-07: Reverse balance based on the current state of the request.
+    // Guard: verify the balance field we're about to decrement is >= totalDays
+    // so we never write a negative value (data inconsistency safeguard).
+    if (request.leaveType.isPaid) {
+      const balance = await app.prisma.leaveBalance.findFirst({
+        where: {
+          organizationId: req.user.orgId,
+          employeeId:     request.employeeId,
+          leaveTypeId:    request.leaveTypeId,
+          year:           request.fromDate.getUTCFullYear(),
+        },
+        select: { used: true, pending: true },
+      });
+      if (balance) {
+        const field = request.status === 'APPROVED' ? balance.used : balance.pending;
+        if (field < request.totalDays) {
+          throw fail('Cannot cancel: leave balance is inconsistent. Contact HR to resolve manually.', 409);
+        }
+      }
+    }
+
     await app.prisma.$transaction([
       app.prisma.leaveRequest.update({
         where: { id },
@@ -453,6 +508,22 @@ export function leaveRoutes(app: FastifyInstance) {
       throw fail('Only approved leave requests can be withdrawn — use cancel for pending requests', 400);
     }
 
+    // Guard: verify `used` balance is >= totalDays before decrementing.
+    if (request.leaveType.isPaid) {
+      const balance = await app.prisma.leaveBalance.findFirst({
+        where: {
+          organizationId: req.user.orgId,
+          employeeId:     request.employeeId,
+          leaveTypeId:    request.leaveTypeId,
+          year:           request.fromDate.getUTCFullYear(),
+        },
+        select: { used: true },
+      });
+      if (balance && balance.used < request.totalDays) {
+        throw fail('Cannot withdraw: leave balance is inconsistent. Contact HR to resolve manually.', 409);
+      }
+    }
+
     await app.prisma.$transaction([
       app.prisma.leaveRequest.update({
         where: { id },
@@ -490,6 +561,9 @@ export function leaveRoutes(app: FastifyInstance) {
     if (input.session && from.getTime() !== to.getTime()) {
       throw fail('Half-day session requires start and end date to be the same', 400);
     }
+    if (from.getUTCFullYear() !== to.getUTCFullYear()) {
+      throw fail('Leave requests cannot span two calendar years. Please split into separate requests.', 400);
+    }
 
     // BUG-08: Managers may only act on their direct reports
     if (req.user.role === 'MANAGER') {
@@ -523,6 +597,25 @@ export function leaveRoutes(app: FastifyInstance) {
 
     if (totalDays <= 0) {
       throw fail('The selected date range contains no working days', 400);
+    }
+
+    // Reject overlapping PENDING or APPROVED requests — same guard as self-service.
+    // Without this check a manager could create two overlapping leaves for the
+    // same employee, causing double pending-balance increments.
+    const overlapping = await app.prisma.leaveRequest.findFirst({
+      where: {
+        organizationId: req.user.orgId,
+        employeeId:     input.employeeId,
+        status:         { in: ['PENDING', 'APPROVED'] },
+        deletedAt:      null,
+        AND: [{ fromDate: { lte: to } }, { toDate: { gte: from } }],
+      },
+    });
+    if (overlapping) {
+      throw fail(
+        `This employee already has a ${overlapping.status.toLowerCase()} leave request overlapping these dates`,
+        409,
+      );
     }
 
     // Create request and update pending balance in one transaction
@@ -593,8 +686,11 @@ export function leaveRoutes(app: FastifyInstance) {
 
   // ─── Leave balance management (HR) ──────────────────────────────────────
 
-  // GET /leaves/balances  — all balances for org, grouped by employee
+  // GET /leaves/balances  — all balances for org, grouped by employee — HR and above only (BUG-C05)
   app.get('/leaves/balances', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const query = paginationSchema
       .extend({
         year:       z.coerce.number().int().optional(),
@@ -643,8 +739,11 @@ export function leaveRoutes(app: FastifyInstance) {
     return reply.send(paginated(employees, query.page, query.limit, total));
   });
 
-  // POST /leaves/balance/upsert  — set allocation for one employee+leaveType+year
+  // POST /leaves/balance/upsert  — HR and above only (BUG-C04)
   app.post('/leaves/balance/upsert', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const input = z
       .object({
         employeeId:  z.string().uuid(),
@@ -676,8 +775,11 @@ export function leaveRoutes(app: FastifyInstance) {
     return reply.send(ok(balance));
   });
 
-  // POST /leaves/balance/initialize  — bulk create balances for all active employees
+  // POST /leaves/balance/initialize  — HR and above only (BUG-C04)
   app.post('/leaves/balance/initialize', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const { year } = z.object({ year: z.coerce.number().int() }).parse(req.body);
 
     const [employees, leaveTypes] = await app.prisma.$transaction([
@@ -741,41 +843,53 @@ export function leaveRoutes(app: FastifyInstance) {
     let records = 0;
     let totalDaysCarried = 0;
 
-    // Batch all upserts in a single transaction for performance
+    // BUG-M04: Collect upsert args first, then execute in a chunked interactive
+    // transaction. Array-form $transaction times out at 5s for large orgs
+    // (e.g. 500 employees × 5 leave types = 2500 ops).
+    type CarryUpsertArgs = Parameters<typeof app.prisma.leaveBalance.upsert>[0];
+    const upsertArgs: CarryUpsertArgs[] = [];
+
+    for (const balance of fromBalances) {
+      const leaveType = leaveTypes.find((lt) => lt.id === balance.leaveTypeId);
+      if (!leaveType) continue;
+
+      const remaining = Math.max(0, balance.allocated - balance.used - balance.pending);
+      const carryDays = Math.min(remaining, leaveType.maxCarryForward);
+      if (carryDays === 0) continue;
+
+      records++;
+      totalDaysCarried += carryDays;
+
+      upsertArgs.push({
+        where: {
+          organizationId_employeeId_leaveTypeId_year: {
+            organizationId: req.user.orgId,
+            employeeId:     balance.employeeId,
+            leaveTypeId:    balance.leaveTypeId,
+            year:           toYear,
+          },
+        },
+        update: { allocated: { increment: carryDays } },
+        create: {
+          organizationId: req.user.orgId,
+          employeeId:     balance.employeeId,
+          leaveTypeId:    balance.leaveTypeId,
+          year:           toYear,
+          allocated:      leaveType.daysAllowed + carryDays,
+        },
+      });
+    }
+
+    const CHUNK = 100;
     await app.prisma.$transaction(
-      fromBalances.flatMap((balance) => {
-        const leaveType = leaveTypes.find((lt) => lt.id === balance.leaveTypeId);
-        if (!leaveType) return [];
-
-        const remaining = Math.max(0, balance.allocated - balance.used - balance.pending);
-        const carryDays = Math.min(remaining, leaveType.maxCarryForward);
-        if (carryDays === 0) return [];
-
-        records++;
-        totalDaysCarried += carryDays;
-
-        return [
-          app.prisma.leaveBalance.upsert({
-            where: {
-              organizationId_employeeId_leaveTypeId_year: {
-                organizationId: req.user.orgId,
-                employeeId:     balance.employeeId,
-                leaveTypeId:    balance.leaveTypeId,
-                year:           toYear,
-              },
-            },
-            // Add carry days on top of existing allocation
-            update: { allocated: { increment: carryDays } },
-            create: {
-              organizationId: req.user.orgId,
-              employeeId:     balance.employeeId,
-              leaveTypeId:    balance.leaveTypeId,
-              year:           toYear,
-              allocated:      leaveType.daysAllowed + carryDays,
-            },
-          }),
-        ];
-      }),
+      async (tx) => {
+        for (let i = 0; i < upsertArgs.length; i += CHUNK) {
+          await Promise.all(
+            upsertArgs.slice(i, i + CHUNK).map((args) => tx.leaveBalance.upsert(args)),
+          );
+        }
+      },
+      { timeout: 60_000 },
     );
 
     return reply.send(
