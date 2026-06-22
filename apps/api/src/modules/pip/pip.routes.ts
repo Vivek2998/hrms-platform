@@ -69,6 +69,9 @@ export async function pipRoutes(app: FastifyInstance) {
     if (!(MANAGER_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
     const input = createSchema.parse(req.body);
 
+    const employee = await app.prisma.employee.findFirst({ where: { id: input.employeeId, organizationId: req.user.orgId } });
+    if (!employee) throw fail('Employee not found', 404);
+
     const pip = await app.prisma.performanceImprovementPlan.create({
       data: {
         organizationId: req.user.orgId,
@@ -109,8 +112,11 @@ export async function pipRoutes(app: FastifyInstance) {
 
   // PATCH /pip/:id/goals/:goalId
   app.patch('/pip/:id/goals/:goalId', auth, async (req, reply) => {
-    const { goalId } = req.params as { id: string; goalId: string };
+    if (!(MANAGER_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
+    const { id, goalId } = req.params as { id: string; goalId: string };
     const { status } = z.object({ status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'ACHIEVED', 'MISSED']) }).parse(req.body);
+    const pip = await app.prisma.performanceImprovementPlan.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!pip) throw fail('PIP not found', 404);
     await app.prisma.pIPGoal.update({ where: { id: goalId }, data: { status } });
     return reply.send(ok({ goalId, status }));
   });
@@ -119,6 +125,8 @@ export async function pipRoutes(app: FastifyInstance) {
   app.post('/pip/:id/check-ins', auth, async (req, reply) => {
     if (!(MANAGER_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
+    const pip = await app.prisma.performanceImprovementPlan.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!pip) throw fail('PIP not found', 404);
     const input = z.object({ conductedAt: z.string(), notes: z.string().optional(), progress: z.string().optional() }).parse(req.body);
     const checkIn = await app.prisma.pIPCheckIn.create({
       data: { pipId: id, conductedAt: new Date(input.conductedAt), notes: input.notes, progress: input.progress },

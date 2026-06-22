@@ -80,6 +80,7 @@ export function compOffRoutes(app: FastifyInstance) {
 
   // PATCH /comp-offs/:id/review  (HR / Manager)
   app.patch('/comp-offs/:id/review', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
     const input = reviewSchema.parse(req.body);
 

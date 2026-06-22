@@ -69,6 +69,9 @@ export async function nineBoxRoutes(app: FastifyInstance) {
     if (!(MANAGER_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
     const input = upsertSchema.parse(req.body);
 
+    const employee = await app.prisma.employee.findFirst({ where: { id: input.employeeId, organizationId: req.user.orgId } });
+    if (!employee) throw fail('Employee not found', 404);
+
     const assessment = await app.prisma.nineBoxAssessment.upsert({
       where: {
         organizationId_cycleId_employeeId: {

@@ -20,13 +20,12 @@ export async function travelRoutes(app: FastifyInstance) {
 
   // GET /travel
   app.get('/travel', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
-    const isApprover = approverRoles.includes(role);
+    const isApprover = approverRoles.includes(req.user.role);
 
     const requests = await app.prisma.travelRequest.findMany({
       where: {
-        organizationId,
-        ...(!isApprover ? { employeeId } : {}),
+        organizationId: req.user.orgId,
+        ...(!isApprover ? { employeeId: req.user.sub } : {}),
       },
       include: {
         employee: {
@@ -43,13 +42,12 @@ export async function travelRoutes(app: FastifyInstance) {
 
   // POST /travel
   app.post('/travel', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, employeeId } = req.user as any;
     const body = travelSchema.parse(req.body);
 
     const request = await app.prisma.travelRequest.create({
       data: {
-        organizationId,
-        employeeId,
+        organizationId: req.user.orgId,
+        employeeId: req.user.sub,
         ...body,
         departureDate: new Date(body.departureDate),
         returnDate: body.returnDate ? new Date(body.returnDate) : undefined,
@@ -65,33 +63,31 @@ export async function travelRoutes(app: FastifyInstance) {
 
   // PATCH /travel/:id/approve
   app.patch('/travel/:id/approve', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
-    if (!approverRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!approverRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const { id } = req.params as any;
     const existing = await app.prisma.travelRequest.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId: req.user.orgId },
     });
     if (!existing) return reply.status(404).send({ error: 'Not found' });
     if (existing.status !== 'PENDING') return reply.status(409).send({ error: 'Not pending' });
 
     await app.prisma.travelRequest.update({
       where: { id },
-      data: { status: 'APPROVED', approvedById: employeeId, approvedAt: new Date() },
+      data: { status: 'APPROVED', approvedById: req.user.sub, approvedAt: new Date() },
     });
     return reply.send({ id });
   });
 
   // PATCH /travel/:id/reject
   app.patch('/travel/:id/reject', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
-    if (!approverRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!approverRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const { id } = req.params as any;
     const { reason } = z.object({ reason: z.string().optional() }).parse(req.body ?? {});
 
     const existing = await app.prisma.travelRequest.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId: req.user.orgId },
     });
     if (!existing) return reply.status(404).send({ error: 'Not found' });
     if (existing.status !== 'PENDING') return reply.status(409).send({ error: 'Not pending' });
@@ -105,15 +101,14 @@ export async function travelRoutes(app: FastifyInstance) {
 
   // DELETE /travel/:id  (cancel own PENDING request)
   app.delete('/travel/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, employeeId, role } = req.user as any;
+    const isApprover = approverRoles.includes(req.user.role);
     const { id } = req.params as any;
-    const isApprover = approverRoles.includes(role);
 
     const existing = await app.prisma.travelRequest.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId: req.user.orgId },
     });
     if (!existing) return reply.status(404).send({ error: 'Not found' });
-    if (!isApprover && existing.employeeId !== employeeId)
+    if (!isApprover && existing.employeeId !== req.user.sub)
       return reply.status(403).send({ error: 'Forbidden' });
     if (existing.status !== 'PENDING')
       return reply.status(409).send({ error: 'Only pending requests can be cancelled' });

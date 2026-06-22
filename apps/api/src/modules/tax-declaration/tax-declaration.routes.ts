@@ -64,6 +64,7 @@ export function taxDeclarationRoutes(app: FastifyInstance) {
 
   // GET /tax-declarations  (HR view — all employees)
   app.get('/tax-declarations', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) throw fail('Forbidden', 403);
     const year = (req.query as Record<string, string>)['financialYear'];
 
     const declarations = await app.prisma.taxDeclaration.findMany({
@@ -133,6 +134,7 @@ export function taxDeclarationRoutes(app: FastifyInstance) {
 
   // PATCH /tax-declarations/:id/verify  (HR marks as verified)
   app.patch('/tax-declarations/:id/verify', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
 
     const declaration = await app.prisma.taxDeclaration.findFirst({

@@ -51,6 +51,8 @@ export async function esopRoutes(app: FastifyInstance) {
     if (!HR_ROLES.includes(req.user.role as any)) throw fail('Forbidden', 403);
     const body = grantSchema.safeParse(req.body);
     if (!body.success) throw fail(body.error.message, 400);
+    const employee = await app.prisma.employee.findFirst({ where: { id: body.data.employeeId, organizationId: req.user.orgId } });
+    if (!employee) throw fail('Employee not found', 404);
     const grant = await app.prisma.esopGrant.create({
       data: { organizationId: req.user.orgId, ...body.data, grantDate: new Date(body.data.grantDate) },
       include: { employee: { select: empSelect } },

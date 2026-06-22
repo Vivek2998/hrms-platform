@@ -19,12 +19,11 @@ export async function assetRoutes(app: FastifyInstance) {
 
   // ── GET /assets ─────────────────────────────────────────────
   app.get('/assets', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role, employeeId } = req.user as any;
-    const isHr = hrRoles.includes(role);
+    const isHr = hrRoles.includes(req.user.role);
 
     if (isHr) {
       const assets = await app.prisma.asset.findMany({
-        where: { organizationId },
+        where: { organizationId: req.user.orgId },
         include: {
           assignments: {
             where: { returnedAt: null },
@@ -44,7 +43,7 @@ export async function assetRoutes(app: FastifyInstance) {
 
     // Employee — my assigned assets only
     const assignments = await app.prisma.assetAssignment.findMany({
-      where: { organizationId, employeeId, returnedAt: null },
+      where: { organizationId: req.user.orgId, employeeId: req.user.sub, returnedAt: null },
       include: { asset: true },
       orderBy: { assignedAt: 'desc' },
     });
@@ -53,13 +52,12 @@ export async function assetRoutes(app: FastifyInstance) {
 
   // ── POST /assets ─────────────────────────────────────────────
   app.post('/assets', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
-    if (!hrRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!hrRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const body = assetSchema.parse(req.body);
     const asset = await app.prisma.asset.create({
       data: {
-        organizationId,
+        organizationId: req.user.orgId,
         ...body,
         purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : undefined,
         warrantyExpiry: body.warrantyExpiry ? new Date(body.warrantyExpiry) : undefined,
@@ -70,13 +68,12 @@ export async function assetRoutes(app: FastifyInstance) {
 
   // ── PATCH /assets/:id ────────────────────────────────────────
   app.patch('/assets/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
-    if (!hrRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!hrRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const { id } = req.params as any;
     const body = assetSchema.partial().parse(req.body);
     const asset = await app.prisma.asset.updateMany({
-      where: { id, organizationId },
+      where: { id, organizationId: req.user.orgId },
       data: {
         ...body,
         purchaseDate: body.purchaseDate ? new Date(body.purchaseDate) : undefined,
@@ -89,18 +86,16 @@ export async function assetRoutes(app: FastifyInstance) {
 
   // ── DELETE /assets/:id ───────────────────────────────────────
   app.delete('/assets/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
-    if (!hrRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!hrRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const { id } = req.params as any;
-    await app.prisma.asset.deleteMany({ where: { id, organizationId } });
+    await app.prisma.asset.deleteMany({ where: { id, organizationId: req.user.orgId } });
     return reply.send({ id });
   });
 
   // ── POST /assets/:id/assign ──────────────────────────────────
   app.post('/assets/:id/assign', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
-    if (!hrRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!hrRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const { id } = req.params as any;
     const { employeeId, notes, condition } = z.object({
@@ -109,13 +104,13 @@ export async function assetRoutes(app: FastifyInstance) {
       condition: z.string().optional(),
     }).parse(req.body);
 
-    const asset = await app.prisma.asset.findFirst({ where: { id, organizationId } });
+    const asset = await app.prisma.asset.findFirst({ where: { id, organizationId: req.user.orgId } });
     if (!asset) return reply.status(404).send({ error: 'Asset not found' });
     if (asset.status === 'ASSIGNED') return reply.status(409).send({ error: 'Asset already assigned' });
 
     const [assignment] = await app.prisma.$transaction([
       app.prisma.assetAssignment.create({
-        data: { organizationId, assetId: id, employeeId, notes, condition },
+        data: { organizationId: req.user.orgId, assetId: id, employeeId, notes, condition },
       }),
       app.prisma.asset.update({ where: { id }, data: { status: 'ASSIGNED' } }),
     ]);
@@ -124,8 +119,7 @@ export async function assetRoutes(app: FastifyInstance) {
 
   // ── POST /assets/:id/return ──────────────────────────────────
   app.post('/assets/:id/return', { preHandler: [app.authenticate] }, async (req, reply) => {
-    const { organizationId, role } = req.user as any;
-    if (!hrRoles.includes(role)) return reply.status(403).send({ error: 'Forbidden' });
+    if (!hrRoles.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' });
 
     const { id } = req.params as any;
     const { condition, notes } = z.object({
@@ -134,7 +128,7 @@ export async function assetRoutes(app: FastifyInstance) {
     }).parse(req.body ?? {});
 
     const activeAssignment = await app.prisma.assetAssignment.findFirst({
-      where: { assetId: id, organizationId, returnedAt: null },
+      where: { assetId: id, organizationId: req.user.orgId, returnedAt: null },
       orderBy: { assignedAt: 'desc' },
     });
     if (!activeAssignment) return reply.status(404).send({ error: 'No active assignment' });

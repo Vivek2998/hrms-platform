@@ -132,6 +132,7 @@ export function salaryRoutes(app: FastifyInstance) {
 
   // POST /salary-revisions
   app.post('/salary-revisions', auth, async (req, reply) => {
+    if (!ADMIN_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const input = revisionSchema.parse(req.body);
 
     const employee = await app.prisma.employee.findFirst({

@@ -80,6 +80,9 @@ export async function successionRoutes(app: FastifyInstance) {
     const plan = await app.prisma.successionPlan.findFirst({ where: { id, organizationId: req.user.orgId } });
     if (!plan) throw fail('Plan not found', 404);
 
+    const employee = await app.prisma.employee.findFirst({ where: { id: input.employeeId, organizationId: req.user.orgId } });
+    if (!employee) throw fail('Employee not found', 404);
+
     const nominee = await app.prisma.successorNomination.upsert({
       where: { planId_employeeId: { planId: id, employeeId: input.employeeId } },
       create: { planId: id, employeeId: input.employeeId, readiness: input.readiness, notes: input.notes },
@@ -93,6 +96,8 @@ export async function successionRoutes(app: FastifyInstance) {
   app.patch('/succession/plans/:id/nominees/:employeeId', auth, async (req, reply) => {
     if (!(HR_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
     const { id, employeeId } = req.params as { id: string; employeeId: string };
+    const plan = await app.prisma.successionPlan.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!plan) throw fail('Plan not found', 404);
     const { readiness, notes } = nomineeSchema.parse(req.body);
     await app.prisma.successorNomination.update({
       where: { planId_employeeId: { planId: id, employeeId } },
@@ -105,6 +110,8 @@ export async function successionRoutes(app: FastifyInstance) {
   app.delete('/succession/plans/:id/nominees/:employeeId', auth, async (req, reply) => {
     if (!(HR_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
     const { id, employeeId } = req.params as { id: string; employeeId: string };
+    const plan = await app.prisma.successionPlan.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!plan) throw fail('Plan not found', 404);
     await app.prisma.successorNomination.deleteMany({
       where: { planId: id, employeeId },
     });

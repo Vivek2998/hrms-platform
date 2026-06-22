@@ -76,6 +76,7 @@ export function regularisationRoutes(app: FastifyInstance) {
 
   // PATCH /regularisations/:id/review  (HR / Manager)
   app.patch('/regularisations/:id/review', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
     const input = reviewSchema.parse(req.body);
 

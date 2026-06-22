@@ -23,6 +23,8 @@ const assignShiftSchema = z.object({
   effectiveTo: z.string().datetime().optional(),
 });
 
+const HR_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'];
+
 export function shiftRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };
 
@@ -45,6 +47,7 @@ export function shiftRoutes(app: FastifyInstance) {
   });
 
   app.post('/shifts', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const input = shiftSchema.parse(req.body);
     const shift = await app.prisma.shift.create({
       data: { ...input, organizationId: req.user.orgId },
@@ -53,6 +56,7 @@ export function shiftRoutes(app: FastifyInstance) {
   });
 
   app.patch('/shifts/:id', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
     const input = shiftSchema.partial().parse(req.body);
     const result = await app.prisma.shift.updateMany({
@@ -64,6 +68,7 @@ export function shiftRoutes(app: FastifyInstance) {
   });
 
   app.delete('/shifts/:id', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
     await app.prisma.shift.updateMany({
       where: { id, organizationId: req.user.orgId },
@@ -74,6 +79,7 @@ export function shiftRoutes(app: FastifyInstance) {
 
   // POST /shifts/assign
   app.post('/shifts/assign', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const input = assignShiftSchema.parse(req.body);
     const assignment = await app.prisma.shiftAssignment.create({
       data: {
@@ -109,6 +115,7 @@ export function shiftRoutes(app: FastifyInstance) {
 
   // PATCH /shifts/assignments/:id  — edit an existing assignment (change shift / dates)
   app.patch('/shifts/assignments/:id', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
     const input = z
       .object({
@@ -139,6 +146,7 @@ export function shiftRoutes(app: FastifyInstance) {
 
   // DELETE /shifts/assignments/:id  — remove a shift assignment
   app.delete('/shifts/assignments/:id', auth, async (req, reply) => {
+    if (!HR_ROLES.includes(req.user.role)) throw fail('Forbidden', 403);
     const { id } = req.params as { id: string };
     await app.prisma.shiftAssignment.deleteMany({
       where: { id, organizationId: req.user.orgId },

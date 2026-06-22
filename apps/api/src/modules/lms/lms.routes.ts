@@ -120,6 +120,8 @@ export function lmsRoutes(app: FastifyInstance) {
     }
     const { id } = req.params as { id: string };
     const input = courseSchema.partial().parse(req.body);
+    const existing = await app.prisma.learningCourse.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!existing) return reply.status(404).send({ message: 'Course not found' });
     const course = await app.prisma.learningCourse.update({
       where: { id },
       data: input,
@@ -134,6 +136,8 @@ export function lmsRoutes(app: FastifyInstance) {
       return reply.status(403).send({ message: 'Forbidden' });
     }
     const { id } = req.params as { id: string };
+    const existing = await app.prisma.learningCourse.findFirst({ where: { id, organizationId: req.user.orgId } });
+    if (!existing) return reply.status(404).send({ message: 'Course not found' });
     await app.prisma.learningCourse.delete({ where: { id } });
     return reply.send(ok(null));
   });
