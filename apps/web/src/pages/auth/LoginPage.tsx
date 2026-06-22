@@ -46,14 +46,7 @@ export default function LoginPage() {
 
   async function onForgot(data: ForgotInput) {
     try {
-      const res = await apiClient.post<ApiResponse<{ message: string; token?: string }>>(
-        '/auth/forgot-password',
-        data,
-      );
-      if (res.data.data.token) {
-        const link = `${window.location.origin}/reset-password?token=${res.data.data.token}`;
-        toast.info(`Dev mode — reset link: ${link}`, { duration: 15000 });
-      }
+      await apiClient.post<ApiResponse<{ message: string }>>('/auth/forgot-password', data);
       setView('forgot-sent');
     } catch {
       toast.error('Something went wrong. Please try again.');
@@ -133,7 +126,7 @@ export default function LoginPage() {
               disabled={isPending}
               className="h-10 w-full bg-foreground text-background hover:bg-foreground/90"
             >
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Sign In
             </Button>
           </form>
@@ -202,7 +195,7 @@ export default function LoginPage() {
               className="h-10 w-full bg-foreground text-background hover:bg-foreground/90"
             >
               {forgotForm.formState.isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               )}
               Send Reset Link
             </Button>
@@ -223,9 +216,6 @@ export default function LoginPage() {
                 If an account exists for that email, a password reset
                 link has been sent.
               </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                In development mode the reset link appears in the notification above.
-              </p>
             </div>
           </div>
 
@@ -234,7 +224,7 @@ export default function LoginPage() {
             className="mt-2 h-10 w-full border-input text-foreground hover:bg-accent"
             onClick={() => { setView('login'); }}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Button>
         </div>

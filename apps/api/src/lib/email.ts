@@ -1,24 +1,35 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function passwordResetEmail(firstName: string, resetUrl: string): string {
+  const safeName = escapeHtml(firstName);
+  const safeUrl = escapeHtml(resetUrl);
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#4f46e5">Reset Your HRMS Password</h2>
-      <p style="color:#374151">Hi ${firstName},</p>
+      <p style="color:#374151">Hi ${safeName},</p>
       <p style="color:#374151">
         Someone requested a password reset for your HRMS account.
         Click the button below to reset your password.
         This link expires in <strong>1 hour</strong>.
       </p>
-      <a href="${resetUrl}"
+      <a href="${safeUrl}"
          style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#fff;
                 text-decoration:none;border-radius:6px;margin:16px 0;font-weight:600">
         Reset Password
       </a>
       <p style="color:#6b7280;font-size:13px;margin-top:8px">
         Or copy this link into your browser:<br/>
-        <span style="color:#4f46e5;word-break:break-all">${resetUrl}</span>
+        <span style="color:#4f46e5;word-break:break-all">${safeUrl}</span>
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
       <p style="color:#9ca3af;font-size:12px">
@@ -60,12 +71,19 @@ interface EmpCodeRequestParams {
 }
 
 export function empCodeRequestToSuperAdminEmail(p: EmpCodeRequestParams): string {
+  const safeSuperAdminName = escapeHtml(p.superAdminName);
+  const safeAdminName = escapeHtml(p.adminName);
+  const safeOrgName = escapeHtml(p.orgName);
+  const safeCurrentPrefix = escapeHtml(p.currentPrefix);
+  const safeRequestedPrefix = escapeHtml(p.requestedPrefix);
+  const safeReason = p.reason ? escapeHtml(p.reason) : undefined;
+
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#4f46e5">Employee Code Change Request</h2>
-      <p style="color:#374151">Hi ${p.superAdminName},</p>
+      <p style="color:#374151">Hi ${safeSuperAdminName},</p>
       <p style="color:#374151">
-        <strong>${p.adminName}</strong> from <strong>${p.orgName}</strong> has submitted a
+        <strong>${safeAdminName}</strong> from <strong>${safeOrgName}</strong> has submitted a
         request to change their employee code prefix.
       </p>
 
@@ -73,22 +91,22 @@ export function empCodeRequestToSuperAdminEmail(p: EmpCodeRequestParams): string
         <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr>
             <td style="padding:6px 0;color:#6b7280;width:160px">Organisation</td>
-            <td style="padding:6px 0;color:#111827;font-weight:600">${p.orgName}</td>
+            <td style="padding:6px 0;color:#111827;font-weight:600">${safeOrgName}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;color:#6b7280">Current Prefix</td>
-            <td style="padding:6px 0;color:#111827;font-weight:600;font-family:monospace">${p.currentPrefix}</td>
+            <td style="padding:6px 0;color:#111827;font-weight:600;font-family:monospace">${safeCurrentPrefix}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;color:#6b7280">Requested Prefix</td>
-            <td style="padding:6px 0;color:#4f46e5;font-weight:700;font-family:monospace">${p.requestedPrefix}</td>
+            <td style="padding:6px 0;color:#4f46e5;font-weight:700;font-family:monospace">${safeRequestedPrefix}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;color:#6b7280">Format Change</td>
             <td style="padding:6px 0;color:#111827">
-              <span style="font-family:monospace;background:#fee2e2;padding:2px 6px;border-radius:4px">${p.currentPrefix}-473</span>
+              <span style="font-family:monospace;background:#fee2e2;padding:2px 6px;border-radius:4px">${safeCurrentPrefix}-473</span>
               &nbsp;→&nbsp;
-              <span style="font-family:monospace;background:#dcfce7;padding:2px 6px;border-radius:4px">${p.requestedPrefix}-473</span>
+              <span style="font-family:monospace;background:#dcfce7;padding:2px 6px;border-radius:4px">${safeRequestedPrefix}-473</span>
             </td>
           </tr>
           <tr>
@@ -99,10 +117,10 @@ export function empCodeRequestToSuperAdminEmail(p: EmpCodeRequestParams): string
                 : '⬜ No — apply new prefix to future employees only'}
             </td>
           </tr>
-          ${p.reason
+          ${safeReason
             ? `<tr>
                 <td style="padding:6px 0;color:#6b7280;vertical-align:top">Reason</td>
-                <td style="padding:6px 0;color:#374151;font-style:italic">"${p.reason}"</td>
+                <td style="padding:6px 0;color:#374151;font-style:italic">&ldquo;${safeReason}&rdquo;</td>
                </tr>`
             : ''}
         </table>
@@ -134,21 +152,26 @@ export function empCodeDecisionEmail(p: EmpCodeDecisionParams): string {
   const color = approved ? '#16a34a' : '#dc2626';
   const label = approved ? 'Approved' : 'Not Approved';
 
+  const safeAdminName = escapeHtml(p.adminName);
+  const safeOrgName = escapeHtml(p.orgName);
+  const safeRequestedPrefix = escapeHtml(p.requestedPrefix);
+  const safeSuperAdminNote = p.superAdminNote ? escapeHtml(p.superAdminNote) : undefined;
+
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:${color}">
         Employee Code Change Request — ${label}
       </h2>
-      <p style="color:#374151">Hi ${p.adminName},</p>
+      <p style="color:#374151">Hi ${safeAdminName},</p>
       <p style="color:#374151">
-        Your request to change the employee code prefix for <strong>${p.orgName}</strong>
+        Your request to change the employee code prefix for <strong>${safeOrgName}</strong>
         has been <strong style="color:${color}">${label.toLowerCase()}</strong>
         by the platform administrator.
       </p>
 
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0;font-size:14px">
         <p style="margin:0 0 8px;color:#6b7280">Requested Prefix</p>
-        <p style="margin:0;font-family:monospace;font-size:18px;font-weight:700;color:#111827">${p.requestedPrefix}</p>
+        <p style="margin:0;font-family:monospace;font-size:18px;font-weight:700;color:#111827">${safeRequestedPrefix}</p>
 
         ${approved
           ? `<p style="margin:12px 0 0;color:#374151">
@@ -159,10 +182,10 @@ export function empCodeDecisionEmail(p: EmpCodeDecisionParams): string {
           : ''}
       </div>
 
-      ${p.superAdminNote
+      ${safeSuperAdminNote
         ? `<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px;margin:16px 0">
             <p style="margin:0;color:#854d0e;font-size:14px">
-              <strong>Note from administrator:</strong><br/>${p.superAdminNote}
+              <strong>Note from administrator:</strong><br/>${safeSuperAdminNote}
             </p>
            </div>`
         : ''}
@@ -191,32 +214,39 @@ interface OrgChartRequestParams {
 }
 
 export function orgChartRequestToSuperAdminEmail(p: OrgChartRequestParams): string {
+  const safeSuperAdminName = escapeHtml(p.superAdminName);
+  const safeAdminName = escapeHtml(p.adminName);
+  const safeOrgName = escapeHtml(p.orgName);
+  const safeCurrentIndustry = escapeHtml(p.currentIndustry);
+  const safeRequestedIndustry = escapeHtml(p.requestedIndustry);
+  const safeReason = p.reason ? escapeHtml(p.reason) : undefined;
+
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:#4f46e5">Org Chart Template Change Request</h2>
-      <p style="color:#374151">Hi ${p.superAdminName},</p>
+      <p style="color:#374151">Hi ${safeSuperAdminName},</p>
       <p style="color:#374151">
-        <strong>${p.adminName}</strong> from <strong>${p.orgName}</strong> has submitted a
+        <strong>${safeAdminName}</strong> from <strong>${safeOrgName}</strong> has submitted a
         request to change their organisation chart template.
       </p>
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0">
         <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr>
             <td style="padding:6px 0;color:#6b7280;width:160px">Organisation</td>
-            <td style="padding:6px 0;color:#111827;font-weight:600">${p.orgName}</td>
+            <td style="padding:6px 0;color:#111827;font-weight:600">${safeOrgName}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;color:#6b7280">Current Template</td>
-            <td style="padding:6px 0;color:#111827;font-weight:600">${p.currentIndustry}</td>
+            <td style="padding:6px 0;color:#111827;font-weight:600">${safeCurrentIndustry}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;color:#6b7280">Requested Template</td>
-            <td style="padding:6px 0;color:#4f46e5;font-weight:700">${p.requestedIndustry}</td>
+            <td style="padding:6px 0;color:#4f46e5;font-weight:700">${safeRequestedIndustry}</td>
           </tr>
-          ${p.reason
+          ${safeReason
             ? `<tr>
                 <td style="padding:6px 0;color:#6b7280;vertical-align:top">Reason</td>
-                <td style="padding:6px 0;color:#374151;font-style:italic">"${p.reason}"</td>
+                <td style="padding:6px 0;color:#374151;font-style:italic">&ldquo;${safeReason}&rdquo;</td>
                </tr>`
             : ''}
         </table>
@@ -244,22 +274,28 @@ export function orgChartDecisionEmail(p: OrgChartDecisionParams): string {
   const approved = p.status === 'APPROVED';
   const color = approved ? '#16a34a' : '#dc2626';
   const label = approved ? 'Approved' : 'Not Approved';
+
+  const safeAdminName = escapeHtml(p.adminName);
+  const safeOrgName = escapeHtml(p.orgName);
+  const safeRequestedIndustry = escapeHtml(p.requestedIndustry);
+  const safeSuperAdminNote = p.superAdminNote ? escapeHtml(p.superAdminNote) : undefined;
+
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:${color}">Org Chart Template Change — ${label}</h2>
-      <p style="color:#374151">Hi ${p.adminName},</p>
+      <p style="color:#374151">Hi ${safeAdminName},</p>
       <p style="color:#374151">
-        Your request to change the organisation chart template for <strong>${p.orgName}</strong>
+        Your request to change the organisation chart template for <strong>${safeOrgName}</strong>
         has been <strong style="color:${color}">${label.toLowerCase()}</strong>.
       </p>
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0;font-size:14px">
         <p style="margin:0 0 6px;color:#6b7280">Requested Template</p>
-        <p style="margin:0;font-size:16px;font-weight:700;color:#111827">${p.requestedIndustry}</p>
+        <p style="margin:0;font-size:16px;font-weight:700;color:#111827">${safeRequestedIndustry}</p>
       </div>
-      ${p.superAdminNote
+      ${safeSuperAdminNote
         ? `<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px;margin:16px 0">
             <p style="margin:0;color:#854d0e;font-size:14px">
-              <strong>Note from administrator:</strong><br/>${p.superAdminNote}
+              <strong>Note from administrator:</strong><br/>${safeSuperAdminNote}
             </p>
            </div>`
         : ''}
@@ -283,15 +319,21 @@ export function leaveDecisionEmail(
 ): string {
   const actionLabel = action === 'APPROVED' ? 'approved' : 'rejected';
   const color = action === 'APPROVED' ? '#16a34a' : '#dc2626';
+
+  const safeName = escapeHtml(firstName);
+  const safeFrom = escapeHtml(fromDate);
+  const safeTo = escapeHtml(toDate);
+  const safeRemarks = remarks ? escapeHtml(remarks) : undefined;
+
   return `
     <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px">
       <h2 style="margin:0 0 16px;color:${color}">Leave Request ${action === 'APPROVED' ? 'Approved' : 'Rejected'}</h2>
-      <p style="color:#374151">Hi ${firstName},</p>
+      <p style="color:#374151">Hi ${safeName},</p>
       <p style="color:#374151">
-        Your leave request from <strong>${fromDate}</strong> to <strong>${toDate}</strong>
+        Your leave request from <strong>${safeFrom}</strong> to <strong>${safeTo}</strong>
         has been <strong style="color:${color}">${actionLabel}</strong>.
       </p>
-      ${remarks ? `<p style="color:#374151"><strong>Remarks:</strong> ${remarks}</p>` : ''}
+      ${safeRemarks ? `<p style="color:#374151"><strong>Remarks:</strong> ${safeRemarks}</p>` : ''}
       <p style="color:#6b7280;font-size:13px;margin-top:32px">— HRMS Platform</p>
     </div>
   `;

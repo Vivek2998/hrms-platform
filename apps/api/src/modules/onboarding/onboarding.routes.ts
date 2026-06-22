@@ -213,7 +213,7 @@ export function onboardingRoutes(app: FastifyInstance) {
     if (!assignment) throw fail('Assignment not found', 404);
 
     const task = await app.prisma.onboardingAssignmentTask.update({
-      where: { id: taskId },
+      where: { id: taskId, assignmentId: id },
       data: {
         status,
         ...(notes ? { notes } : {}),

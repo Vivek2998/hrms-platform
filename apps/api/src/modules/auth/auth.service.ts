@@ -77,11 +77,18 @@ export async function refreshService(token: string, prisma: PrismaClient, redis:
   if (!valid) throw fail('Invalid refresh token', 401);
 
   const employee = await prisma.employee.findUnique({
-    where: { id: payload.sub, deletedAt: null },
+    where: { id: payload.sub, deletedAt: null, status: { not: 'TERMINATED' } },
+    include: { organization: { select: { isActive: true, plan: true } } },
   });
   if (!employee) throw fail('Employee not found', 401);
+  if (!employee.organization.isActive) throw fail('Organisation is inactive', 403);
 
-  const newPayload = { sub: employee.id, orgId: employee.organizationId, role: employee.role };
+  const newPayload = {
+    sub: employee.id,
+    orgId: employee.organizationId,
+    role: employee.role,
+    orgPlan: employee.organization.plan,
+  };
   const accessToken = signAccessToken(newPayload);
   const refreshToken = signRefreshToken(newPayload);
 
@@ -106,6 +113,9 @@ export async function changePasswordService(
 
   const valid = await bcrypt.compare(input.currentPassword, employee.passwordHash);
   if (!valid) throw fail('Current password is incorrect', 400);
+
+  const sameAsOld = await bcrypt.compare(input.newPassword, employee.passwordHash);
+  if (sameAsOld) throw fail('New password must be different from your current password', 400);
 
   const passwordHash = await bcrypt.hash(input.newPassword, 12);
   await prisma.employee.update({

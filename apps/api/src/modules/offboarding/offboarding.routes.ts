@@ -177,7 +177,7 @@ export function offboardingRoutes(app: FastifyInstance) {
     if (!assignment) throw fail('Assignment not found', 404);
 
     const task = await app.prisma.offboardingAssignmentTask.update({
-      where: { id: taskId },
+      where: { id: taskId, assignmentId: id },
       data: { status, ...(notes !== undefined ? { notes } : {}), completedAt: status === 'COMPLETED' ? new Date() : null },
     });
 
@@ -196,6 +196,10 @@ export function offboardingRoutes(app: FastifyInstance) {
 
   app.get('/offboarding/assignments/:id/exit-interview', auth, async (req, reply) => {
     const { id: assignmentId } = req.params as { id: string };
+    const assignment = await app.prisma.offboardingAssignment.findFirst({
+      where: { id: assignmentId, organizationId: req.user.orgId },
+    });
+    if (!assignment) throw fail('Assignment not found', 404);
     const interview = await app.prisma.exitInterview.findUnique({ where: { assignmentId } });
     return reply.send(ok(interview));
   });

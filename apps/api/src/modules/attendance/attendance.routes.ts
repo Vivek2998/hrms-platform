@@ -64,8 +64,9 @@ export function attendanceRoutes(app: FastifyInstance) {
       year: (req.query as Record<string, string>)['year'] ?? now.getFullYear(),
     });
 
-    const from = new Date(year, month - 1, 1);
-    const to = new Date(year, month, 0); // last day of month
+    // QUALITY-02: Use UTC dates to match @db.Date storage in PostgreSQL
+    const from = new Date(Date.UTC(year, month - 1, 1));
+    const to = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
     const records = await app.prisma.attendanceRecord.findMany({
       where: {
@@ -81,6 +82,9 @@ export function attendanceRoutes(app: FastifyInstance) {
 
   // GET /attendance  (admin/HR: all records with filters)
   app.get('/attendance', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(req.user.role)) {
+      throw fail('Forbidden — only HR and Managers can view all attendance records', 403);
+    }
     const query = attendanceQuerySchema.parse(req.query);
     const where: Prisma.AttendanceRecordWhereInput = {
       organizationId: req.user.orgId,
@@ -223,8 +227,9 @@ export function attendanceRoutes(app: FastifyInstance) {
       })
       .parse(req.query);
 
-    const from = new Date(year, month - 1, 1);
-    const to = new Date(year, month, 0);
+    // QUALITY-02: Use UTC dates to match @db.Date storage in PostgreSQL
+    const from = new Date(Date.UTC(year, month - 1, 1));
+    const to = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
     const records = await app.prisma.attendanceRecord.findMany({
       where: {

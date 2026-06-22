@@ -245,6 +245,18 @@ export function performanceRoutes(app: FastifyInstance) {
     const targetEmployeeId =
       isManagerRole && input.employeeId ? input.employeeId : req.user.sub;
 
+    const cycle = await app.prisma.performanceCycle.findFirst({
+      where: { id: input.cycleId, organizationId: req.user.orgId },
+    });
+    if (!cycle) throw fail('Performance cycle not found', 404);
+
+    if (targetEmployeeId !== req.user.sub) {
+      const emp = await app.prisma.employee.findFirst({
+        where: { id: targetEmployeeId, organizationId: req.user.orgId, deletedAt: null },
+      });
+      if (!emp) throw fail('Employee not found', 404);
+    }
+
     const goal = await app.prisma.performanceGoal.create({
       data: {
         cycleId: input.cycleId,
@@ -268,6 +280,7 @@ export function performanceRoutes(app: FastifyInstance) {
     const updated = await app.prisma.performanceGoal.updateMany({
       where: {
         id,
+        cycle: { organizationId: req.user.orgId },
         ...(isHR ? {} : { employeeId: req.user.sub }),
       },
       data: {
@@ -330,6 +343,12 @@ export function performanceRoutes(app: FastifyInstance) {
     const input = z
       .object({ employeeId: z.string().uuid(), reviewerId: z.string().uuid() })
       .parse(req.body);
+
+    const cycle = await app.prisma.performanceCycle.findFirst({
+      where: { id: cycleId, organizationId: req.user.orgId },
+    });
+    if (!cycle) throw fail('Cycle not found', 404);
+
     const review = await app.prisma.performanceReview.upsert({
       where: { cycleId_employeeId: { cycleId, employeeId: input.employeeId } },
       create: {
@@ -407,6 +426,12 @@ export function performanceRoutes(app: FastifyInstance) {
   app.post('/performance/peer-feedback', auth, async (req, reply) => {
     const input = peerFeedbackSchema.parse(req.body);
     if (input.toId === req.user.sub) throw fail('Cannot give feedback to yourself', 400);
+
+    const recipient = await app.prisma.employee.findFirst({
+      where: { id: input.toId, organizationId: req.user.orgId, deletedAt: null },
+    });
+    if (!recipient) throw fail('Employee not found', 404);
+
     const feedback = await app.prisma.peerFeedback.upsert({
       where: { cycleId_fromId_toId: { cycleId: input.cycleId, fromId: req.user.sub, toId: input.toId } },
       create: {

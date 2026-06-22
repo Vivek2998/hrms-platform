@@ -143,44 +143,109 @@ export function employeeRoutes(app: FastifyInstance) {
         avatarUrl: true,
       },
     });
+
+    // BUG-M06: Notify the employee when bank details change so they can act if
+    // the change was unauthorised (e.g. hijacked session).
+    const bankFields = ['bankAccountNumber', 'bankIfsc', 'bankName', 'bankBranch'] as const;
+    const hasBankChange = bankFields.some((f) => f in input && input[f] !== undefined);
+    if (hasBankChange) {
+      void app.prisma.notification.create({
+        data: {
+          organizationId: req.user.orgId,
+          employeeId: req.user.sub,
+          type: 'SYSTEM',
+          title: 'Bank Details Updated',
+          body: 'Your bank details have been updated. If you did not make this change, contact HR immediately.',
+        },
+      });
+    }
+
     return reply.send(ok(updated));
   });
 
-  // GET /employees
+  // GET /employees  — MANAGER and above only (BUG-C01)
   app.get('/employees', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const query = employeeListSchema.parse(req.query);
-    const result = await listEmployees(req.user.orgId, query, app.prisma);
+    const result = await listEmployees(req.user.orgId, query, app.prisma, req.user.role);
     return reply.send(result);
   });
 
-  // GET /employees/:id
+  // GET /employees/:id  — MANAGER and above only (BUG-C01)
   app.get('/employees/:id', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER'].includes(req.user.role)) {
+      throw fail('Forbidden', 403);
+    }
     const { id } = req.params as { id: string };
-    const employee = await getEmployee(id, req.user.orgId, app.prisma);
+    const employee = await getEmployee(id, req.user.orgId, app.prisma, req.user.role);
     return reply.send(ok(employee));
   });
 
-  // POST /employees
+  // POST /employees  — HR and above only (BUG-C02)
   app.post('/employees', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden — only HR can create employees', 403);
+    }
     const input = createEmployeeSchema.parse(req.body);
     const employee = await createEmployee(req.user.orgId, input, app.prisma);
     return reply.status(201).send(ok(employee));
   });
 
-  // PATCH /employees/:id
+  // PATCH /employees/:id  — role-aware edit (BUG-C02 / BUG-H06)
   app.patch('/employees/:id', auth, async (req, reply) => {
     const { id } = req.params as { id: string };
     const input = updateEmployeeSchema.parse(req.body);
-    const adminRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'];
-    if (!adminRoles.includes(req.user.role)) {
-      delete input.workEmail;
+
+    const isAdmin = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role);
+    const isManager = req.user.role === 'MANAGER';
+    const isEmployee = req.user.role === 'EMPLOYEE';
+
+    // EMPLOYEE role: can only edit their own record
+    if (isEmployee && id !== req.user.sub) {
+      throw fail('Forbidden — you can only edit your own profile', 403);
     }
+
+    // MANAGER role: can only edit self or direct reports
+    if (isManager && id !== req.user.sub) {
+      const isDirect = await app.prisma.employee.findFirst({
+        where: { id, managerId: req.user.sub, organizationId: req.user.orgId, deletedAt: null },
+      });
+      if (!isDirect) throw fail('Forbidden — you can only edit your direct reports', 403);
+    }
+
+    // Non-admin roles cannot change these fields
+    if (!isAdmin) {
+      delete input.workEmail;
+      // HR-only: employment classification and statutory data
+      delete (input as Record<string, unknown>).employmentType;
+      delete (input as Record<string, unknown>).dateOfJoining;
+      delete (input as Record<string, unknown>).noticePeriodDays;
+      delete (input as Record<string, unknown>).panNumber;
+      delete (input as Record<string, unknown>).aadhaarNumber;
+      delete (input as Record<string, unknown>).pfAccountNumber;
+      delete (input as Record<string, unknown>).esiNumber;
+      delete (input as Record<string, unknown>).uanNumber;
+    }
+
+    // Non-admin/non-manager roles cannot change structural fields
+    if (!isAdmin && !isManager) {
+      delete (input as Record<string, unknown>).status;
+      delete (input as Record<string, unknown>).departmentId;
+      delete (input as Record<string, unknown>).managerId;
+      delete (input as Record<string, unknown>).designationId;
+    }
+
     const employee = await updateEmployee(id, req.user.orgId, input, app.prisma);
     return reply.send(ok(employee));
   });
 
-  // DELETE /employees/:id  (soft delete)
+  // DELETE /employees/:id  — HR and above only (BUG-C02)
   app.delete('/employees/:id', auth, async (req, reply) => {
+    if (!['SUPER_ADMIN', 'ORG_ADMIN', 'HR'].includes(req.user.role)) {
+      throw fail('Forbidden — only HR can delete employees', 403);
+    }
     const { id } = req.params as { id: string };
     await softDeleteEmployee(id, req.user.orgId, app.prisma);
     return reply.status(204).send();
