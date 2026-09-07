@@ -22,7 +22,6 @@ const TESTIMONIALS = [
     title: 'HR Director',
     company: 'TechNova Systems',
     initials: 'RK',
-    color: 'from-slate-600 to-slate-700',
   },
   {
     quote:
@@ -31,7 +30,6 @@ const TESTIMONIALS = [
     title: 'Head of People Ops',
     company: 'Orbits Technologies',
     initials: 'PS',
-    color: 'from-slate-600 to-slate-700',
   },
 ];
 
@@ -49,10 +47,10 @@ function BrandMark({ onDark = true }: { onDark?: boolean }) {
 
 function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
   return (
-    <div className="rounded-2xl border border-white/[0.07] bg-white/4 p-5">
-      {/* Decorative quote mark */}
+    /* auth-panel-surface = white/4% — subtle card lift inside the dark panel */
+    <div className="rounded-2xl border border-auth-panel-border bg-auth-panel-surface p-5">
       <svg
-        className="mb-3 h-7 w-7 text-white/20"
+        className="mb-3 h-7 w-7 text-auth-panel-border"
         fill="currentColor"
         viewBox="0 0 32 32"
         aria-hidden
@@ -60,18 +58,16 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
         <path d="M10 8C5.6 8 2 11.6 2 16v8h8v-8H6c0-2.2 1.8-4 4-4V8zm14 0c-4.4 0-8 3.6-8 8v8h8v-8h-4c0-2.2 1.8-4 4-4V8z" />
       </svg>
 
-      <p className="text-sm leading-relaxed text-slate-300">{t.quote}</p>
+      <p className="text-sm leading-relaxed text-auth-panel-subtext">{t.quote}</p>
 
-      {/* Person */}
       <div className="mt-4 flex items-center gap-3">
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br ${t.color} ring-1 ring-white/10`}
-        >
-          <span className="text-xs font-bold tracking-wide text-white">{t.initials}</span>
+        {/* Avatar — uses primary action colour for a branded feel */}
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-auth-panel-surface ring-1 ring-auth-panel-border">
+          <span className="text-xs font-bold tracking-wide text-auth-panel-fg">{t.initials}</span>
         </div>
         <div>
-          <p className="text-sm font-semibold text-white">{t.name}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm font-semibold text-auth-panel-fg">{t.name}</p>
+          <p className="text-xs text-auth-panel-muted">
             {t.title} · {t.company}
           </p>
         </div>
@@ -91,8 +87,8 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
 
-      {/* ── Left brand panel ── */}
-      <aside className="relative hidden flex-col bg-slate-950 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[460px] lg:shrink-0 xl:w-[500px]">
+      {/* ── Left brand panel — always-dark, independent of app theme ── */}
+      <aside className="relative hidden flex-col bg-auth-panel lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-115 lg:shrink-0 xl:w-125">
         {/* Subtle dot-grid texture */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -107,10 +103,10 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
 
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-auth-panel-surface">
               <BrandMark onDark />
             </div>
-            <span className="text-sm font-semibold tracking-tight text-white">
+            <span className="text-sm font-semibold tracking-tight text-auth-panel-fg">
               WorkAxis HRMS
             </span>
           </div>
@@ -119,20 +115,20 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
           <div className="mt-14 flex-1">
             {variant === 'login' ? (
               <>
-                <h2 className="text-[2rem] font-bold leading-snug text-white xl:text-[2.2rem]">
+                <h2 className="text-[2rem] font-bold leading-snug text-auth-panel-fg xl:text-[2.2rem]">
                   Modern HR,<br />built for India.
                 </h2>
-                <p className="mt-3.5 text-sm leading-relaxed text-slate-400">
+                <p className="mt-3.5 text-sm leading-relaxed text-auth-panel-subtext">
                   From payroll compliance to attendance tracking —
                   everything your HR team needs, in one place.
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-[2rem] font-bold leading-snug text-white xl:text-[2.2rem]">
+                <h2 className="text-[2rem] font-bold leading-snug text-auth-panel-fg xl:text-[2.2rem]">
                   Set up your<br />team in minutes.
                 </h2>
-                <p className="mt-3.5 text-sm leading-relaxed text-slate-400">
+                <p className="mt-3.5 text-sm leading-relaxed text-auth-panel-subtext">
                   Join 200+ companies already running payroll, leaves,
                   and attendance on WorkAxis HRMS.
                 </p>
@@ -142,25 +138,24 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
             <ul className="mt-8 space-y-3">
               {FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                  <span className="text-sm text-slate-300">{f}</span>
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-auth-panel-muted" />
+                  <span className="text-sm text-auth-panel-subtext">{f}</span>
                 </li>
               ))}
             </ul>
 
-            {/* Testimonial card */}
             <div className="mt-8">
               <TestimonialCard t={testimonial} />
             </div>
           </div>
 
           {/* Stats strip */}
-          <div className="border-t border-white/10 pt-6">
+          <div className="border-t border-auth-panel-border pt-6">
             <div className="grid grid-cols-3 gap-4">
               {STATS.map((s) => (
                 <div key={s.label}>
-                  <p className="text-xl font-bold text-white">{s.value}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{s.label}</p>
+                  <p className="text-xl font-bold text-auth-panel-fg">{s.value}</p>
+                  <p className="mt-0.5 text-xs text-auth-panel-muted">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -173,8 +168,8 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
         <main className="flex flex-1 flex-col items-center px-6 py-14 sm:px-10">
 
           {/* Mobile-only logo */}
-          <div className="mb-8 flex w-full max-w-[400px] items-center gap-2.5 lg:hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900">
+          <div className="mb-8 flex w-full max-w-100 items-center gap-2.5 lg:hidden">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground">
               <BrandMark onDark />
             </div>
             <span className="text-sm font-semibold tracking-tight text-foreground">
@@ -182,7 +177,7 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
             </span>
           </div>
 
-          <div className="w-full max-w-[400px]">
+          <div className="w-full max-w-100">
             {children}
           </div>
         </main>
@@ -193,7 +188,7 @@ export function AuthLayout({ children, variant = 'login' }: AuthLayoutProps) {
             <p className="text-muted-foreground text-xs">
               © {new Date().getFullYear()} WorkAxis HRMS. All rights reserved.
             </p>
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+            <nav aria-label="Footer links" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
               {FOOTER_LINKS.map((link) => (
                 <a
                   key={link}

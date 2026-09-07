@@ -44,16 +44,17 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+// C-8: uses CSS variable tokens — adapts automatically in both light and dark mode
 const STATUS_COLORS: Record<string, string> = {
-  PRESENT:   'bg-green-100  text-green-800  border-green-200',
-  ABSENT:    'bg-red-100    text-red-800    border-red-200',
-  LATE:      'bg-orange-100 text-orange-800 border-orange-200',
-  HALF_DAY:  'bg-yellow-100 text-yellow-800 border-yellow-200',
-  WFH:       'bg-sky-100    text-sky-800    border-sky-200',
-  ON_LEAVE:  'bg-purple-100 text-purple-800 border-purple-200',
-  HOLIDAY:   'bg-pink-100   text-pink-800   border-pink-200',
-  WEEKEND:   'bg-gray-100   text-gray-500   border-gray-200',
-  PENDING:   'bg-gray-50    text-gray-400   border-gray-200',
+  PRESENT:   'bg-status-present-bg  text-status-present-fg  border-status-present-bd',
+  ABSENT:    'bg-status-absent-bg   text-status-absent-fg   border-status-absent-bd',
+  LATE:      'bg-status-late-bg     text-status-late-fg     border-status-late-bd',
+  HALF_DAY:  'bg-status-halfday-bg  text-status-halfday-fg  border-status-halfday-bd',
+  WFH:       'bg-status-wfh-bg      text-status-wfh-fg      border-status-wfh-bd',
+  ON_LEAVE:  'bg-status-onleave-bg  text-status-onleave-fg  border-status-onleave-bd',
+  HOLIDAY:   'bg-status-holiday-bg  text-status-holiday-fg  border-status-holiday-bd',
+  WEEKEND:   'bg-status-weekend-bg  text-status-weekend-fg  border-status-weekend-bd',
+  PENDING:   'bg-status-pending-bg  text-status-pending-fg  border-status-pending-bd',
 };
 
 const STATUSES: AttendanceStatus[] = [
@@ -86,10 +87,11 @@ function fmtHours(minutes: number) {
   return `${String(h)}h ${String(m)}m`;
 }
 
+// C-9: uses CSS variable tokens — adapts automatically in both light and dark mode
 const PUNCH_METHOD_META: Record<PunchMethod, { label: string; className: string }> = {
-  FINGERPRINT: { label: '👆 Fingerprint', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  FACE_ID:     { label: '🫥 Face ID',    className: 'bg-sky-100    text-sky-800    border-sky-200'    },
-  MANUAL:      { label: 'Manual',        className: 'bg-gray-100   text-gray-600   border-gray-200'   },
+  FINGERPRINT: { label: '👆 Fingerprint', className: 'bg-punch-finger-bg text-punch-finger-fg border-punch-finger-bd' },
+  FACE_ID:     { label: '🫥 Face ID',    className: 'bg-punch-face-bg   text-punch-face-fg   border-punch-face-bd'   },
+  MANUAL:      { label: 'Manual',        className: 'bg-punch-manual-bg text-punch-manual-fg border-punch-manual-bd' },
 };
 
 function PunchMethodBadge({ method }: { method?: PunchMethod | null }) {
@@ -277,6 +279,7 @@ function CalendarView({
                   size="icon"
                   className="absolute right-0.5 top-0.5 hidden h-5 w-5 group-hover:flex"
                   onClick={(e) => { e.stopPropagation(); onEdit(rec); }}
+                  aria-label={`Edit attendance for ${dateStr}`}
                 >
                   <Pencil className="h-2.5 w-2.5" />
                 </Button>
@@ -473,14 +476,14 @@ export default function AttendancePage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50 text-muted-foreground border-b text-left text-xs font-medium">
-                      {!isEmployee && <th className="px-4 py-3">Employee</th>}
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Punch In</th>
-                      <th className="px-4 py-3">Punch Out</th>
-                      <th className="px-4 py-3">Hours</th>
-                      <th className="px-4 py-3">Method</th>
-                      {!isEmployee && <th className="px-4 py-3" />}
+                      {!isEmployee && <th scope="col" className="px-4 py-3">Employee</th>}
+                      <th scope="col" className="px-4 py-3">Date</th>
+                      <th scope="col" className="px-4 py-3">Status</th>
+                      <th scope="col" className="px-4 py-3">Punch In</th>
+                      <th scope="col" className="px-4 py-3">Punch Out</th>
+                      <th scope="col" className="px-4 py-3 text-right">Hours</th>
+                      <th scope="col" className="px-4 py-3">Method</th>
+                      {!isEmployee && <th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -502,7 +505,7 @@ export default function AttendancePage() {
                         </td>
                         <td className="px-4 py-3">{fmtTime(rec.punchIn)}</td>
                         <td className="px-4 py-3">{fmtTime(rec.punchOut)}</td>
-                        <td className="px-4 py-3">{fmtHours(rec.workingMinutes ?? 0)}</td>
+                        <td className="px-4 py-3 tabular-nums text-right">{fmtHours(rec.workingMinutes ?? 0)}</td>
                         <td className="px-4 py-3">
                           <PunchMethodBadge method={rec.punchMethod} />
                         </td>
@@ -513,6 +516,7 @@ export default function AttendancePage() {
                               size="icon"
                               className="h-7 w-7"
                               onClick={() => { setEditing(rec); }}
+                              aria-label={`Edit attendance for ${fmtDate(rec.date)}`}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>

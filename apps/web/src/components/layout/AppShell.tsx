@@ -17,6 +17,13 @@ export function AppShell() {
 
   return (
     <div className="bg-background flex h-screen overflow-hidden">
+      {/* Skip-nav: invisible until focused — lets keyboard users jump past the sidebar */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-ring"
+      >
+        Skip to main content
+      </a>
       <Sidebar />
       <div
         className={cn(
@@ -26,12 +33,12 @@ export function AppShell() {
         )}
       >
         <Header />
-        <main id="org-theme-main" className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-6">
+        <main id="main-content" aria-label="Main content" className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-6">
           <div key={location.pathname} className="animate-page-enter h-full">
             <Outlet />
           </div>
         </main>
-        <footer className="hidden md:flex shrink-0 items-center justify-between border-t bg-background px-6 py-2 mt-4">
+        <footer className="flex shrink-0 flex-col items-center gap-0.5 border-t bg-background px-6 py-2 mt-4 md:flex-row md:justify-between">
           <span className="text-[11px] text-muted-foreground">
             © {new Date().getFullYear()} WorkAxis · All rights reserved
           </span>

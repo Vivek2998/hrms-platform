@@ -96,10 +96,10 @@ export async function buildApp() {
   // ── Plugins ────────────────────────────────────────────────
   await app.register(corsPlugin);
   await app.register(helmetPlugin);
-  await app.register(rateLimitPlugin);
   await app.register(swaggerPlugin);
   await app.register(prismaPlugin);
   await app.register(redisPlugin);
+  await app.register(rateLimitPlugin);
   await app.register(jwtPlugin);
   await app.register(multipart);
   app.setErrorHandler(errorHandler);

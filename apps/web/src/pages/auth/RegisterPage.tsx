@@ -1,19 +1,26 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import {
-  Loader2, ChevronRight, ChevronLeft, Building2, UserCircle, Palette,
-  Check, Upload, X, Link as LinkIcon,
-} from 'lucide-react';
+import { Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { apiClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { INDUSTRY_LABELS } from '@/lib/industry-templates';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
+import { FieldLabel } from '@/components/auth/FieldLabel';
+import { FieldError } from './register/FieldError';
+import { PasswordStrengthMeter } from './register/PasswordStrengthMeter';
+import { StepIndicator } from './register/StepIndicator';
+import { ColorPicker } from './register/ColorPicker';
+import { SidebarPicker } from './register/SidebarPicker';
+import { ImagePicker } from './register/ImagePicker';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
@@ -74,272 +81,6 @@ function derivePrefix(orgName: string): string {
     return initials.length >= 2 ? initials : (words[0] ?? 'EMP').slice(0, 4);
   }
   return (words[0] ?? 'EMP').slice(0, 4);
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
-  return (
-    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-      {children}
-      {optional && <span className="ml-1 normal-case tracking-normal font-normal text-muted-foreground/70">(optional)</span>}
-    </p>
-  );
-}
-
-function FieldError({ msg }: { msg: string | undefined }) {
-  if (!msg) return null;
-  return <p className="mt-1 text-xs text-destructive">{msg}</p>;
-}
-
-// ── Step indicator ────────────────────────────────────────────────────────────
-
-const STEPS = [
-  { n: 1, label: 'Company',  Icon: Building2 },
-  { n: 2, label: 'Account',  Icon: UserCircle },
-  { n: 3, label: 'Branding', Icon: Palette },
-] as const;
-
-function StepIndicator({ current }: { current: number }) {
-  return (
-    <div className="mb-8 flex items-center justify-between">
-      {STEPS.map(({ n, label, Icon }, i) => {
-        const done = current > n;
-        const active = current === n;
-        return (
-          <div key={n} className="flex flex-1 items-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                  done
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : active
-                    ? 'border-primary text-primary bg-background'
-                    : 'border-muted text-muted-foreground bg-background'
-                }`}
-              >
-                {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
-              </div>
-              <span className={`text-[10px] font-medium ${active ? 'text-primary' : done ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {label}
-              </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={`mx-2 -mt-3.5 h-px flex-1 transition-colors ${current > n ? 'bg-primary' : 'bg-border'}`} />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Colour picker ─────────────────────────────────────────────────────────────
-
-function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isValid = /^#[0-9A-Fa-f]{6}$/.test(value);
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="h-9 w-9 shrink-0 rounded-md border border-input shadow-sm cursor-pointer hover:scale-105 transition-transform"
-        style={{ backgroundColor: isValid ? value : '#e5e7eb' }}
-        title="Click to pick colour"
-      />
-      <input ref={inputRef} type="color" value={isValid ? value : '#2563eb'} onChange={(e) => onChange(e.target.value)} className="sr-only" />
-      <Input
-        value={value}
-        onChange={(e) => {
-          const v = e.target.value.toUpperCase();
-          onChange(v.startsWith('#') ? v : '#' + v);
-        }}
-        placeholder="#2563EB"
-        className="font-mono uppercase text-sm"
-        maxLength={7}
-      />
-    </div>
-  );
-}
-
-// ── Sidebar style selector ────────────────────────────────────────────────────
-
-const SIDEBAR_OPTIONS = [
-  { value: 'light',   label: 'Light',   desc: 'Clean white sidebar' },
-  { value: 'dark',    label: 'Dark',    desc: 'Dark slate sidebar' },
-  { value: 'branded', label: 'Branded', desc: 'Uses your brand colour' },
-] as const;
-
-function SidebarPicker({ value, onChange }: { value: string; onChange: (v: 'light' | 'dark' | 'branded') => void }) {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {SIDEBAR_OPTIONS.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          className={`rounded-lg border p-2.5 text-left transition-colors ${
-            value === o.value
-              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-              : 'border-border hover:border-muted-foreground/40'
-          }`}
-        >
-          <p className="text-xs font-semibold">{o.label}</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground leading-tight">{o.desc}</p>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ── Shared image picker (used for both logo and background) ───────────────────
-
-type ImageMode = 'file' | 'url';
-
-function ImagePicker({
-  file,
-  url,
-  onFileChange,
-  onUrlChange,
-  accept,
-  maxLabel,
-  urlPlaceholder,
-  uploadNote,
-  previewShape = 'contain',
-}: {
-  file: File | null;
-  url: string;
-  onFileChange: (f: File | null) => void;
-  onUrlChange: (u: string) => void;
-  accept: string;
-  maxLabel: string;
-  urlPlaceholder: string;
-  uploadNote: string;
-  previewShape?: 'contain' | 'cover';
-}) {
-  const [mode, setMode] = useState<ImageMode>('file');
-  const fileRef = useRef<HTMLInputElement>(null);
-  // Track the current object URL so we can revoke it when the file changes or
-  // the component unmounts — avoids a Blob memory leak per file selection.
-  const objectUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!file) {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-      return;
-    }
-    const next = URL.createObjectURL(file);
-    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    objectUrlRef.current = next;
-    return () => {
-      URL.revokeObjectURL(next);
-      objectUrlRef.current = null;
-    };
-  }, [file]);
-
-  return (
-    <div className="space-y-2.5">
-      {/* Mode toggle */}
-      <div className="flex rounded-md border border-input overflow-hidden text-xs">
-        <button
-          type="button"
-          onClick={() => setMode('file')}
-          className={`flex flex-1 items-center justify-center gap-1.5 py-1.5 transition-colors ${
-            mode === 'file' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          <Upload className="h-3 w-3" />
-          Upload file
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('url')}
-          className={`flex flex-1 items-center justify-center gap-1.5 py-1.5 transition-colors ${
-            mode === 'url' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          <LinkIcon className="h-3 w-3" />
-          Paste URL
-        </button>
-      </div>
-
-      {mode === 'file' ? (
-        <div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept={accept}
-            className="sr-only"
-            onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
-          />
-          {file ? (
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
-              <img
-                src={objectUrlRef.current ?? undefined}
-                alt="Preview"
-                className={`h-10 w-16 rounded-md border bg-white ${previewShape === 'cover' ? 'object-cover' : 'object-contain'}`}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-foreground">{file.name}</p>
-                <p className="text-[10px] text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => { onFileChange(null); if (fileRef.current) fileRef.current.value = ''; }}
-                className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="flex w-full flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 py-5 transition-colors hover:bg-muted/40 hover:border-primary/50"
-            >
-              <Upload className="h-6 w-6 text-muted-foreground" />
-              <div className="text-center">
-                <p className="text-xs font-medium text-foreground">Click to upload</p>
-                <p className="text-[10px] text-muted-foreground">{maxLabel}</p>
-              </div>
-            </button>
-          )}
-          <p className="mt-1.5 text-[10px] text-muted-foreground">{uploadNote}</p>
-        </div>
-      ) : (
-        <div>
-          <div className="flex items-center gap-2">
-            <Input
-              type="url"
-              value={url}
-              onChange={(e) => onUrlChange(e.target.value)}
-              placeholder={urlPlaceholder}
-              className="h-9 text-sm"
-            />
-            {url && (
-              <button type="button" onClick={() => onUrlChange('')} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          {url && (
-            <div className="mt-2">
-              <img
-                src={url}
-                alt="Preview"
-                className={`h-16 w-full rounded-lg border bg-muted ${previewShape === 'cover' ? 'object-cover' : 'object-contain'}`}
-                onError={(e) => (e.currentTarget.style.display = 'none')}
-              />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── API response type ─────────────────────────────────────────────────────────
@@ -494,6 +235,7 @@ export default function RegisterPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const slug = form.watch('slug');
+  const adminPassword = form.watch('adminPassword');
   const e = form.formState.errors;
 
   return (
@@ -510,8 +252,9 @@ export default function RegisterPage() {
 
           <div className="space-y-4">
             <div>
-              <FieldLabel>Company Name</FieldLabel>
+              <FieldLabel htmlFor="register-name">Company Name</FieldLabel>
               <Input
+                id="register-name"
                 placeholder="Acme Pvt Ltd"
                 className="h-10"
                 {...form.register('name', {
@@ -531,8 +274,8 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <FieldLabel>URL Slug</FieldLabel>
-                <Input placeholder="acme-pvt-ltd" className="h-10" {...form.register('slug')} />
+                <FieldLabel htmlFor="register-slug">URL Slug</FieldLabel>
+                <Input id="register-slug" placeholder="acme-pvt-ltd" className="h-10" {...form.register('slug')} />
                 {e.slug ? (
                   <FieldError msg={e.slug.message} />
                 ) : (
@@ -540,23 +283,28 @@ export default function RegisterPage() {
                 )}
               </div>
               <div>
-                <FieldLabel>Company Email</FieldLabel>
-                <Input type="email" placeholder="hr@acme.in" className="h-10" {...form.register('email')} />
+                <FieldLabel htmlFor="register-email">Company Email</FieldLabel>
+                <Input id="register-email" type="email" placeholder="hr@acme.in" className="h-10" {...form.register('email')} />
                 <FieldError msg={e.email?.message} />
               </div>
             </div>
 
+            {/* C-10: Radix Select replaces native <select> — consistent cross-browser styling */}
             <div>
-              <FieldLabel optional>Industry</FieldLabel>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                {...form.register('industryType')}
+              <FieldLabel htmlFor="register-industry" optional>Industry</FieldLabel>
+              <Select
+                value={form.watch('industryType') ?? ''}
+                onValueChange={(v) => form.setValue('industryType', v, { shouldValidate: true })}
               >
-                <option value="">Select industry…</option>
-                {Object.entries(INDUSTRY_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
+                <SelectTrigger id="register-industry" className="h-10">
+                  <SelectValue placeholder="Select industry…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(INDUSTRY_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -590,34 +338,41 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <FieldLabel>First Name</FieldLabel>
-                <Input className="h-10" {...form.register('adminFirstName')} />
+                <FieldLabel htmlFor="register-admin-first">First Name</FieldLabel>
+                <Input id="register-admin-first" className="h-10" {...form.register('adminFirstName')} />
                 <FieldError msg={e.adminFirstName?.message} />
               </div>
               <div>
-                <FieldLabel>Last Name</FieldLabel>
-                <Input className="h-10" {...form.register('adminLastName')} />
+                <FieldLabel htmlFor="register-admin-last">Last Name</FieldLabel>
+                <Input id="register-admin-last" className="h-10" {...form.register('adminLastName')} />
                 <FieldError msg={e.adminLastName?.message} />
               </div>
             </div>
 
             <div>
-              <FieldLabel>Work Email</FieldLabel>
-              <Input type="email" placeholder="you@acme.in" className="h-10" {...form.register('adminEmail')} />
+              <FieldLabel htmlFor="register-admin-email">Work Email</FieldLabel>
+              <Input id="register-admin-email" type="email" placeholder="you@acme.in" className="h-10" {...form.register('adminEmail')} />
               <FieldError msg={e.adminEmail?.message} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <FieldLabel>Password</FieldLabel>
-                <Input type="password" placeholder="Min 8 characters" className="h-10" {...form.register('adminPassword')} />
-                <FieldError msg={e.adminPassword?.message} />
-              </div>
-              <div>
-                <FieldLabel>Confirm</FieldLabel>
-                <Input type="password" className="h-10" {...form.register('confirmPassword')} />
-                <FieldError msg={e.confirmPassword?.message} />
-              </div>
+            {/* I-11: Password with strength meter */}
+            <div>
+              <FieldLabel htmlFor="register-admin-password">Password</FieldLabel>
+              <Input
+                id="register-admin-password"
+                type="password"
+                placeholder="Min 8 characters"
+                className="h-10"
+                {...form.register('adminPassword')}
+              />
+              <PasswordStrengthMeter password={adminPassword} />
+              <FieldError msg={e.adminPassword?.message} />
+            </div>
+
+            <div>
+              <FieldLabel htmlFor="register-confirm-password">Confirm Password</FieldLabel>
+              <Input id="register-confirm-password" type="password" className="h-10" {...form.register('confirmPassword')} />
+              <FieldError msg={e.confirmPassword?.message} />
             </div>
           </div>
 
@@ -646,8 +401,9 @@ export default function RegisterPage() {
 
           {/* Employee code prefix */}
           <div>
-            <FieldLabel optional>Employee Code Prefix</FieldLabel>
+            <FieldLabel htmlFor="register-emp-prefix" optional>Employee Code Prefix</FieldLabel>
             <Input
+              id="register-emp-prefix"
               value={branding.employeeCodePrefix}
               onChange={(ev) =>
                 setBranding((b) => ({
@@ -688,7 +444,7 @@ export default function RegisterPage() {
 
           {/* Primary colour */}
           <div>
-            <FieldLabel optional>Primary Brand Colour</FieldLabel>
+            <FieldLabel htmlFor="register-primary-color" optional>Primary Brand Colour</FieldLabel>
             <ColorPicker
               value={branding.primaryColor}
               onChange={(v) => setBranding((b) => ({ ...b, primaryColor: v }))}

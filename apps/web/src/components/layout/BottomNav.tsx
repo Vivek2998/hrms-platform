@@ -13,7 +13,7 @@ export function BottomNav() {
   const { toggleSidebar } = useUiStore();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-background px-2 md:hidden">
+    <nav aria-label="Mobile navigation" className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-background px-2 md:hidden">
       {NAV_ITEMS.map(({ icon: Icon, label, to }) => (
         <NavLink
           key={to}

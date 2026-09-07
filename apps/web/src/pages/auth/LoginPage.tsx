@@ -12,19 +12,12 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useLogin, loginSchema, type LoginInput } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/axios';
 import type { ApiResponse } from '@hrms/shared-types';
+import { FieldLabel } from '@/components/auth/FieldLabel';
 
 const forgotSchema = z.object({ email: z.string().email('Enter a valid email') });
 type ForgotInput = z.infer<typeof forgotSchema>;
 
 type View = 'login' | 'forgot' | 'forgot-sent';
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-      {children}
-    </p>
-  );
-}
 
 export default function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -71,8 +64,9 @@ export default function LoginPage() {
             className="space-y-5"
           >
             <div>
-              <FieldLabel>Work Email</FieldLabel>
+              <FieldLabel htmlFor="login-email">Work Email</FieldLabel>
               <Input
+                id="login-email"
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
@@ -80,7 +74,7 @@ export default function LoginPage() {
                 {...loginForm.register('email')}
               />
               {loginForm.formState.errors.email && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-destructive">
                   {loginForm.formState.errors.email.message}
                 </p>
               )}
@@ -88,7 +82,7 @@ export default function LoginPage() {
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <FieldLabel>Password</FieldLabel>
+                <FieldLabel htmlFor="login-password">Password</FieldLabel>
                 <button
                   type="button"
                   onClick={() => { setView('forgot'); }}
@@ -99,6 +93,7 @@ export default function LoginPage() {
               </div>
               <div className="relative">
                 <Input
+                  id="login-password"
                   type={showPwd ? 'text' : 'password'}
                   placeholder="••••••••"
                   autoComplete="current-password"
@@ -115,7 +110,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {loginForm.formState.errors.password && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-destructive">
                   {loginForm.formState.errors.password.message}
                 </p>
               )}
@@ -134,7 +129,7 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-7">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-100" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
               <span className="bg-background px-3 text-xs text-muted-foreground">New to WorkAxis?</span>
@@ -174,8 +169,9 @@ export default function LoginPage() {
 
           <form onSubmit={forgotForm.handleSubmit(onForgot)} className="space-y-5">
             <div>
-              <FieldLabel>Work Email</FieldLabel>
+              <FieldLabel htmlFor="forgot-email">Work Email</FieldLabel>
               <Input
+                id="forgot-email"
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
@@ -183,7 +179,7 @@ export default function LoginPage() {
                 {...forgotForm.register('email')}
               />
               {forgotForm.formState.errors.email && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-destructive">
                   {forgotForm.formState.errors.email.message}
                 </p>
               )}
@@ -207,7 +203,7 @@ export default function LoginPage() {
       {view === 'forgot-sent' && (
         <div>
           <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-50">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
               <CheckCircle2 className="h-7 w-7 text-foreground" />
             </div>
             <div>

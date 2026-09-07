@@ -188,11 +188,11 @@ function PayslipListDialog({
             <table className="w-full text-sm">
               <thead className="sticky top-0">
                 <tr className="bg-muted/80 text-muted-foreground border-b text-left text-xs font-medium">
-                  <th className="px-4 py-2.5">Employee</th>
-                  <th className="px-4 py-2.5">Days Present</th>
-                  <th className="px-4 py-2.5 text-right">Gross</th>
-                  <th className="px-4 py-2.5 text-right">Deductions</th>
-                  <th className="px-4 py-2.5 text-right">Net Pay</th>
+                  <th scope="col" className="px-4 py-2.5">Employee</th>
+                  <th scope="col" className="px-4 py-2.5">Days Present</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Gross</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Deductions</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Net Pay</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -216,11 +216,11 @@ function PayslipListDialog({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right">{fmtCurrency(p.grossEarnings)}</td>
-                    <td className="text-destructive px-4 py-2.5 text-right">
+                    <td className="px-4 py-2.5 text-right tabular-nums">{fmtCurrency(p.grossEarnings)}</td>
+                    <td className="text-destructive px-4 py-2.5 text-right tabular-nums">
                       -{fmtCurrency(p.totalDeductions)}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-semibold">
+                    <td className="px-4 py-2.5 text-right tabular-nums font-semibold">
                       {fmtCurrency(p.netPay)}
                     </td>
                   </tr>
@@ -232,13 +232,13 @@ function PayslipListDialog({
                     Total ({payslips.length} employees)
                   </td>
                   <td />
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="px-4 py-2.5 text-right tabular-nums">
                     {fmtCurrency(payslips.reduce((s, p) => s + p.grossEarnings, 0))}
                   </td>
-                  <td className="text-destructive px-4 py-2.5 text-right">
+                  <td className="text-destructive px-4 py-2.5 text-right tabular-nums">
                     -{fmtCurrency(payslips.reduce((s, p) => s + p.totalDeductions, 0))}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-bold">
+                  <td className="px-4 py-2.5 text-right tabular-nums font-bold">
                     {fmtCurrency(payslips.reduce((s, p) => s + p.netPay, 0))}
                   </td>
                 </tr>
@@ -303,13 +303,13 @@ export default function PayrollPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/50 text-muted-foreground border-b text-left text-xs font-medium">
-                    <th className="px-4 py-3">Period</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Employees</th>
-                    <th className="px-4 py-3">Gross Earnings</th>
-                    <th className="px-4 py-3">Deductions</th>
-                    <th className="px-4 py-3">Net Pay</th>
-                    <th className="px-4 py-3">Actions</th>
+                    <th scope="col" className="px-4 py-3">Period</th>
+                    <th scope="col" className="px-4 py-3">Status</th>
+                    <th scope="col" className="px-4 py-3">Employees</th>
+                    <th scope="col" className="px-4 py-3 text-right">Gross Earnings</th>
+                    <th scope="col" className="px-4 py-3 text-right">Deductions</th>
+                    <th scope="col" className="px-4 py-3 text-right">Net Pay</th>
+                    <th scope="col" className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -322,13 +322,13 @@ export default function PayrollPage() {
                         <Badge variant={statusVariant(run.status)}>{run.status}</Badge>
                       </td>
                       <td className="px-4 py-3">{run.totalEmployees}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-right tabular-nums">
                         {run.totalGross > 0 ? fmtCurrency(run.totalGross) : '—'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-right tabular-nums">
                         {run.totalDeductions > 0 ? fmtCurrency(run.totalDeductions) : '—'}
                       </td>
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-4 py-3 text-right tabular-nums font-medium">
                         {run.totalNetPay > 0 ? fmtCurrency(run.totalNetPay) : '—'}
                       </td>
                       <td className="px-4 py-3">
@@ -344,19 +344,21 @@ export default function PayrollPage() {
                               }}
                             >
                               <Play className="h-3.5 w-3.5" />
-                              Process
+                              <span className="hidden sm:inline">Process</span>
                             </Button>
                           )}
                           {run.status === 'COMPLETED' && (
+                            // C-12: use variant="success" token instead of hardcoded green classes
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 gap-1 border-green-200 text-green-700 hover:bg-green-50"
+                              className="h-7 gap-1 border-action-green-fg/30 text-action-green-fg hover:bg-action-green-bg"
                               disabled={markPaidMutation.isPending}
                               onClick={() => { markPaidMutation.mutate(run.id); }}
                             >
                               <CheckCircle className="h-3.5 w-3.5" />
-                              Mark Paid
+                              {/* I-5: hide text on mobile to prevent overflow */}
+                              <span className="hidden sm:inline">Mark Paid</span>
                             </Button>
                           )}
                           {(run.status === 'COMPLETED' || run.status === 'PAID') && (
@@ -368,7 +370,7 @@ export default function PayrollPage() {
                                 onClick={() => { setViewingRun(run); }}
                               >
                                 <Eye className="h-3.5 w-3.5" />
-                                Payslips
+                                <span className="hidden sm:inline">Payslips</span>
                               </Button>
                               <Button
                                 size="sm"
@@ -383,7 +385,7 @@ export default function PayrollPage() {
                                 }}
                               >
                                 <Download className="h-3.5 w-3.5" />
-                                CSV
+                                <span className="hidden sm:inline">CSV</span>
                               </Button>
                             </>
                           )}

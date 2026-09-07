@@ -50,7 +50,6 @@ import {
   Calculator,
   ShieldAlert,
   Shield,
-  Bot,
   Crown,
   Gift,
   Map,
@@ -65,6 +64,7 @@ import {
   LineChart,
   HeartHandshake,
   Layers,
+  Monitor,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UserRole, OrgPlan } from '@hrms/shared-types';
@@ -110,9 +110,12 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'My Leaves', to: '/my-leaves', icon: CalendarCheck },
       { label: 'Regularisation', to: '/regularisation', icon: ClockAlert, feature: 'regularisation' },
       { label: 'Comp Off', to: '/comp-off', icon: CalendarPlus, feature: 'comp-off' },
+      { label: 'Work From Home', to: '/wfh', icon: Home },
+      { label: 'Shift Swap', to: '/shift-swap', icon: ArrowLeftRight },
     ],
   },
   {
+    // I-1: Payroll reduced to 8 core compensation items (scheduling items moved out)
     group: true,
     key: 'payroll',
     label: 'Payroll',
@@ -123,19 +126,34 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'My Payslips', to: '/my-payslips', icon: IndianRupee, feature: 'my-payslips' },
       { label: 'My Letters', to: '/my-letters', icon: FileText },
       { label: 'Tax Declaration', to: '/tax-declaration', icon: FileText, feature: 'tax-declaration' },
-      { label: 'Expense Claims', to: '/expenses', icon: Wallet, feature: 'expenses' },
-      { label: 'E-Signatures', to: '/esignatures', icon: FileSignature },
-      { label: 'Asset Management', to: '/assets', icon: Package, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-      { label: 'Travel Requests', to: '/travel', icon: Plane },
-      { label: 'Loans & Advances', to: '/loans', icon: CreditCard },
-      { label: 'Meeting Rooms', to: '/rooms', icon: DoorOpen },
-      { label: 'Work From Home', to: '/wfh', icon: Home },
-      { label: 'Shift Swap', to: '/shift-swap', icon: ArrowLeftRight },
-      { label: 'Referrals', to: '/referrals', icon: Users2 },
       { label: 'FnF Settlement', to: '/fnf', icon: Calculator },
       { label: 'Salary Revision', to: '/salary-revision', icon: TrendingUp, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
-      { label: 'Timesheets', to: '/timesheets', icon: Clock },
       { label: 'Benefits', to: '/benefits', icon: Gift },
+    ],
+  },
+  {
+    // I-1: New Finance & Claims group (expense / travel / loans / e-signatures)
+    group: true,
+    key: 'finance',
+    label: 'Finance & Claims',
+    icon: Wallet,
+    children: [
+      { label: 'Expense Claims', to: '/expenses', icon: Wallet, feature: 'expenses' },
+      { label: 'Travel Requests', to: '/travel', icon: Plane },
+      { label: 'Loans & Advances', to: '/loans', icon: CreditCard },
+      { label: 'E-Signatures', to: '/esignatures', icon: FileSignature },
+    ],
+  },
+  {
+    // I-1: New Workplace group (physical workspace tools)
+    group: true,
+    key: 'workplace',
+    label: 'Workplace',
+    icon: Monitor,
+    children: [
+      { label: 'Meeting Rooms', to: '/rooms', icon: DoorOpen },
+      { label: 'Asset Management', to: '/assets', icon: Package, allow: ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'] },
+      { label: 'Timesheets', to: '/timesheets', icon: Clock },
     ],
   },
   {
@@ -148,6 +166,7 @@ const ENTRIES: SidebarEntry[] = [
       { label: 'Recognition Wall', to: '/kudos', icon: Heart },
       { label: 'Employee Directory', to: '/directory', icon: BookUser },
       { label: 'Organisation Chart', to: '/org-chart', icon: Network },
+      { label: 'Referrals', to: '/referrals', icon: Users2 },
     ],
   },
   {
@@ -258,6 +277,33 @@ function flyoutItemClass(isActive: boolean) {
   );
 }
 
+// ── Locked nav item (shows plan-gate toast on click, visible in expanded mode) ──
+function LockedNavItem({
+  icon: Icon,
+  label,
+  feature,
+  isChild = false,
+}: {
+  icon: IconType;
+  label: string;
+  feature?: string | undefined;
+  isChild?: boolean;
+}) {
+  return (
+    <button
+      onClick={() => {
+        const plan = feature ? requiredPlan(feature) : null;
+        if (plan) toast.info(`${label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
+      }}
+      className={cn(expandedItemClass(false, isChild), 'w-full cursor-pointer opacity-50')}
+    >
+      <Icon className={cn(isChild ? 'h-4 w-4' : 'h-5 w-5', 'shrink-0')} />
+      <span className="flex-1 text-left">{label}</span>
+      <Lock className="h-3 w-3 shrink-0" />
+    </button>
+  );
+}
+
 export function Sidebar() {
   const role = useAuthStore((s) => s.user?.role);
   const orgName = useAuthStore((s) => s.user?.orgName);
@@ -283,11 +329,11 @@ export function Sidebar() {
   useEffect(() => {
     if (sidebarOpen) {
       setSidebarVisible(true);
-    } else {
-      setOpenGroups(new Set());
-      const t = setTimeout(() => setSidebarVisible(false), 200);
-      return () => clearTimeout(t);
+      return;
     }
+    setOpenGroups(new Set());
+    const t = setTimeout(() => setSidebarVisible(false), 200);
+    return () => clearTimeout(t);
   }, [sidebarOpen]);
 
   // Auto-open the group whose child matches the current path; close all when no group matches
@@ -535,17 +581,7 @@ export function Sidebar() {
                               if (locked) {
                                 return (
                                   <li key={child.to}>
-                                    <button
-                                      onClick={() => {
-                                        const plan = child.feature ? requiredPlan(child.feature) : null;
-                                        if (plan) toast.info(`${child.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
-                                      }}
-                                      className={cn(expandedItemClass(false, true), 'w-full cursor-pointer opacity-50')}
-                                    >
-                                      <child.icon className="h-4 w-4 shrink-0" />
-                                      <span className="flex-1 text-left">{child.label}</span>
-                                      <Lock className="h-3 w-3 shrink-0" />
-                                    </button>
+                                    <LockedNavItem icon={child.icon} label={child.label} feature={child.feature} isChild />
                                   </li>
                                 );
                               }
@@ -671,17 +707,7 @@ export function Sidebar() {
                 return (
                   <li key={entry.to}>
                     {locked ? (
-                      <button
-                        onClick={() => {
-                          const plan = entry.feature ? requiredPlan(entry.feature) : null;
-                          if (plan) toast.info(`${entry.label} requires the ${PLAN_LABELS[plan]} plan. Please upgrade.`);
-                        }}
-                        className={cn(expandedItemClass(false), 'w-full cursor-pointer opacity-50')}
-                      >
-                        <entry.icon className="h-5 w-5 shrink-0" />
-                        <span className="flex-1 text-left">{entry.label}</span>
-                        <Lock className="h-3 w-3 shrink-0" />
-                      </button>
+                      <LockedNavItem icon={entry.icon} label={entry.label} feature={entry.feature} />
                     ) : (
                       <NavLink
                         to={entry.to}

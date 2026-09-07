@@ -6,6 +6,69 @@
     /* ── Radius ──────────────────────────────────────── */
     --radius: 0.625rem;
 
+    /* ── Auth panel (always-dark marketing panel, theme-independent) ── */
+    --auth-panel:         oklch(0.10 0 0);
+    --auth-panel-fg:      oklch(0.985 0 0);
+    --auth-panel-subtext: oklch(0.74 0 0);
+    --auth-panel-muted:   oklch(0.52 0 0);
+    --auth-panel-border:  oklch(1 0 0 / 10%);
+    --auth-panel-surface: oklch(1 0 0 / 4%);
+
+    /* ── Action chip colors (quick-actions, type-badges) ─────────────
+       Each pair: background tint + foreground ink.
+       Light values below; dark-mode overrides in .dark block.        */
+    --action-blue-bg:   oklch(0.94 0.03 240);
+    --action-blue-fg:   oklch(0.44 0.17 253);
+    --action-amber-bg:  oklch(0.96 0.05 85);
+    --action-amber-fg:  oklch(0.50 0.14 75);
+    --action-green-bg:  oklch(0.95 0.05 145);
+    --action-green-fg:  oklch(0.44 0.14 150);
+    --action-violet-bg: oklch(0.95 0.03 290);
+    --action-violet-fg: oklch(0.44 0.15 295);
+    --action-rose-bg:   oklch(0.95 0.04 10);
+    --action-rose-fg:   oklch(0.50 0.18 15);
+
+    /* ── Attendance status chip colors (light) ───────────────────────
+       Used by the calendar view and legend in AttendancePage.        */
+    --status-present-bg:  oklch(0.95 0.05 145);
+    --status-present-fg:  oklch(0.36 0.12 150);
+    --status-present-bd:  oklch(0.87 0.07 145);
+    --status-absent-bg:   oklch(0.96 0.04 20);
+    --status-absent-fg:   oklch(0.44 0.18 25);
+    --status-absent-bd:   oklch(0.88 0.06 20);
+    --status-late-bg:     oklch(0.96 0.05 55);
+    --status-late-fg:     oklch(0.52 0.15 50);
+    --status-late-bd:     oklch(0.89 0.07 55);
+    --status-halfday-bg:  oklch(0.97 0.05 90);
+    --status-halfday-fg:  oklch(0.53 0.14 80);
+    --status-halfday-bd:  oklch(0.90 0.07 90);
+    --status-wfh-bg:      oklch(0.95 0.04 225);
+    --status-wfh-fg:      oklch(0.43 0.15 230);
+    --status-wfh-bd:      oklch(0.87 0.06 225);
+    --status-onleave-bg:  oklch(0.95 0.04 295);
+    --status-onleave-fg:  oklch(0.44 0.15 300);
+    --status-onleave-bd:  oklch(0.87 0.06 295);
+    --status-holiday-bg:  oklch(0.96 0.04 5);
+    --status-holiday-fg:  oklch(0.50 0.18 10);
+    --status-holiday-bd:  oklch(0.88 0.06 5);
+    --status-weekend-bg:  oklch(0.96 0 0);
+    --status-weekend-fg:  oklch(0.52 0 0);
+    --status-weekend-bd:  oklch(0.88 0 0);
+    --status-pending-bg:  oklch(0.98 0 0);
+    --status-pending-fg:  oklch(0.60 0 0);
+    --status-pending-bd:  oklch(0.88 0 0);
+
+    /* ── Punch method badge colors (light) ───────────────────────── */
+    --punch-finger-bg: oklch(0.95 0.03 275);
+    --punch-finger-fg: oklch(0.43 0.15 280);
+    --punch-finger-bd: oklch(0.87 0.05 275);
+    --punch-face-bg:   oklch(0.95 0.04 225);
+    --punch-face-fg:   oklch(0.43 0.15 230);
+    --punch-face-bd:   oklch(0.87 0.06 225);
+    --punch-manual-bg: oklch(0.96 0 0);
+    --punch-manual-fg: oklch(0.46 0 0);
+    --punch-manual-bd: oklch(0.88 0 0);
+
     /* ── Light theme ─────────────────────────────────── */
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
@@ -41,6 +104,58 @@
   }
 
   .dark {
+    /* ── Action chip colors (dark overrides) ─────────────────────── */
+    --action-blue-bg:   oklch(0.20 0.05 253);
+    --action-blue-fg:   oklch(0.74 0.12 253);
+    --action-amber-bg:  oklch(0.22 0.05 75);
+    --action-amber-fg:  oklch(0.80 0.12 80);
+    --action-green-bg:  oklch(0.20 0.05 150);
+    --action-green-fg:  oklch(0.74 0.12 150);
+    --action-violet-bg: oklch(0.20 0.05 295);
+    --action-violet-fg: oklch(0.74 0.12 295);
+    --action-rose-bg:   oklch(0.22 0.05 15);
+    --action-rose-fg:   oklch(0.78 0.14 15);
+
+    /* ── Attendance status chip colors (dark overrides) ───────────── */
+    --status-present-bg:  oklch(0.20 0.04 145);
+    --status-present-fg:  oklch(0.74 0.12 145);
+    --status-present-bd:  oklch(0.32 0.06 145);
+    --status-absent-bg:   oklch(0.22 0.04 20);
+    --status-absent-fg:   oklch(0.76 0.14 20);
+    --status-absent-bd:   oklch(0.34 0.06 20);
+    --status-late-bg:     oklch(0.22 0.04 55);
+    --status-late-fg:     oklch(0.78 0.12 50);
+    --status-late-bd:     oklch(0.34 0.06 55);
+    --status-halfday-bg:  oklch(0.22 0.04 90);
+    --status-halfday-fg:  oklch(0.80 0.12 85);
+    --status-halfday-bd:  oklch(0.34 0.06 90);
+    --status-wfh-bg:      oklch(0.20 0.04 225);
+    --status-wfh-fg:      oklch(0.74 0.12 230);
+    --status-wfh-bd:      oklch(0.32 0.06 225);
+    --status-onleave-bg:  oklch(0.20 0.04 295);
+    --status-onleave-fg:  oklch(0.74 0.12 300);
+    --status-onleave-bd:  oklch(0.32 0.06 295);
+    --status-holiday-bg:  oklch(0.22 0.04 5);
+    --status-holiday-fg:  oklch(0.78 0.14 10);
+    --status-holiday-bd:  oklch(0.34 0.06 5);
+    --status-weekend-bg:  oklch(0.24 0 0);
+    --status-weekend-fg:  oklch(0.60 0 0);
+    --status-weekend-bd:  oklch(0.36 0 0);
+    --status-pending-bg:  oklch(0.22 0 0);
+    --status-pending-fg:  oklch(0.56 0 0);
+    --status-pending-bd:  oklch(0.34 0 0);
+
+    /* ── Punch method badge colors (dark overrides) ─────────────── */
+    --punch-finger-bg: oklch(0.20 0.04 275);
+    --punch-finger-fg: oklch(0.74 0.12 280);
+    --punch-finger-bd: oklch(0.32 0.05 275);
+    --punch-face-bg:   oklch(0.20 0.04 225);
+    --punch-face-fg:   oklch(0.74 0.12 230);
+    --punch-face-bd:   oklch(0.32 0.05 225);
+    --punch-manual-bg: oklch(0.24 0 0);
+    --punch-manual-fg: oklch(0.62 0 0);
+    --punch-manual-bd: oklch(0.36 0 0);
+
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -95,7 +210,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes count-up {
+@keyframes fade-up {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
@@ -158,6 +273,66 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* ── Auth panel tokens ─────────────────────────────── */
+  --color-auth-panel:         var(--auth-panel);
+  --color-auth-panel-fg:      var(--auth-panel-fg);
+  --color-auth-panel-subtext: var(--auth-panel-subtext);
+  --color-auth-panel-muted:   var(--auth-panel-muted);
+  --color-auth-panel-border:  var(--auth-panel-border);
+  --color-auth-panel-surface: var(--auth-panel-surface);
+
+  /* ── Action chip tokens ────────────────────────────── */
+  --color-action-blue-bg:   var(--action-blue-bg);
+  --color-action-blue-fg:   var(--action-blue-fg);
+  --color-action-amber-bg:  var(--action-amber-bg);
+  --color-action-amber-fg:  var(--action-amber-fg);
+  --color-action-green-bg:  var(--action-green-bg);
+  --color-action-green-fg:  var(--action-green-fg);
+  --color-action-violet-bg: var(--action-violet-bg);
+  --color-action-violet-fg: var(--action-violet-fg);
+  --color-action-rose-bg:   var(--action-rose-bg);
+  --color-action-rose-fg:   var(--action-rose-fg);
+
+  /* ── Attendance status tokens ──────────────────────── */
+  --color-status-present-bg:  var(--status-present-bg);
+  --color-status-present-fg:  var(--status-present-fg);
+  --color-status-present-bd:  var(--status-present-bd);
+  --color-status-absent-bg:   var(--status-absent-bg);
+  --color-status-absent-fg:   var(--status-absent-fg);
+  --color-status-absent-bd:   var(--status-absent-bd);
+  --color-status-late-bg:     var(--status-late-bg);
+  --color-status-late-fg:     var(--status-late-fg);
+  --color-status-late-bd:     var(--status-late-bd);
+  --color-status-halfday-bg:  var(--status-halfday-bg);
+  --color-status-halfday-fg:  var(--status-halfday-fg);
+  --color-status-halfday-bd:  var(--status-halfday-bd);
+  --color-status-wfh-bg:      var(--status-wfh-bg);
+  --color-status-wfh-fg:      var(--status-wfh-fg);
+  --color-status-wfh-bd:      var(--status-wfh-bd);
+  --color-status-onleave-bg:  var(--status-onleave-bg);
+  --color-status-onleave-fg:  var(--status-onleave-fg);
+  --color-status-onleave-bd:  var(--status-onleave-bd);
+  --color-status-holiday-bg:  var(--status-holiday-bg);
+  --color-status-holiday-fg:  var(--status-holiday-fg);
+  --color-status-holiday-bd:  var(--status-holiday-bd);
+  --color-status-weekend-bg:  var(--status-weekend-bg);
+  --color-status-weekend-fg:  var(--status-weekend-fg);
+  --color-status-weekend-bd:  var(--status-weekend-bd);
+  --color-status-pending-bg:  var(--status-pending-bg);
+  --color-status-pending-fg:  var(--status-pending-fg);
+  --color-status-pending-bd:  var(--status-pending-bd);
+
+  /* ── Punch method badge tokens ─────────────────────── */
+  --color-punch-finger-bg: var(--punch-finger-bg);
+  --color-punch-finger-fg: var(--punch-finger-fg);
+  --color-punch-finger-bd: var(--punch-finger-bd);
+  --color-punch-face-bg:   var(--punch-face-bg);
+  --color-punch-face-fg:   var(--punch-face-fg);
+  --color-punch-face-bd:   var(--punch-face-bd);
+  --color-punch-manual-bg: var(--punch-manual-bg);
+  --color-punch-manual-fg: var(--punch-manual-fg);
+  --color-punch-manual-bd: var(--punch-manual-bd);
+
   --animate-shimmer: shimmer 1.5s ease-in-out infinite;
   --animate-page-enter: page-enter 0.2s ease-out both;
   --animate-stagger-1: stagger-fade-in 0.25s ease-out 0.05s both;
@@ -165,6 +340,7 @@
   --animate-stagger-3: stagger-fade-in 0.25s ease-out 0.15s both;
   --animate-stagger-4: stagger-fade-in 0.25s ease-out 0.20s both;
   --animate-stagger-5: stagger-fade-in 0.25s ease-out 0.25s both;
+  --animate-fade-up: fade-up 0.2s ease-out both;
 }
 
 /* ── Utility: hide scrollbar while keeping scroll behaviour ───────────────────
