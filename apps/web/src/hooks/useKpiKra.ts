@@ -14,7 +14,7 @@ export interface KPI {
   name: string;
   description?: string;
   unit: KPIUnit;
-  targetValue?: number;
+  targetValue?: number | undefined;
   frequency: KPIFrequency;
   isActive: boolean;
 }

@@ -175,7 +175,7 @@ export default function ESOPPage() {
       ) : (
         <div className="space-y-3">
           {grants.map((grant: any) => {
-            const meta = STATUS_META[grant.status] ?? STATUS_META['ACTIVE'];
+            const meta = STATUS_META[grant.status] ?? STATUS_META['ACTIVE']!;
             const isOpen = expanded === grant.id;
             const vestedCount = grant.vestingSchedule?.filter((v: any) => v.isVested)
               .reduce((acc: number, v: any) => acc + (v.options ?? 0), 0) ?? 0;

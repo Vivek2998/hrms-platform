@@ -1205,5 +1205,5 @@ export function getDailyQuote(category: QuoteCategory): Quote {
   const quotes = QUOTES_BY_CATEGORY[category] ?? QUOTES_BY_CATEGORY.default;
   const now = new Date();
   const idx = (now.getFullYear() * 1000 + (now.getMonth() + 1) * 31 + now.getDate()) % quotes.length;
-  return quotes[idx];
+  return quotes[idx]!;
 }

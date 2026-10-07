@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -26,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Loader2, Target, Plus, Star, Users, BarChart3, Trophy, TrendingUp,
-  CheckCircle2, AlertCircle, RefreshCw, Award, UserCheck, Zap, Eye,
+  RefreshCw, Award, UserCheck, Zap, Eye,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
@@ -34,7 +33,7 @@ import { cn } from '@/lib/utils';
 import {
   useCycles, useCreateCycle, useUpdateCycle,
   useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal,
-  useReviews, useCreateReview, useInitializeReviews,
+  useReviews, useInitializeReviews,
   useSubmitSelfReview, useSubmitManagerReview,
   usePeerFeedbacks, useSubmitPeerFeedback,
   useTeamOverview,
@@ -466,7 +465,7 @@ function MyScorecardTab({ cycleId }: { cycleId: string | null }) {
               </span>
               {review && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  Review: <span className={cn('font-medium', REVIEW_STATUS_COLORS[review.status].split(' ')[1])}>
+                  Review: <span className={cn('font-medium', REVIEW_STATUS_COLORS[review.status]?.split(' ')[1])}>
                     {review.status.replace('_', ' ')}
                   </span>
                 </p>
@@ -750,11 +749,6 @@ function TeamOverviewTab({ cycleId }: { cycleId: string | null }) {
               </thead>
               <tbody className="divide-y">
                 {filtered.map((s) => {
-                  const overallScore = computeOverallScore(
-                    s.review as PerformanceReview | null,
-                    s.weightedProgress,
-                    s.avgPeerRating,
-                  );
                   return (
                     <tr key={s.employee.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">

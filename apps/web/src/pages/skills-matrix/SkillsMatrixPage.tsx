@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,7 +24,7 @@ import {
   useSkills, useCreateSkill, useUpdateSkill, useDeleteSkill,
   useMySkills, useAddMySkill, useDeleteMySkill,
   useSkillsMatrix, useSearchBySkill, useVerifySkill, useSkillsSummary,
-  type Skill, type SkillCategory, type SkillProficiency, type MatrixRow,
+  type Skill, type SkillCategory, type SkillProficiency,
 } from '@/hooks/useSkills';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -284,7 +283,7 @@ function MySkillsTab() {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <p className="text-sm font-medium">{es.skill.name}</p>
-                            {es.isVerified && <ShieldCheck className="h-3.5 w-3.5 text-green-500" title="Verified" />}
+                            {es.isVerified && <span title="Verified"><ShieldCheck className="h-3.5 w-3.5 text-green-500" /></span>}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className={cn('inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold', pm.color)}>{pm.label}</span>

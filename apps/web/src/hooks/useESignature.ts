@@ -40,9 +40,9 @@ export function useCreateSignatureRequest() {
       requestedTo: string;
       documentName: string;
       documentUrl: string;
-      documentId?: string;
-      message?: string;
-      expiresAt?: string;
+      documentId?: string | undefined;
+      message?: string | undefined;
+      expiresAt?: string | undefined;
     }) => apiClient.post('/esignatures', data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['esignatures'] });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileText, Download, Printer } from 'lucide-react';
 import { DialogContentSkeleton } from '@/components/ui/skeleton-patterns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

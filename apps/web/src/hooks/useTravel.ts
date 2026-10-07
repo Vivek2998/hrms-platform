@@ -39,13 +39,13 @@ export interface CreateTravelInput {
   fromCity: string;
   toCity: string;
   departureDate: string;
-  returnDate?: string;
-  travelMode?: TravelMode;
-  estimatedBudget?: number;
-  hotelRequired?: boolean;
-  advanceRequired?: boolean;
-  advanceAmount?: number;
-  notes?: string;
+  returnDate?: string | undefined;
+  travelMode?: TravelMode | undefined;
+  estimatedBudget?: number | undefined;
+  hotelRequired?: boolean | undefined;
+  advanceRequired?: boolean | undefined;
+  advanceAmount?: number | undefined;
+  notes?: string | undefined;
 }
 
 export function useTravelRequests() {

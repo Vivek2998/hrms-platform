@@ -126,14 +126,15 @@ function _DatePickerField({
 }: {
   label: string;
   value: string;
-  disabled?: boolean;
-  minDate?: Date;
-  maxDate?: Date;
+  disabled?: boolean | undefined;
+  minDate?: Date | undefined;
+  maxDate?: Date | undefined;
   onChange: (value: string) => void;
-  info?: string;
+  info?: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const selected = value ? new Date(value + 'T00:00:00') : undefined;
+  const initialMonth = selected ?? minDate;
 
   return (
     <div className="space-y-1">
@@ -160,7 +161,7 @@ function _DatePickerField({
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="single"
-            selected={selected}
+            {...(selected ? { selected } : {})}
             onSelect={(date) => {
               if (date) { onChange(format(date, 'yyyy-MM-dd')); setOpen(false); }
             }}
@@ -176,7 +177,7 @@ function _DatePickerField({
               }
               return false;
             }}
-            defaultMonth={selected ?? minDate}
+            {...(initialMonth ? { defaultMonth: initialMonth } : {})}
             autoFocus
           />
         </PopoverContent>

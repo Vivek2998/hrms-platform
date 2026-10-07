@@ -15,12 +15,12 @@ export function useCreateReferral() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: {
-      jobId?: string;
+      jobId?: string | undefined;
       candidateName: string;
       candidateEmail: string;
-      candidatePhone?: string;
+      candidatePhone?: string | undefined;
       position: string;
-      message?: string;
+      message?: string | undefined;
     }) => apiClient.post('/referrals', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['referrals'] }),
   });
@@ -29,7 +29,7 @@ export function useCreateReferral() {
 export function useUpdateReferralStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: string; status: string; bonusAmount?: number; bonusPaid?: boolean; rejectedReason?: string }) =>
+    mutationFn: ({ id, ...data }: { id: string; status: string; bonusAmount?: number | undefined; bonusPaid?: boolean | undefined; rejectedReason?: string | undefined }) =>
       apiClient.patch(`/referrals/${id}/status`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['referrals'] }),
   });

@@ -19,7 +19,7 @@ import {
   useSeedDesignations, useAssignEmployeeToDesignation,
   useOrgChartPendingRequest, useSubmitOrgChartChangeRequest,
   useApproveOrgChartChangeRequest, useRejectOrgChartChangeRequest,
-  type DesignationWithEmployees, type PendingOrgChartRequest,
+  type DesignationWithEmployees,
 } from '@/hooks/useDesignations';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/stores/auth.store';

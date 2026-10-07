@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/axios';
-import type { ApiResponse } from '@/lib/axios';
+import type { ApiResponse } from '@hrms/shared-types';
 
 export interface Designation {
   id: string;
@@ -135,7 +135,7 @@ export function useOrgChartPendingRequest() {
 export function useSubmitOrgChartChangeRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { industryType: string; reason?: string }) => {
+    mutationFn: async (data: { industryType: string; reason?: string | undefined }) => {
       const res = await apiClient.post<ApiResponse<PendingOrgChartRequest>>(
         '/designations/change-request',
         data,
@@ -149,7 +149,7 @@ export function useSubmitOrgChartChangeRequest() {
 export function useApproveOrgChartChangeRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, superAdminNote }: { id: string; superAdminNote?: string }) => {
+    mutationFn: async ({ id, superAdminNote }: { id: string; superAdminNote?: string | undefined }) => {
       await apiClient.post(`/designations/change-request/${id}/approve`, { superAdminNote });
     },
     onSuccess: () => {
@@ -164,7 +164,7 @@ export function useApproveOrgChartChangeRequest() {
 export function useRejectOrgChartChangeRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, superAdminNote }: { id: string; superAdminNote?: string }) => {
+    mutationFn: async ({ id, superAdminNote }: { id: string; superAdminNote?: string | undefined }) => {
       await apiClient.post(`/designations/change-request/${id}/reject`, { superAdminNote });
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.changeRequest }),

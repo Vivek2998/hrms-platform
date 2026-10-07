@@ -164,7 +164,7 @@ export default function HiringDrivesPage() {
             </div>
           ) : (
             drives.map((drive: any) => {
-              const typeMeta = DRIVE_TYPE_META[drive.type] ?? DRIVE_TYPE_META['CAMPUS'];
+              const typeMeta = DRIVE_TYPE_META[drive.type] ?? DRIVE_TYPE_META['CAMPUS']!;
               return (
                 <Card
                   key={drive.id}

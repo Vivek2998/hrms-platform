@@ -28,13 +28,13 @@ export function useCreateCourse() {
   return useMutation({
     mutationFn: (data: {
       title: string;
-      description?: string;
-      thumbnailUrl?: string;
-      category?: string;
-      level?: CourseLevel;
-      durationMinutes?: number;
-      tags?: string[];
-      externalUrl?: string;
+      description?: string | undefined;
+      thumbnailUrl?: string | undefined;
+      category?: string | undefined;
+      level?: CourseLevel | undefined;
+      durationMinutes?: number | undefined;
+      tags?: string[] | undefined;
+      externalUrl?: string | undefined;
     }) => apiClient.post('/lms/courses', data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['lms'] });

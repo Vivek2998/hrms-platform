@@ -38,7 +38,7 @@ export interface CreateBookingInput {
   startTime: string;
   endTime: string;
   attendees: number;
-  notes?: string;
+  notes?: string | undefined;
 }
 
 export function useRooms() {

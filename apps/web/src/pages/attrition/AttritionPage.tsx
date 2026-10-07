@@ -136,7 +136,7 @@ export default function AttritionPage() {
               </thead>
               <tbody className="divide-y">
                 {scores.map((row: any) => {
-                  const meta = RISK_META[row.riskLevel] ?? RISK_META['LOW'];
+                  const meta = RISK_META[row.riskLevel] ?? RISK_META['LOW']!;
                   return (
                     <tr key={row.id} className="hover:bg-muted/20">
                       <td className="px-4 py-3">

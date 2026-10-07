@@ -103,7 +103,7 @@ export default function ESignaturePage() {
       ) : (
         <div className="space-y-3">
           {items.map((req) => {
-            const meta = STATUS_META[req.status] ?? STATUS_META.PENDING;
+            const meta = STATUS_META[req.status] ?? STATUS_META.PENDING!;
             return (
               <Card key={req.id} className="border shadow-sm">
                 <CardContent className="py-4 px-5">
@@ -279,7 +279,8 @@ function SignDocumentDialog({ request, onClose }: { request: ESignatureRequest; 
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     if ('touches' in e) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+      const touch = e.touches[0]!;
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
     }
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }

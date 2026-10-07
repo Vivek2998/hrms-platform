@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/axios';
-import type { ApiResponse } from '@/lib/axios';
+import type { ApiResponse } from '@hrms/shared-types';
 
 export type CycleFrequency = 'ANNUAL' | 'HALF_YEARLY' | 'QUARTERLY';
 export type CycleStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED';
@@ -281,7 +281,7 @@ export function useSubmitSelfReview() {
       reviewId: string;
       cycleId: string;
       selfRating: number;
-      selfComments?: string;
+      selfComments?: string | undefined;
     }) => {
       await apiClient.patch(`/performance/reviews/${reviewId}/self`, { selfRating, selfComments });
     },
@@ -302,8 +302,8 @@ export function useSubmitManagerReview() {
       reviewId: string;
       cycleId: string;
       managerRating: number;
-      managerComments?: string;
-      finalRating?: number;
+      managerComments?: string | undefined;
+      finalRating?: number | undefined;
     }) => {
       await apiClient.patch(`/performance/reviews/${reviewId}/manager`, {
         managerRating,

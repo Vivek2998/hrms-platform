@@ -29,6 +29,8 @@ export interface EmployeeSkill {
   verifiedAt?: string;
   notes?: string;
   verifiedBy?: { id: string; firstName: string; lastName: string };
+  // Present on /skills/search results
+  employee?: MatrixRow['employee'];
 }
 
 export interface MatrixRow {
@@ -113,10 +115,10 @@ export function useAddMySkill() {
     mutationFn: (payload: {
       skillId: string;
       proficiency: SkillProficiency;
-      yearsOfExperience?: number;
-      lastUsedYear?: number;
-      certificationUrl?: string;
-      notes?: string;
+      yearsOfExperience?: number | undefined;
+      lastUsedYear?: number | undefined;
+      certificationUrl?: string | undefined;
+      notes?: string | undefined;
     }) => apiClient.post('/skills/my-skills', payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-skills'] });
@@ -163,7 +165,7 @@ export function useVerifySkill() {
 
 // ── Skills Matrix ────────────────────────────────────────────────────────────
 
-export function useSkillsMatrix(params?: { skillId?: string; category?: string; search?: string }) {
+export function useSkillsMatrix(params?: { skillId?: string | undefined; category?: string | undefined; search?: string | undefined }) {
   return useQuery<MatrixRow[]>({
     queryKey: ['skills-matrix', params],
     queryFn: async () => {

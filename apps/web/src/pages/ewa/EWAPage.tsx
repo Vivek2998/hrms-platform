@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Wallet, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -108,7 +107,7 @@ export default function EWAPage() {
             </thead>
             <tbody className="divide-y">
               {requests.map((req: any) => {
-                const meta = STATUS_META[req.status] ?? STATUS_META['PENDING'];
+                const meta = STATUS_META[req.status] ?? STATUS_META['PENDING']!;
                 return (
                   <tr key={req.id} className="hover:bg-muted/20">
                     {isHR && (

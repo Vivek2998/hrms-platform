@@ -143,7 +143,7 @@ export default function InterviewScorecardsPage() {
         <div className="space-y-3">
           {scorecards.map((sc: any) => {
             const recMeta =
-              RECOMMENDATION_META[sc.recommendation] ?? RECOMMENDATION_META['MAYBE'];
+              RECOMMENDATION_META[sc.recommendation] ?? RECOMMENDATION_META['MAYBE']!;
             const isOpen = expanded === sc.id;
             return (
               <Card key={sc.id} className="border shadow-sm">

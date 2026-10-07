@@ -4,13 +4,12 @@ import { useForm } from 'react-hook-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Loader2, Briefcase, Plus, MapPin, Users, ChevronRight } from 'lucide-react';
+import { Loader2, Briefcase, Plus, MapPin, Users } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -54,8 +53,8 @@ function CreateJobDialog({ open, onClose }: { open: boolean; onClose: () => void
         description: data.description,
         requirements: data.requirements || undefined,
         openings: Number(data.openings),
-        minSalary: data.minSalary ? Number(data.minSalary) : null,
-        maxSalary: data.maxSalary ? Number(data.maxSalary) : null,
+        minSalary: data.minSalary ? Number(data.minSalary) : undefined,
+        maxSalary: data.maxSalary ? Number(data.maxSalary) : undefined,
         closingDate: data.closingDate || undefined,
       });
       toast.success('Job posted');

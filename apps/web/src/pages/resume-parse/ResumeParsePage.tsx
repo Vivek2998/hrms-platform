@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileSearch, Plus, RefreshCw, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -195,7 +195,7 @@ export default function ResumeParsePage() {
       ) : (
         <div className="space-y-3">
           {resumes.map((resume: any) => {
-            const meta = STATUS_META[resume.status] ?? STATUS_META['PENDING'];
+            const meta = STATUS_META[resume.status] ?? STATUS_META['PENDING']!;
             const isOpen = expanded === resume.id;
             return (
               <Card key={resume.id} className="border shadow-sm">

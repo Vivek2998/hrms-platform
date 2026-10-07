@@ -2,7 +2,6 @@ import {
   ResponsiveContainer,
   AreaChart, Area,
   BarChart, Bar,
-  LineChart, Line,
   PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';

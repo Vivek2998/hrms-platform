@@ -3,7 +3,7 @@ import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import {
   Target, Plus, ChevronDown, ChevronUp, Pencil, Trash2,
   TrendingUp, Users, CheckCircle2, AlertCircle, Clock, BarChart3,
-  UserPlus, X,
+  UserPlus,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import {
   useCreateKPI, useUpdateKPI, useDeleteKPI,
   useKRAAssignments, useAssignKRA, useUpdateAssignment, useDeleteAssignment,
   useUpdateKPIRecord, useKpiKraSummary,
-  type KRA, type KPI, type KRAAssignment, type KPIUnit, type KPIFrequency, type KRAStatus, type KPIRecordStatus,
+  type KRA, type KPI, type KPIUnit, type KPIFrequency, type KRAStatus, type KPIRecordStatus,
 } from '@/hooks/useKpiKra';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -332,7 +332,6 @@ function AssignmentsTab({ isManager }: { isManager: boolean }) {
     } catch { toast.error('Failed to assign KRA'); }
   }
 
-  const periods = [...new Set(assignments.map((a) => a.period))].sort().reverse();
 
   if (isLoading) return <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>;
 
@@ -573,7 +572,7 @@ export default function KpiKraPage() {
             { label: 'Total Assignments', value: summary.totalAssignments, color: 'text-blue-600' },
             { label: 'Active', value: summary.activeAssignments, color: 'text-green-600' },
             { label: 'Completed', value: summary.completedAssignments, color: 'text-gray-500' },
-          ].map(({ label, value, color }, i, arr) => (
+          ].map(({ label, value, color }, i) => (
             <div key={label} className="flex items-center">
               {i > 0 && <div className="mr-4 h-6 w-px bg-border/50" />}
               <div className="flex flex-col items-center gap-0.5">

@@ -15,9 +15,6 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -299,8 +296,6 @@ export default function RoomsPage() {
     }
   }
 
-  const myBookings = bookings.filter((b) => !isPrivileged);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -356,7 +351,7 @@ export default function RoomsPage() {
           ) : (
             <ScrollArea className="h-[500px] pr-3">
               <div className="space-y-2">
-                {filteredBookings.filter((b) => !isPrivileged || true).length === 0 ? (
+                {filteredBookings.length === 0 ? (
                   <p className="text-muted-foreground text-sm">No bookings found.</p>
                 ) : (
                   filteredBookings.map((b) => (

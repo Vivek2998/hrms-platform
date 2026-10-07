@@ -94,7 +94,7 @@ const PUNCH_METHOD_META: Record<PunchMethod, { label: string; className: string 
   MANUAL:      { label: 'Manual',        className: 'bg-punch-manual-bg text-punch-manual-fg border-punch-manual-bd' },
 };
 
-function PunchMethodBadge({ method }: { method?: PunchMethod | null }) {
+function PunchMethodBadge({ method }: { method?: PunchMethod | null | undefined }) {
   if (!method) return <span className="text-muted-foreground text-xs">—</span>;
   const { label, className } = PUNCH_METHOD_META[method];
   return (

@@ -53,6 +53,18 @@ export interface InterviewSchedule {
   rating: number | null;
 }
 
+export interface CreateJobInput {
+  title: string;
+  location?: string | undefined;
+  employmentType: string;
+  description: string;
+  requirements?: string | undefined;
+  openings: number;
+  minSalary?: number | undefined;
+  maxSalary?: number | undefined;
+  closingDate?: string | undefined;
+}
+
 export function useJobs(status?: JobStatus) {
   return useQuery({
     queryKey: ['recruitment', 'jobs', status],
@@ -67,7 +79,7 @@ export function useJobs(status?: JobStatus) {
 export function useCreateJob() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Omit<JobPosting, 'id' | 'status' | 'postedBy' | 'createdAt' | '_count'>) => {
+    mutationFn: async (data: CreateJobInput) => {
       const res = await apiClient.post<{ data: JobPosting }>('/recruitment/jobs', data);
       return res.data.data;
     },

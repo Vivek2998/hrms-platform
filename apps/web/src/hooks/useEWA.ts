@@ -13,7 +13,7 @@ export function useEWARequests(isHR: boolean) {
 export function useCreateEWARequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { amount: number; notes?: string }) =>
+    mutationFn: (data: { amount: number; notes?: string | undefined }) =>
       apiClient.post('/ewa', data).then((r) => r.data.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ewa'] });

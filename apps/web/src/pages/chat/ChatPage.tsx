@@ -10,21 +10,21 @@ import { cn } from '@/lib/utils';
 import { BASE_URL } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 // ── Markdown bubble shared between streamed and historical messages ────────────
 
-const mdComponents = {
-  p: ({ children }: { children: React.ReactNode }) => <p className="mb-1 last:mb-0">{children}</p>,
-  ul: ({ children }: { children: React.ReactNode }) => <ul className="my-1 list-disc pl-4 space-y-0.5">{children}</ul>,
-  ol: ({ children }: { children: React.ReactNode }) => <ol className="my-1 list-decimal pl-4 space-y-0.5">{children}</ol>,
-  li: ({ children }: { children: React.ReactNode }) => <li>{children}</li>,
-  strong: ({ children }: { children: React.ReactNode }) => <strong className="font-semibold">{children}</strong>,
-  code: ({ children }: { children: React.ReactNode }) => (
+const mdComponents: Components = {
+  p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+  ul: ({ children }) => <ul className="my-1 list-disc pl-4 space-y-0.5">{children}</ul>,
+  ol: ({ children }) => <ol className="my-1 list-decimal pl-4 space-y-0.5">{children}</ol>,
+  li: ({ children }) => <li>{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  code: ({ children }) => (
     <code className="rounded bg-background/60 px-1 py-0.5 font-mono text-xs">{children}</code>
   ),
-  pre: ({ children }: { children: React.ReactNode }) => (
+  pre: ({ children }) => (
     <pre className="my-1.5 overflow-x-auto rounded bg-background/60 p-2 font-mono text-xs">{children}</pre>
   ),
 };

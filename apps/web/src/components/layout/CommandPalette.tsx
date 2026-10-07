@@ -161,7 +161,7 @@ export function CommandPalette() {
 
   const groups = [...new Set(visibleNav.map((i) => i.group))];
 
-  const nextTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+  const nextTheme = theme === 'light' ? 'dark' : 'light';
   const themeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
   const ThemeIcon = themeIcon;
 

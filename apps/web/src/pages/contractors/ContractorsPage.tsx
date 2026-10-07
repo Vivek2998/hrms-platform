@@ -27,7 +27,6 @@ import {
   useUpdatePOStatus,
 } from '@/hooks/useContractors';
 import { useAuthStore } from '@/stores/auth.store';
-import { format } from 'date-fns';
 
 const TYPE_META: Record<string, { label: string; className: string }> = {
   INDIVIDUAL: { label: 'Individual', className: 'bg-blue-100 text-blue-700' },
@@ -336,8 +335,8 @@ export default function ContractorsPage() {
               </thead>
               <tbody className="divide-y">
                 {contractors.map((c: any) => {
-                  const typeMeta = TYPE_META[c.type] ?? TYPE_META['INDIVIDUAL'];
-                  const statusMeta = STATUS_META[c.status] ?? STATUS_META['ACTIVE'];
+                  const typeMeta = TYPE_META[c.type] ?? TYPE_META['INDIVIDUAL']!;
+                  const statusMeta = STATUS_META[c.status] ?? STATUS_META['ACTIVE']!;
                   return (
                     <tr
                       key={c.id}

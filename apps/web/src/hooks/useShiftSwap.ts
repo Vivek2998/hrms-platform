@@ -14,7 +14,7 @@ export function useShiftSwaps() {
 export function useCreateShiftSwap() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { targetId: string; requesterDate: string; targetDate: string; reason?: string }) =>
+    mutationFn: (data: { targetId: string; requesterDate: string; targetDate: string; reason?: string | undefined }) =>
       apiClient.post('/shift-swaps', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['shift-swaps'] }),
   });

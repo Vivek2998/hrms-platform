@@ -6,6 +6,7 @@ export function useCountUp(target: number | undefined, duration = 800) {
 
   useEffect(() => {
     if (target === undefined) return;
+    const to = target;
     const start = performance.now();
     const from = 0;
 
@@ -14,7 +15,7 @@ export function useCountUp(target: number | undefined, duration = 800) {
       const progress = Math.min(elapsed / duration, 1);
       // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(from + (target - from) * eased));
+      setValue(Math.round(from + (to - from) * eased));
       if (progress < 1) raf.current = requestAnimationFrame(tick);
     }
 

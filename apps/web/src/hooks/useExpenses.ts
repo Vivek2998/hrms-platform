@@ -32,11 +32,11 @@ export function useCreateExpense() {
   return useMutation({
     mutationFn: (data: {
       title: string;
-      description?: string;
+      description?: string | undefined;
       category: ExpenseCategory;
       amount: number;
-      currency?: string;
-      receiptUrl?: string;
+      currency?: string | undefined;
+      receiptUrl?: string | undefined;
       expenseDate: string;
     }) => apiClient.post('/expenses', data),
     onSuccess: () => {
@@ -75,7 +75,7 @@ export function useSubmitExpense() {
 export function useReviewExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, action, reviewNote }: { id: string; action: 'APPROVE' | 'REJECT'; reviewNote?: string }) =>
+    mutationFn: ({ id, action, reviewNote }: { id: string; action: 'APPROVE' | 'REJECT'; reviewNote?: string | undefined }) =>
       apiClient.patch(`/expenses/${id}/review`, { action, reviewNote }),
     onSuccess: (_, { action }) => {
       qc.invalidateQueries({ queryKey: ['expenses'] });

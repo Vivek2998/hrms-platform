@@ -3,7 +3,7 @@ import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Package, Plus, Laptop, Phone, Monitor, Keyboard, User, RotateCcw, Pencil, Trash2 } from 'lucide-react';
+import { Package, Plus, Laptop, Phone, Monitor, Keyboard, User, RotateCcw, Trash2 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useAssets, useCreateAsset, useDeleteAsset, useAssignAsset, useReturnAsset, type Asset, type AssetCategory } from '@/hooks/useAssets';
 import { useEmployees } from '@/hooks/useEmployees';

@@ -34,9 +34,9 @@ export interface LoanRequest {
 export interface CreateLoanInput {
   loanType: LoanType;
   amount: number;
-  tenure?: number;
+  tenure?: number | undefined;
   purpose: string;
-  notes?: string;
+  notes?: string | undefined;
 }
 
 export function useLoans() {

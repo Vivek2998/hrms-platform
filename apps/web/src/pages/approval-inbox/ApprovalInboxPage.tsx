@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSessionStorageState } from '@/hooks/useSessionStorageState';
 import { CheckCircle, XCircle, Inbox, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
