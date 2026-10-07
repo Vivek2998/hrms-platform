@@ -79,7 +79,7 @@ export function announcementRoutes(app: FastifyInstance) {
           });
         }
       } catch (err) {
-        app.log.error('[announcements] Failed to broadcast notifications:', err);
+        app.log.error({ err }, '[announcements] Failed to broadcast notifications');
       }
     })();
 

@@ -12,7 +12,7 @@ export function analyticsRoutes(app: FastifyInstance) {
     preHandler: [
       app.authenticate,
       requirePlan('GROWTH'),
-      async (req: any, reply: any) => {
+      async (req: any, _reply: any) => {
         if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
       },
     ],

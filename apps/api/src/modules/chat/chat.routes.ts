@@ -303,7 +303,7 @@ async function executeTool(
 
       case 'get_my_attendance': {
         const monthStr = (input.month as string | undefined) ?? currentMonth;
-        const [yr, mo] = monthStr.split('-').map(Number);
+        const [yr = new Date().getFullYear(), mo = new Date().getMonth() + 1] = monthStr.split('-').map(Number);
         const from = new Date(yr, mo - 1, 1);
         const to = new Date(yr, mo, 0, 23, 59, 59);
         const records = await prisma.attendanceRecord.findMany({

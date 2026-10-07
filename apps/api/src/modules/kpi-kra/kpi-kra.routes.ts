@@ -118,7 +118,6 @@ export async function kpiKraRoutes(app: FastifyInstance) {
   // GET /kpi-kra/assignments?employeeId=&period=
   app.get('/kpi-kra/assignments', auth, async (req, reply) => {
     const { employeeId, period } = req.query as { employeeId?: string; period?: string };
-    const isHR = (HR_ROLES as readonly string[]).includes(req.user.role);
     const isManager = (MANAGER_ROLES as readonly string[]).includes(req.user.role);
 
     // Employee sees only their own

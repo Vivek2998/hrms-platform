@@ -72,31 +72,34 @@ export async function nineBoxRoutes(app: FastifyInstance) {
     const employee = await app.prisma.employee.findFirst({ where: { id: input.employeeId, organizationId: req.user.orgId } });
     if (!employee) throw fail('Employee not found', 404);
 
-    const assessment = await app.prisma.nineBoxAssessment.upsert({
-      where: {
-        organizationId_cycleId_employeeId: {
-          organizationId: req.user.orgId,
-          cycleId: input.cycleId ?? null,
-          employeeId: input.employeeId,
-        },
-      },
-      create: {
-        organizationId: req.user.orgId,
-        employeeId: input.employeeId,
-        assessedById: req.user.sub,
-        cycleId: input.cycleId,
-        performance: input.performance,
-        potential: input.potential,
-        notes: input.notes,
-      },
-      update: {
-        performance: input.performance,
-        potential: input.potential,
-        notes: input.notes,
-        assessedById: req.user.sub,
-      },
-      include: { employee: { select: empSelect } },
+    // Prisma can't upsert on a compound unique whose cycleId is null, so find-then-write.
+    const existing = await app.prisma.nineBoxAssessment.findFirst({
+      where: { organizationId: req.user.orgId, cycleId: input.cycleId ?? null, employeeId: input.employeeId },
+      select: { id: true },
     });
+    const assessment = existing
+      ? await app.prisma.nineBoxAssessment.update({
+          where: { id: existing.id },
+          data: {
+            performance: input.performance,
+            potential: input.potential,
+            notes: input.notes,
+            assessedById: req.user.sub,
+          },
+          include: { employee: { select: empSelect } },
+        })
+      : await app.prisma.nineBoxAssessment.create({
+          data: {
+            organizationId: req.user.orgId,
+            employeeId: input.employeeId,
+            assessedById: req.user.sub,
+            cycleId: input.cycleId,
+            performance: input.performance,
+            potential: input.potential,
+            notes: input.notes,
+          },
+          include: { employee: { select: empSelect } },
+        });
     return reply.send(ok(assessment));
   });
 }

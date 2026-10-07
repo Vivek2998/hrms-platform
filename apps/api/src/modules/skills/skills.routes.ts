@@ -11,16 +11,20 @@ const empSelect = {
   department: { select: { name: true } },
 };
 
+const categoryEnum = z.enum(['TECHNICAL', 'SOFT_SKILL', 'DOMAIN', 'CERTIFICATION', 'LANGUAGE', 'TOOL']);
+
 const skillSchema = z.object({
   name: z.string().min(1),
-  category: z.enum(['TECHNICAL', 'SOFT_SKILL', 'DOMAIN', 'CERTIFICATION', 'LANGUAGE', 'TOOL']).default('TECHNICAL'),
+  category: categoryEnum.default('TECHNICAL'),
   description: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
+const proficiencyEnum = z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']);
+
 const employeeSkillSchema = z.object({
   skillId: z.string().uuid(),
-  proficiency: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']).default('BEGINNER'),
+  proficiency: proficiencyEnum.default('BEGINNER'),
   yearsOfExperience: z.number().min(0).optional(),
   lastUsedYear: z.number().int().optional(),
   certificationUrl: z.string().url().optional().or(z.literal('')),
@@ -33,7 +37,7 @@ export async function skillsRoutes(app: FastifyInstance) {
   // ── SKILL CATALOG (HR manages) ───────────────────────────────
 
   app.get('/skills', auth, async (req, reply) => {
-    const { category } = req.query as { category?: string };
+    const { category } = z.object({ category: categoryEnum.optional() }).parse(req.query);
     const skills = await app.prisma.skill.findMany({
       where: {
         organizationId: req.user.orgId,
@@ -161,9 +165,13 @@ export async function skillsRoutes(app: FastifyInstance) {
   app.get('/skills/matrix', auth, async (req, reply) => {
     if (!(MANAGER_ROLES as readonly string[]).includes(req.user.role)) throw fail('Forbidden', 403);
 
-    const { skillId, category, search } = req.query as {
-      skillId?: string; category?: string; search?: string;
-    };
+    const { skillId, category, search } = z
+      .object({
+        skillId: z.string().optional(),
+        category: categoryEnum.optional(),
+        search: z.string().optional(),
+      })
+      .parse(req.query);
 
     // Get employees that have at least one skill
     const employeeSkills = await app.prisma.employeeSkill.findMany({
@@ -213,7 +221,9 @@ export async function skillsRoutes(app: FastifyInstance) {
 
   // GET /skills/search?skillId=&proficiency= — find employees with a specific skill
   app.get('/skills/search', auth, async (req, reply) => {
-    const { skillId, proficiency } = req.query as { skillId?: string; proficiency?: string };
+    const { skillId, proficiency } = z
+      .object({ skillId: z.string().optional(), proficiency: proficiencyEnum.optional() })
+      .parse(req.query);
     if (!skillId) throw fail('skillId required', 400);
 
     const results = await app.prisma.employeeSkill.findMany({

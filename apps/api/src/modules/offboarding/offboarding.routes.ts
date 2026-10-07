@@ -156,7 +156,7 @@ export function offboardingRoutes(app: FastifyInstance) {
         },
       },
       include: {
-        tasks: { orderBy: { createdAt: 'asc' } },
+        tasks: { orderBy: { dueDate: 'asc' } },
         employee: { select: { id: true, firstName: true, lastName: true } },
         template: { select: { id: true, name: true } },
       },

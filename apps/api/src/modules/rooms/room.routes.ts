@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { ok, fail } from '../../lib/response.js';
 
 const HR_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR'];
-const ALL_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'];
 
 export function roomRoutes(app: FastifyInstance) {
   const auth = { preHandler: [app.authenticate] };

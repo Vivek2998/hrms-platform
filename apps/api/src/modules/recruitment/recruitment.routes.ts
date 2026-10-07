@@ -45,7 +45,7 @@ export function recruitmentRoutes(app: FastifyInstance) {
 
   app.get('/recruitment/jobs', auth, async (req, reply) => {
     const isHR = HR_ROLES.includes(req.user.role as HrRole);
-    const qs = req.query as { status?: string };
+    const qs = z.object({ status: z.enum(['OPEN', 'FILLED', 'CLOSED']).optional() }).parse(req.query);
     const jobs = await app.prisma.jobPosting.findMany({
       where: {
         organizationId: req.user.orgId,
@@ -64,7 +64,6 @@ export function recruitmentRoutes(app: FastifyInstance) {
       data: {
         organizationId: req.user.orgId,
         title: input.title,
-        ...(input.departmentId ? { departmentId: input.departmentId } : {}),
         ...(input.location ? { location: input.location } : {}),
         employmentType: input.employmentType as any,
         description: input.description,
@@ -73,7 +72,6 @@ export function recruitmentRoutes(app: FastifyInstance) {
         ...(input.maxSalary !== undefined ? { maxSalary: input.maxSalary } : {}),
         openings: input.openings,
         ...(input.closingDate ? { closingDate: new Date(input.closingDate) } : {}),
-        postedBy: req.user.sub,
       },
     });
     return reply.status(201).send(ok(job));
@@ -85,10 +83,11 @@ export function recruitmentRoutes(app: FastifyInstance) {
     const input = jobSchema.partial().extend({
       status: z.enum(['OPEN', 'FILLED', 'CLOSED']).optional(),
     }).parse(req.body);
+    const { departmentId: _departmentId, ...jobInput } = input;
     const updated = await app.prisma.jobPosting.updateMany({
       where: { id, organizationId: req.user.orgId },
       data: {
-        ...input,
+        ...jobInput,
         ...(input.employmentType ? { employmentType: input.employmentType as any } : {}),
         ...(input.closingDate ? { closingDate: new Date(input.closingDate) } : {}),
       },
@@ -111,7 +110,7 @@ export function recruitmentRoutes(app: FastifyInstance) {
     const qs = req.query as { jobId?: string; stage?: string };
     const applications = await app.prisma.jobApplication.findMany({
       where: {
-        organizationId: req.user.orgId,
+        job: { organizationId: req.user.orgId },
         ...(qs.jobId ? { jobId: qs.jobId } : {}),
         ...(qs.stage ? { stage: qs.stage as any } : {}),
       },
@@ -133,7 +132,6 @@ export function recruitmentRoutes(app: FastifyInstance) {
     const input = applicationSchema.parse(req.body);
     const application = await app.prisma.jobApplication.create({
       data: {
-        organizationId: req.user.orgId,
         jobId,
         candidateName: input.candidateName,
         candidateEmail: input.candidateEmail,
@@ -141,7 +139,6 @@ export function recruitmentRoutes(app: FastifyInstance) {
         ...(input.resumeUrl ? { resumeUrl: input.resumeUrl } : {}),
         ...(input.coverLetter ? { coverLetter: input.coverLetter } : {}),
         ...(input.source ? { source: input.source } : {}),
-        ...(input.referredBy ? { referredBy: input.referredBy } : {}),
       },
     });
     return reply.status(201).send(ok(application));
@@ -156,10 +153,9 @@ export function recruitmentRoutes(app: FastifyInstance) {
       rejectionReason: z.string().optional(),
     }).parse(req.body);
     const updated = await app.prisma.jobApplication.updateMany({
-      where: { id, organizationId: req.user.orgId },
+      where: { id, job: { organizationId: req.user.orgId } },
       data: {
         stage: input.stage as any,
-        ...(input.notes ? { notes: input.notes } : {}),
         ...(input.rejectionReason ? { rejectionReason: input.rejectionReason } : {}),
       },
     });
@@ -173,7 +169,7 @@ export function recruitmentRoutes(app: FastifyInstance) {
     if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
     const { id: applicationId } = req.params as { id: string };
     const interviews = await app.prisma.interviewSchedule.findMany({
-      where: { applicationId, organizationId: req.user.orgId },
+      where: { applicationId, application: { job: { organizationId: req.user.orgId } } },
       orderBy: { scheduledAt: 'asc' },
     });
     return reply.send(ok(interviews));
@@ -183,17 +179,26 @@ export function recruitmentRoutes(app: FastifyInstance) {
     if (!HR_ROLES.includes(req.user.role as HrRole)) throw fail('Forbidden', 403);
     const { id: applicationId } = req.params as { id: string };
     const input = interviewSchema.parse(req.body);
+    const application = await app.prisma.jobApplication.findFirst({
+      where: { id: applicationId, job: { organizationId: req.user.orgId } },
+      select: { id: true },
+    });
+    if (!application) throw fail('Application not found', 404);
+    const interviewers = await app.prisma.employee.findMany({
+      where: { id: { in: input.interviewerIds }, organizationId: req.user.orgId },
+      select: { firstName: true, lastName: true },
+    });
+    const notes = [`Round ${String(input.round)}`, input.meetingLink, input.venue].filter(Boolean).join(' · ');
     const interview = await app.prisma.interviewSchedule.create({
       data: {
-        organizationId: req.user.orgId,
         applicationId,
-        interviewerIds: input.interviewerIds,
         scheduledAt: new Date(input.scheduledAt),
-        durationMinutes: input.durationMinutes,
+        durationMins: input.durationMinutes,
         mode: input.mode,
-        ...(input.meetingLink ? { meetingLink: input.meetingLink } : {}),
-        ...(input.venue ? { venue: input.venue } : {}),
-        round: input.round,
+        ...(interviewers.length
+          ? { interviewerName: interviewers.map((e) => `${e.firstName} ${e.lastName}`).join(', ') }
+          : {}),
+        notes,
       },
     });
     return reply.status(201).send(ok(interview));
@@ -207,9 +212,10 @@ export function recruitmentRoutes(app: FastifyInstance) {
       feedback: z.string().optional(),
       rating: z.number().int().min(1).max(5).optional(),
     }).parse(req.body);
+    const { rating: _rating, ...interviewInput } = input;
     const updated = await app.prisma.interviewSchedule.updateMany({
-      where: { id, organizationId: req.user.orgId },
-      data: input,
+      where: { id, application: { job: { organizationId: req.user.orgId } } },
+      data: interviewInput,
     });
     if (updated.count === 0) throw fail('Interview not found', 404);
     return reply.send(ok({ id }));

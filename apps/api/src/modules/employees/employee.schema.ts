@@ -42,6 +42,7 @@ export const createEmployeeSchema = z.object({
   // Personal
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
+  displayName: z.string().min(1).max(100).optional(),
   email: z.string().email(),
   phone: z
     .string()
